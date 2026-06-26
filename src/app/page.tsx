@@ -1,180 +1,149 @@
 'use client';
 
-import Hero from "@/components/Hero";
-import Link from "next/link";
-import { SyringeIcon, FamilyIcon, HeartIcon, BroomIcon, BabyIcon, HomeIcon, EmergencyIcon, WaterIcon, ArrowRightIcon } from "@/components/Icons";
+import { useState } from 'react';
+import Image from 'next/image';
+import { ArrowRight, AlertTriangle, Phone } from 'lucide-react';
+import { loginAction } from './actions';
 
-const objectives = [
-  {
-    icon: <SyringeIcon />,
-    title: "Immunization Awareness",
-    description: "Increasing knowledge of immunization and essential health services"
-  },
-  {
-    icon: <FamilyIcon />,
-    title: "Family Planning",
-    description: "Promoting family planning education and reproductive health"
-  },
-  {
-    icon: <HeartIcon />,
-    title: "Maternal Care",
-    description: "Encouraging early and regular antenatal care attendance"
-  },
-  {
-    icon: <BroomIcon />,
-    title: "Environmental Sanitation",
-    description: "Improving community participation in sanitation initiatives"
-  },
-  {
-    icon: <BabyIcon />,
-    title: "Child Nutrition",
-    description: "Advocating for exclusive breastfeeding and proper nutrition"
-  },
-  {
-    icon: <FamilyIcon />,
-    title: "Community Collaboration",
-    description: "Working with local health authorities and NGOs"
-  }
-];
+export default function LoginPage() {
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
-const programs = [
-  { name: "Immunization & Routine Vaccination", icon: <SyringeIcon /> },
-  { name: "Family Planning Education", icon: <FamilyIcon /> },
-  { name: "Antenatal & Postnatal Care", icon: <HeartIcon /> },
-  { name: "Environmental Sanitation", icon: <HomeIcon /> },
-  { name: "Nutrition & Breastfeeding", icon: <BabyIcon /> },
-  { name: "Health Emergency Response", icon: <EmergencyIcon /> },
-  { name: "Water, Sanitation & Hygiene (WASH)", icon: <WaterIcon /> }
-];
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setError(null);
+    setLoading(true);
 
-export default function Home() {
+    const formData = new FormData(e.currentTarget);
+    try {
+      const result = await loginAction(formData);
+      if (result && result.error) {
+        setError(result.error);
+        setLoading(false);
+      }
+    } catch (err: any) {
+      setError(err.message || 'An unexpected error occurred. Please try again.');
+      setLoading(false);
+    }
+  };
+
   return (
-    <>
-      {/* Hero Section */}
-      <Hero />
+    <div className="glass-container bg-slate-50">
+      {/* Decorative blurred circles for premium glassmorphism */}
+      <div className="glass-circle glass-circle-1" />
+      <div className="glass-circle glass-circle-2" />
+      <div className="glass-circle glass-circle-3" />
 
-      {/* Vision Section */}
-      <section className="section" style={{ background: 'var(--background)' }}>
-        <div className="container">
-          <div className="max-w-5xl mx-auto text-center">
-            <span className="badge mb-4">🌟 Why We Exist</span>
-            <h2 className="heading-lg mb-6">
-              <strong>Our Vision for</strong> <span className="text-accent">Warji LGA</span>
-            </h2>
-            <p className="text-xl leading-relaxed font-medium" style={{ color: 'var(--text-secondary)' }}>
-              We envision <strong className="text-accent">thriving communities</strong> where every family has access to 
-              quality health education, clean environments, and the knowledge they need to live healthier lives.
-            </p>
+      {/* Main card */}
+      <div className="w-full max-w-[460px] p-8 md:p-10 mx-4 glass-card animate-slide-up relative rounded-[2.5rem]">
+        <div className="flex flex-col items-center text-center">
+          {/* Logo container (Matches logo design in login page.png) */}
+          <div className="relative w-[76px] h-[76px] mb-5 bg-white rounded-full shadow-sm flex items-center justify-center border border-slate-100">
+            <Image
+              src="/logo.jpg"
+              alt="AI Integrated Academy Logo"
+              width={66}
+              height={66}
+              className="object-contain rounded-full"
+              priority
+            />
           </div>
+
+          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2.5">
+            AI INTEGRATED ACADEMY ARGUNGU
+          </span>
+          
+          <h1 className="text-3xl font-black text-slate-800 tracking-tight leading-none mb-3">
+            Student Data Verification
+          </h1>
+          
+          <p className="text-slate-500 text-sm font-semibold mt-1 mb-8 leading-relaxed max-w-xs">
+            Enter your registered phone number to access your children's profiles.
+          </p>
         </div>
-      </section>
 
-      {/* Objectives Section */}
-      <section className="section section-alt">
-        <div className="container">
-          <div className="text-center mb-10">
-            <span className="badge mb-4">🎯 Our Impact Areas</span>
-            <h2 className="heading-lg mb-4"><strong>How We're Making</strong> <span className="text-accent">a Difference</span></h2>
-            <p className="max-w-3xl mx-auto text-lg font-medium" style={{ color: 'var(--text-secondary)' }}>
-              From immunization campaigns to sanitation programs, we're working on the ground 
-              to create <strong className="text-accent">lasting health improvements</strong> in our communities.
-            </p>
-          </div>
-          <div className="grid-cards">
-            {objectives.map((obj, index) => (
-              <div key={index} className="card">
-                <div className="icon-box mb-4">
-                  {obj.icon}
-                </div>
-                <h3 className="text-lg font-semibold mb-2">{obj.title}</h3>
-                <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>{obj.description}</p>
+        {/* Login Form */}
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div>
+            <label htmlFor="phone" className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
+              Phone Number
+            </label>
+            <div className="relative flex items-center">
+              {/* input display with low contrast prefix "call" matching image */}
+              <div className="absolute left-4 flex items-center pointer-events-none">
+                <Phone className="w-4 h-4 text-slate-400" />
               </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Programs Section */}
-      <section className="section">
-        <div className="container">
-          <div className="text-center mb-10">
-            <span className="badge mb-4">📋 Active Programs</span>
-            <h2 className="heading-lg mb-4"><strong>Seven Key Areas</strong> <span className="text-accent">We Focus On</span></h2>
-            <p className="max-w-3xl mx-auto text-lg font-medium" style={{ color: 'var(--text-secondary)' }}>
-              Each program addresses critical health needs in Warji LGA, from <strong className="text-accent">maternal care</strong> 
-              to <strong className="text-accent">environmental sanitation</strong>.
-            </p>
-          </div>
-          <div className="flex flex-wrap justify-center gap-4">
-            {programs.map((program, index) => (
-              <div
-                key={index}
-                className="flex items-center gap-3 px-5 py-3 rounded-full transition-all hover:shadow-md"
-                style={{
-                  background: 'var(--background-alt)',
-                  border: '1px solid var(--border-color)'
-                }}
-              >
-                <span className="text-accent">{program.icon}</span>
-                <span className="font-medium text-sm">{program.name}</span>
-              </div>
-            ))}
-          </div>
-          <div className="text-center mt-8">
-            <Link href="/programs" className="btn btn-primary">
-              <strong>Explore Our Programs</strong>
-              <ArrowRightIcon className="ml-2 w-5 h-5" />
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="section section-alt">
-        <div className="container">
-          <div className="max-w-4xl mx-auto text-center">
-            <h2 className="heading-lg mb-6">
-              <strong>Join Our</strong> <span className="text-accent">Health Movement</span>
-            </h2>
-            <p className="mb-8 text-xl font-medium" style={{ color: 'var(--text-secondary)' }}>
-              Whether you're a <strong className="text-accent">healthcare worker</strong>, community leader, or simply someone who cares 
-              about improving health outcomes in Warji LGA - <strong>we need you</strong>.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-6 justify-center">
-              <Link href="/contact" className="btn btn-primary">
-                <strong>Start Your Journey</strong>
-              </Link>
-              <Link href="/about" className="btn btn-outline">
-                <strong>Meet Our Team</strong>
-              </Link>
+              <input
+                type="text"
+                id="phone"
+                name="phone"
+                placeholder="0803 123 4567"
+                required
+                className="w-full pl-12 pr-4 py-3.5 bg-[#f0f4f9]/60 border border-slate-200/80 rounded-[1.25rem] font-semibold text-sm text-slate-800 focus:outline-none focus:border-green-600 focus:bg-white transition-all focus:ring-1 focus:ring-green-600/35"
+                autoComplete="tel"
+              />
             </div>
           </div>
-        </div>
-      </section>
 
-      {/* Stats Section */}
-      <section className="section">
-        <div className="container">
-          <div className="text-center mb-8">
-            <span className="badge mb-4">📈 Our Impact</span>
-            <h2 className="heading-md mb-4"><strong>Growing</strong> <span className="text-accent">Together</span></h2>
-          </div>
-          <div className="grid-stats max-w-5xl mx-auto">
-            {[
-              { number: "32+", label: "Dedicated Members", desc: "Community volunteers" },
-              { number: "7", label: "Active Programs", desc: "Health focus areas" },
-              { number: "10", label: "Leadership Team", desc: "Executive officers" },
-              { number: "2022", label: "Founded", desc: "Years of service" }
-            ].map((stat, index) => (
-              <div key={index} className="card text-center py-8">
-                <div className="text-4xl md:text-5xl font-black text-accent mb-3">{stat.number}</div>
-                <div className="text-lg font-bold mb-1" style={{ color: 'var(--text-primary)' }}>{stat.label}</div>
-                <div className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>{stat.desc}</div>
-              </div>
-            ))}
-          </div>
+          {/* Error Alert Box */}
+          {error && (
+            <div className="p-4 bg-rose-50 border border-rose-100 rounded-2xl text-xs text-rose-800 font-semibold flex items-start gap-2.5 animate-slide-down">
+              <AlertTriangle className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
+              <div className="leading-relaxed">{error}</div>
+            </div>
+          )}
+
+          {/* Submit Button (Matches access dashboard design in login page.png) */}
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full py-3.5 px-6 rounded-full bg-[#111622] hover:bg-[#1a2133] text-white font-bold text-sm flex items-center justify-center gap-2 transition-all active:scale-[0.98] cursor-pointer"
+          >
+            {loading ? (
+              <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            ) : (
+              <>
+                <span>Access Dashboard</span>
+                <ArrowRight className="w-4 h-4 opacity-80" />
+              </>
+            )}
+          </button>
+        </form>
+
+        {/* Account Help Link */}
+        <div className="mt-6 text-center">
+          <a href="#" className="text-xs font-semibold text-slate-400 hover:text-slate-600 transition-all hover:underline">
+            Need help accessing your account?
+          </a>
         </div>
-      </section>
-    </>
+
+        {/* Admin and credentials helper link for evaluation */}
+        <div className="mt-8 pt-5 border-t border-slate-100/80 flex justify-between text-[10px] text-slate-400 font-bold">
+          <span className="text-green-600 bg-green-50/60 px-2 py-0.5 rounded border border-green-100/40">
+            Argungu Portal v2.0
+          </span>
+          <button
+            type="button"
+            onClick={() => {
+              const phoneInput = document.getElementById('phone') as HTMLInputElement;
+              if (phoneInput) {
+                phoneInput.value = '07038363534';
+                phoneInput.focus();
+              }
+            }}
+            className="hover:text-slate-600 underline cursor-pointer"
+          >
+            Fill Parent Phone
+          </button>
+        </div>
+      </div>
+
+      {/* Brand Footer */}
+      <div className="absolute bottom-6 left-0 right-0 text-center z-10">
+        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest opacity-80">
+          LEARNING TODAY, LEADING TOMORROW
+        </span>
+      </div>
+    </div>
   );
 }

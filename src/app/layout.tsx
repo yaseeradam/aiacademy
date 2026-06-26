@@ -1,29 +1,10 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
-import { ThemeProvider } from "@/components/ThemeProvider";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
 
 export const metadata: Metadata = {
-  title: "CHESN Warji Branch | Community Health Education & Sanitation Network",
-  description: "Promoting community health education, sanitation, and well-being in Warji LGA, Bauchi State, Nigeria. Join us in building a healthier community.",
-  keywords: "CHESN, community health, sanitation, Warji, Bauchi, Nigeria, health education, immunization, family planning",
-  openGraph: {
-    title: "CHESN Warji Branch",
-    description: "Building a healthy, informed, and empowered community",
-    type: "website",
-  },
+  title: "Student Verification Portal | AI Integrated Academy Argungu",
+  description: "Secure data verification portal for parents of AI Integrated Academy Argungu. Review, confirm, and correct your child's enrollment records.",
+  keywords: "AI Integrated Academy, Argungu, student data verification, parent portal, admission verification",
 };
 
 export default function RootLayout({
@@ -33,16 +14,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
-        <ThemeProvider>
-          <Navbar />
-          <main style={{ minHeight: '100vh' }}>
-            {children}
-          </main>
-          <Footer />
-        </ThemeProvider>
+      <body className="antialiased bg-slate-50">
+        <main className="min-h-screen">
+          {children}
+        </main>
       </body>
     </html>
   );

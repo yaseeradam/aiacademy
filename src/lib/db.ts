@@ -1,0 +1,361 @@
+import { ObjectId } from 'mongodb';
+import clientPromise from './mongodb';
+import { Parent, Student, VerificationStatus } from '../types';
+
+const DB_NAME = 'ai_academy';
+const PARENTS_COL = 'parents';
+const STUDENTS_COL = 'students';
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Seed data — only inserted once when the database is empty
+// ─────────────────────────────────────────────────────────────────────────────
+
+const INITIAL_PARENTS: Parent[] = [
+  { id: 'parent-1',  parentName: "Muh'd Bashir",              phoneNumber: '07038363534' },
+  { id: 'parent-2',  parentName: 'Aliyu Musa',                phoneNumber: '08063764842' },
+  { id: 'parent-3',  parentName: 'Lawal Sa,idu',              phoneNumber: '08039697744' },
+  { id: 'parent-4',  parentName: 'Ibrahim shu,aibu',          phoneNumber: '08036749793' },
+  { id: 'parent-5',  parentName: 'Murtala Sulaiman Marafa',   phoneNumber: '08032395458' },
+  { id: 'parent-6',  parentName: 'Anas Adamu Augie',          phoneNumber: '08038795671' },
+  { id: 'parent-7',  parentName: 'Mustapha Musa',             phoneNumber: '07038003381' },
+  { id: 'parent-8',  parentName: 'Ibrahim Muhammad Zangina',  phoneNumber: '08065944704' },
+  { id: 'parent-9',  parentName: 'Sama,ila Lamne Bubuche',    phoneNumber: '08038047105' },
+  { id: 'parent-10', parentName: 'Umar Faruk Madawaki',       phoneNumber: '07036101710' },
+  { id: 'parent-11', parentName: 'Ibrahim Abubakar',          phoneNumber: '08140555336' },
+  { id: 'parent-12', parentName: 'Yusuf Yakubu',              phoneNumber: '08030439378' },
+  { id: 'parent-13', parentName: 'Bilyameen Bawa',            phoneNumber: '08138203863' },
+  { id: 'parent-14', parentName: 'Bashir Garba kangiwa',      phoneNumber: '07038697593' },
+  { id: 'parent-15', parentName: 'Muhammad Ibrahim Musa',     phoneNumber: '070677766477' },
+  { id: 'parent-16', parentName: 'Alh AbdulSalam Gande',      phoneNumber: '08166186744' },
+  { id: 'parent-17', parentName: 'Lawali Musa Maina',         phoneNumber: '08062427576' },
+  { id: 'parent-18', parentName: 'Salisu Sani',               phoneNumber: '08068899384' },
+  { id: 'parent-19', parentName: 'Sani Abdullahi',            phoneNumber: '07038758969' },
+];
+
+const INITIAL_STUDENTS: Student[] = [
+  {
+    id: 'stud-1', parentId: 'parent-1', formNumber: 'N-3000',
+    firstName: 'Muhd Imam', lastName: 'Bashir', gender: 'Male',
+    intendedClass: 'Primary 1', verificationStatus: 'pending',
+    dateOfBirth: '2017-01-10', fatherName: "Muh'd Bashir",
+    motherName: 'Hauwa,u Abubakar kigo',
+    residentialAddress: 'Near dutsen Mariya f|Tank, Argungu',
+    phone1: '07038363534', guardianName: 'Hauwa,u Abubakar kigo',
+    guardianAddress: 'of chc Uduths Branch Argungu',
+    nationality: 'Nigerian', religion: 'Islam',
+  },
+  {
+    id: 'stud-2', parentId: 'parent-2', formNumber: 'FORM-2026-002',
+    firstName: 'Asma,u', lastName: 'Aliyu Musa', gender: 'Female',
+    intendedClass: 'Primary 1', verificationStatus: 'pending',
+    dateOfBirth: '2019-05-16', fatherName: 'Aliyu Musa',
+    motherName: 'Aisha Aliyu',
+    residentialAddress: 'low-cost Behind Area court, Argungu',
+    phone1: '08063764842', guardianName: 'Aliyu Musa low cost',
+    nationality: 'Nigerian', religion: 'Islam',
+  },
+  {
+    id: 'stud-3', parentId: 'parent-3', formNumber: 'FORM-2026-003',
+    firstName: 'Musa', lastName: 'Lawal', gender: 'Male',
+    intendedClass: 'Nursery 1', verificationStatus: 'pending',
+    dateOfBirth: '', fatherName: 'Lawal Sa,idu',
+    motherName: 'Hadiza Musa',
+    residentialAddress: 'Bayan shagun kici, Argungu',
+    phone1: '08039697744', guardianName: 'Hadiza Musa',
+    guardianAddress: 'Bayan shagunonin kici, Argungu',
+    nationality: 'Nigerian', religion: 'Islam',
+  },
+  {
+    id: 'stud-4', parentId: 'parent-4', formNumber: 'FORM-2026-004',
+    firstName: 'Maryam', lastName: 'Ibrahim', gender: 'Female',
+    intendedClass: 'Nursery 1', verificationStatus: 'pending',
+    dateOfBirth: '2023-02-08', fatherName: 'Ibrahim shu,aibu',
+    motherName: 'Habiba Salisu',
+    residentialAddress: 'House no:3 Dutsin Mariya Area, Argungu',
+    phone1: '08036749793', guardianName: 'Ibrahim Shu,aibu',
+    guardianAddress: 'House no. 16 Tsoaf RD Argungu',
+    nationality: 'Nigerian', religion: 'Islam',
+  },
+  {
+    id: 'stud-5', parentId: 'parent-5', formNumber: 'FORM-2026-005',
+    firstName: 'Aisha', lastName: 'Murtala Marafa', gender: 'Female',
+    intendedClass: 'Nursery 1', verificationStatus: 'pending',
+    dateOfBirth: '2022-11-02', fatherName: 'Murtala Sulaiman Marafa',
+    motherName: 'Hadiza Bello Bawa',
+    residentialAddress: 'Farin Tanki Area Argungu',
+    phone1: '08032395458', guardianName: 'Murtala Sulaiman Marafa',
+    guardianAddress: 'Nigerian correctional service Argungu',
+    nationality: 'Nigerian', religion: 'Islam',
+  },
+  {
+    id: 'stud-6', parentId: 'parent-6', formNumber: 'FORM-2026-006',
+    firstName: 'Amina', lastName: 'Anas Augie', gender: 'Female',
+    intendedClass: 'Nursery 1', verificationStatus: 'pending',
+    dateOfBirth: '2023-06-20', fatherName: 'Anas Adamu Augie',
+    motherName: 'Hauwa,u Musa Bachaka',
+    residentialAddress: 'Near Dan ganas Residence, Argungu',
+    phone1: '08038795671', guardianName: 'Anas Adamu Augie',
+    guardianAddress: 'Near Dan ganas residence',
+    nationality: 'Nigerian', religion: 'Islam',
+  },
+  {
+    id: 'stud-7', parentId: 'parent-7', formNumber: 'FORM-2026-007',
+    firstName: 'Maryam', lastName: 'Mustapha Musa', gender: 'Female',
+    intendedClass: 'Nursery 1', verificationStatus: 'pending',
+    dateOfBirth: '2022-10-09', fatherName: 'Mustapha Musa',
+    motherName: 'Dayyaba Sama,ila na bame',
+    residentialAddress: 'Gwaxange Area, Argungu',
+    phone1: '07038003381',
+    nationality: 'Nigerian', religion: 'Islam',
+  },
+  {
+    id: 'stud-8', parentId: 'parent-8', formNumber: 'FORM-2026-008',
+    firstName: 'Ibrahim', lastName: 'Ibrahim Zangina', gender: 'Male',
+    intendedClass: 'Nursery 1', verificationStatus: 'pending',
+    dateOfBirth: '2021-06-22', fatherName: 'Ibrahim Muhammad Zangina',
+    motherName: 'Sharifatu Abdul Kadir',
+    residentialAddress: 'Farin Tanki Area, Argungu',
+    phone1: '08065944704', guardianName: 'Farin Tanki Area',
+    nationality: 'Nigerian', religion: 'Islam',
+  },
+  {
+    id: 'stud-9', parentId: 'parent-9', formNumber: 'FORM-2026-009',
+    firstName: 'Maimuna', lastName: 'Sama,ila', gender: 'Female',
+    intendedClass: 'Primary 1', verificationStatus: 'pending',
+    dateOfBirth: '2019-05-04', fatherName: 'Sama,ila Lamne Bubuche',
+    motherName: 'Saliha Sani kokani',
+    residentialAddress: 'Shiyar Buben ta alolo, Argungu',
+    phone1: '08038047105', guardianName: 'Sama,ila Lamne Bubuche',
+    guardianAddress: 'Sardaunan Bubuche, Argungu',
+    nationality: 'Nigerian', religion: 'Islam',
+  },
+  {
+    id: 'stud-10', parentId: 'parent-10', formNumber: 'FORM-2026-010',
+    firstName: 'Faruk', lastName: 'Umar Madawaki', gender: 'Male',
+    intendedClass: 'Primary 2', verificationStatus: 'pending',
+    dateOfBirth: '2018-06-19', fatherName: 'Umar Faruk Madawaki',
+    motherName: 'Salamatu Idris',
+    residentialAddress: 'No.30 Albarka road T/wada, Argungu',
+    phone1: '07036101710', guardianName: 'Laila Muhammad Kangiwa',
+    guardianAddress: 'No.30 Albarka Road Tudun Wada Area',
+    nationality: 'Nigerian', religion: 'Islam',
+  },
+  {
+    id: 'stud-11', parentId: 'parent-11', formNumber: 'FORM-2026-011',
+    firstName: 'Zainab', lastName: 'Ibrahim', gender: 'Female',
+    intendedClass: 'Nursery 1', verificationStatus: 'pending',
+    dateOfBirth: '2023-08-02', fatherName: 'Ibrahim Abubakar',
+    motherName: 'Aisha Isiyaka',
+    residentialAddress: 'Sabon garin kanta behind kanta, Argungu',
+    phone1: '08140555336', guardianName: 'Ibrahim Sabon garin kanta',
+    guardianAddress: 'Behind kanta',
+    nationality: 'Nigerian', religion: 'Islam',
+  },
+  {
+    id: 'stud-12', parentId: 'parent-12', formNumber: 'FORM-2026-012',
+    firstName: 'Bashar', lastName: 'Yusuf Yakubu', gender: 'Male',
+    intendedClass: 'Primary 1', verificationStatus: 'pending',
+    dateOfBirth: '', fatherName: 'Yusuf Yakubu',
+    motherName: 'Fauziya Sulaiman Kalanda',
+    residentialAddress: 'House no.4 behind ta ololo Area, Argungu',
+    phone1: '08030439378', guardianName: 'Yusuf Yakubu',
+    guardianAddress: 'House no.4 Behind ta ololo Area opposite maiyaki house Argungu',
+    nationality: 'Nigerian', religion: 'Islam',
+  },
+  {
+    id: 'stud-13', parentId: 'parent-13', formNumber: 'FORM-2026-013',
+    firstName: 'Saudat', lastName: 'Bilyameen Bawa', gender: 'Female',
+    intendedClass: 'Nursery 1', verificationStatus: 'pending',
+    dateOfBirth: '2022-01-10', fatherName: 'Bilyameen Bawa',
+    motherName: 'Hassana Muhammad',
+    residentialAddress: 'No:18 kyanga road T/wada Area, Argungu',
+    phone1: '08138203863', guardianName: 'Bilyameen Bawa No.18 kyanga',
+    guardianAddress: 'Road tudun wada Area Argungu',
+    nationality: 'Nigerian', religion: 'Islam',
+  },
+  {
+    id: 'stud-14', parentId: 'parent-14', formNumber: 'FORM-2026-014',
+    firstName: 'Yusuf', lastName: 'Bashir Kangiwa', gender: 'Male',
+    intendedClass: 'Nursery 1', verificationStatus: 'pending',
+    dateOfBirth: '2022-05-22', fatherName: 'Bashir Garba kangiwa',
+    motherName: 'Hauwa,u Yusuf kangiwa',
+    residentialAddress: 'Behind Buben ta ololo, Argungu',
+    phone1: '07038697593', guardianName: 'Bashir Garba kangiwa',
+    nationality: 'Nigerian', religion: 'Islam',
+  },
+  {
+    id: 'stud-15', parentId: 'parent-15', formNumber: 'FORM-2026-015',
+    firstName: 'Salamatu', lastName: 'Muhammad Ibrahim', gender: 'Female',
+    intendedClass: 'Nursery 1', verificationStatus: 'pending',
+    dateOfBirth: '2023-10-21', fatherName: 'Muhammad Ibrahim Musa',
+    motherName: 'Aisha Ibrahim Usman',
+    residentialAddress: 'Low cost Area Argungu',
+    phone1: '070677766477', guardianName: 'Ibrahim Usman Manxo',
+    guardianAddress: 'Low cost area Argungu',
+    nationality: 'Nigerian', religion: 'Islam',
+  },
+  {
+    id: 'stud-16', parentId: 'parent-4', formNumber: 'FORM-2026-016',
+    firstName: 'Hassana', lastName: 'Ibrahim Shu,aibu', gender: 'Female',
+    intendedClass: 'Nursery 1', verificationStatus: 'pending',
+    dateOfBirth: '', fatherName: 'Ibrahim Shu,aibu',
+    motherName: 'Sadiya Adamu',
+    residentialAddress: 'Behind Shagunan k.c, Argungu',
+    phone1: '08036749793', guardianName: 'Ibrahim Shu,aibu',
+    nationality: 'Nigerian', religion: 'Islam',
+  },
+  {
+    id: 'stud-17', parentId: 'parent-16', formNumber: 'FORM-2026-017',
+    firstName: 'Aisha', lastName: 'AbdulSalam Gande', gender: 'Female',
+    intendedClass: 'Nursery 1', verificationStatus: 'pending',
+    dateOfBirth: '2022-07-12', fatherName: 'Alh AbdulSalam Gande',
+    motherName: 'Zainab Haruna',
+    residentialAddress: 'Farin Tanki Area Argungu',
+    phone1: '08166186744', guardianName: 'Alh AbdulSalam Gande',
+    guardianAddress: 'Farin Tanki Area Argungu',
+    nationality: 'Nigerian', religion: 'Islam',
+  },
+  {
+    id: 'stud-18', parentId: 'parent-17', formNumber: 'FORM-2026-018',
+    firstName: 'Aisha', lastName: 'Lawal Maina', gender: 'Female',
+    intendedClass: 'Nursery 1', verificationStatus: 'pending',
+    dateOfBirth: '2024-04-11', fatherName: 'Lawali Musa Maina',
+    motherName: 'Amina Ibrahim Usman',
+    residentialAddress: 'Shagari Quarters Argungu',
+    phone1: '08062427576', guardianName: 'Lawali Maina',
+    guardianAddress: 'Shagari Quarters Argungu',
+    nationality: 'Nigerian', religion: 'Islam',
+  },
+  {
+    id: 'stud-19', parentId: 'parent-18', formNumber: 'FORM-2026-019',
+    firstName: 'Ahmad', lastName: 'Salisu Sani', gender: 'Male',
+    intendedClass: 'Nursery 1', verificationStatus: 'pending',
+    dateOfBirth: '2021-06-14', fatherName: 'Salisu Sani',
+    motherName: 'Lubabatu Sulaiman kalanka',
+    residentialAddress: 'Bakin Kasuwa Argungu',
+    phone1: '08068899384', guardianName: 'Salisu Sani',
+    guardianAddress: 'Bakin kasuwa Gidan Sarkin Shanu',
+    nationality: 'Nigerian', religion: 'Islam',
+  },
+  {
+    id: 'stud-20', parentId: 'parent-19', formNumber: 'FORM-2026-020',
+    firstName: 'Hauwa,u', lastName: 'Sani', gender: 'Female',
+    intendedClass: 'Nursery 1', verificationStatus: 'pending',
+    dateOfBirth: '2023-07-30', fatherName: 'Sani Abdullahi',
+    motherName: 'Sadiya Sama,ila Misbahu',
+    residentialAddress: 'Farin Tanki Area Near White House, Argungu',
+    phone1: '07038758969', guardianName: 'Farin Tanki Area Dawakin Sarkin kabi',
+    nationality: 'Nigerian', religion: 'Islam',
+  },
+];
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Helpers
+// ─────────────────────────────────────────────────────────────────────────────
+
+export function normalizePhone(phone: string): string {
+  const digits = phone.replace(/\D/g, '');
+  return digits.length >= 10 ? digits.slice(-10) : digits;
+}
+
+async function getDB() {
+  const client = await clientPromise;
+  return client.db(DB_NAME);
+}
+
+// Auto-seed on first run if the collections are empty
+async function ensureSeeded() {
+  const db = await getDB();
+  const parentsCount = await db.collection(PARENTS_COL).countDocuments();
+  if (parentsCount === 0) {
+    await db.collection(PARENTS_COL).insertMany(INITIAL_PARENTS as any[]);
+    await db.collection(STUDENTS_COL).insertMany(INITIAL_STUDENTS as any[]);
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Public API — same signatures as the old file-based db.ts
+// ─────────────────────────────────────────────────────────────────────────────
+
+export async function getParentByPhone(phone: string): Promise<Parent | undefined> {
+  await ensureSeeded();
+  const db = await getDB();
+  const normalizedSearch = normalizePhone(phone);
+  if (!normalizedSearch) return undefined;
+
+  const all = await db.collection<Parent>(PARENTS_COL).find({}).toArray();
+  return all.find(p => normalizePhone(p.phoneNumber) === normalizedSearch);
+}
+
+export async function getStudentsByParentId(parentId: string): Promise<Student[]> {
+  await ensureSeeded();
+  const db = await getDB();
+  const docs = await db.collection<Student>(STUDENTS_COL).find({ parentId }).toArray();
+  // Strip MongoDB _id before returning
+  return docs.map(({ _id, ...rest }) => rest as Student);
+}
+
+export async function getStudentById(studentId: string): Promise<Student | undefined> {
+  await ensureSeeded();
+  const db = await getDB();
+  const doc = await db.collection<Student>(STUDENTS_COL).findOne({ id: studentId });
+  if (!doc) return undefined;
+  const { _id, ...rest } = doc;
+  return rest as Student;
+}
+
+export async function updateStudentStatus(
+  studentId: string,
+  status: VerificationStatus,
+  notes?: string
+): Promise<boolean> {
+  const db = await getDB();
+  const result = await db.collection<Student>(STUDENTS_COL).updateOne(
+    { id: studentId },
+    { $set: { verificationStatus: status, correctionNotes: notes ?? '' } }
+  );
+  return result.matchedCount > 0;
+}
+
+export async function getAllStudents(): Promise<Student[]> {
+  await ensureSeeded();
+  const db = await getDB();
+  const docs = await db.collection<Student>(STUDENTS_COL).find({}).toArray();
+  return docs.map(({ _id, ...rest }) => rest as Student);
+}
+
+export async function getAllParents(): Promise<Parent[]> {
+  await ensureSeeded();
+  const db = await getDB();
+  const docs = await db.collection<Parent>(PARENTS_COL).find({}).toArray();
+  return docs.map(({ _id, ...rest }) => rest as Parent);
+}
+
+export async function addOrUpdateStudent(student: Student): Promise<void> {
+  const db = await getDB();
+  await db.collection<Student>(STUDENTS_COL).updateOne(
+    { id: student.id },
+    { $set: student as any },
+    { upsert: true }
+  );
+}
+
+export async function addOrUpdateParent(parent: Parent): Promise<void> {
+  const db = await getDB();
+  const normalizedPhone = normalizePhone(parent.phoneNumber);
+  const existing = await db.collection<Parent>(PARENTS_COL).findOne({ id: parent.id });
+  if (existing) {
+    await db.collection<Parent>(PARENTS_COL).updateOne(
+      { id: parent.id },
+      { $set: parent as any }
+    );
+  } else {
+    await db.collection<Parent>(PARENTS_COL).insertOne(parent as any);
+  }
+}
+
+export async function deleteStudent(studentId: string): Promise<boolean> {
+  const db = await getDB();
+  const result = await db.collection<Student>(STUDENTS_COL).deleteOne({ id: studentId });
+  return result.deletedCount > 0;
+}
