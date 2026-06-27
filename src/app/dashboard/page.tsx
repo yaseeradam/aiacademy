@@ -46,7 +46,7 @@ export default async function DashboardPage() {
           {/* Header */}
           <header className="bg-white border-b border-slate-200/80 sticky top-0 z-40">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-              <div className="flex justify-between items-center h-20">
+              <div className="flex justify-between items-center h-14">
                 {/* Logo and school name exactly matches children list.png */}
                 <div className="flex items-center gap-3">
                   <div className="relative w-9 h-9 rounded-full overflow-hidden shrink-0">
@@ -87,22 +87,16 @@ export default async function DashboardPage() {
             </div>
           </header>
 
-          {/* Profiles Content (Matches children list.png layout) */}
-          <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-10">
-            <div className="space-y-8">
-              <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4">
+          {/* Profiles Content */}
+          <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-4">
+            <div className="space-y-4">
+              <div className="flex items-center justify-between gap-3">
                 <div>
-                  <h1 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tight">
-                    Student Profiles
-                  </h1>
-                  <p className="text-slate-500 text-sm md:text-base font-semibold mt-3 max-w-3xl leading-relaxed">
-                    Review and confirm the enrollment details for your children. Ensure all information is accurate before the term begins.
-                  </p>
+                  <h1 className="text-2xl font-black text-slate-900 tracking-tight">Student Profiles</h1>
+                  <p className="text-slate-500 text-xs font-semibold mt-0.5">Review and confirm your children's enrollment details.</p>
                 </div>
-
-                {/* Alert Box (Action required by Aug 15th) */}
-                <div className="inline-flex items-center gap-2.5 p-3.5 px-5 rounded-[1rem] bg-[#f8fafc] border border-slate-200 text-slate-700 text-xs font-bold leading-none shrink-0 self-start lg:self-auto shadow-sm">
-                  <Info className="w-4 h-4 text-[#137333]" />
+                <div className="inline-flex items-center gap-2 p-2.5 px-4 rounded-xl bg-[#f8fafc] border border-slate-200 text-slate-700 text-xs font-bold shrink-0">
+                  <Info className="w-3.5 h-3.5 text-[#137333]" />
                   <span>Action required by Aug 15th</span>
                 </div>
               </div>
@@ -118,6 +112,7 @@ export default async function DashboardPage() {
                     <VerificationCard
                       key={student.id}
                       student={student}
+                      isAdmin={isAdmin}
                     />
                   ))}
                 </div>

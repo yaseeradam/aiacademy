@@ -8,9 +8,10 @@ import { confirmStudentAction, submitCorrectionAction, updateStudentPhotoAction 
 
 interface VerificationCardProps {
   student: Student;
+  isAdmin?: boolean;
 }
 
-export default function VerificationCard({ student }: VerificationCardProps) {
+export default function VerificationCard({ student, isAdmin = false }: VerificationCardProps) {
   const router = useRouter();
   const [isCorrecting, setIsCorrecting] = useState(false);
   const [correctionNotes, setCorrectionNotes] = useState(student.correctionNotes || '');
@@ -143,7 +144,7 @@ export default function VerificationCard({ student }: VerificationCardProps) {
   // Avatar SVG depending on Gender or Custom Photo
   const AvatarIcon = () => {
     return (
-      <div className="relative w-32 h-32 rounded-3xl overflow-hidden border border-slate-200 shrink-0 group shadow-md bg-slate-100">
+      <div className="relative w-20 h-20 rounded-2xl overflow-hidden border border-slate-200 shrink-0 group shadow-md bg-slate-100">
         {student.photo ? (
           <img src={student.photo} alt={`${student.firstName}`} className="w-full h-full object-cover" />
         ) : student.gender === 'Female' ? (
@@ -160,74 +161,72 @@ export default function VerificationCard({ student }: VerificationCardProps) {
           </div>
         )}
 
-        {/* Hover overlay for uploading photo */}
-        <label className="absolute inset-0 bg-black/45 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer text-white text-xs font-bold">
-          {isUploadingPhoto ? (
-            <Loader2 className="w-6 h-6 animate-spin text-white" />
-          ) : (
-            <>
-              <Camera className="w-6 h-6 mb-1 text-white" />
-              <span>Change Photo</span>
-            </>
-          )}
-          <input
-            type="file"
-            accept="image/*"
-            onChange={handlePhotoUpload}
-            disabled={isUploadingPhoto}
-            className="hidden"
-          />
-        </label>
+        {/* Hover overlay for uploading photo — admin only */}
+        {isAdmin && (
+          <label className="absolute inset-0 bg-black/45 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer text-white text-xs font-bold">
+            {isUploadingPhoto ? (
+              <Loader2 className="w-6 h-6 animate-spin text-white" />
+            ) : (
+              <>
+                <Camera className="w-6 h-6 mb-1 text-white" />
+                <span>Change Photo</span>
+              </>
+            )}
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handlePhotoUpload}
+              disabled={isUploadingPhoto}
+              className="hidden"
+            />
+          </label>
+        )}
       </div>
     );
   };
 
   return (
-    <div className="soft-card p-6 md:p-8 bg-white flex flex-col justify-between h-full rounded-[2rem]">
+    <div className="soft-card p-4 md:p-6 bg-white flex flex-col justify-between h-full rounded-[2rem]">
       <div>
-        {/* Top Card Header - Centered with Large Photo */}
-        <div className="flex flex-col items-center text-center mb-6">
-          <div className="mb-4">
-            {getStatusBadge(student.verificationStatus)}
-          </div>
-          
+        {/* Top Card Header - Photo left, info right */}
+        <div className="flex items-center gap-4 mb-4">
           <AvatarIcon />
-          
-          <div className="mt-4">
-            <h3 className="text-2xl font-black text-slate-800 leading-tight">
+          <div className="flex-1 min-w-0">
+            {getStatusBadge(student.verificationStatus)}
+            <h3 className="text-lg font-black text-slate-800 leading-tight mt-1">
               {student.firstName} {student.lastName}
             </h3>
-            <p className="text-sm font-semibold text-slate-400 mt-1">
-              Form Serial: <span className="text-slate-600">{student.formNumber}</span>
+            <p className="text-xs font-semibold text-slate-400 mt-0.5">
+              Form: <span className="text-slate-600">{student.formNumber}</span>
             </p>
           </div>
         </div>
 
-        {/* Info Grid (Matches children list.png layout exactly) */}
-        <div className="grid grid-cols-2 gap-x-8 gap-y-5 p-5 bg-[#f8fafc] rounded-2xl border border-slate-100 text-sm mb-5">
+        {/* Info Grid */}
+        <div className="grid grid-cols-2 gap-x-6 gap-y-3 p-4 bg-[#f8fafc] rounded-2xl border border-slate-100 text-sm mb-4">
           <div>
-            <span className="block text-xs font-semibold text-slate-400 mb-1">Intended Class</span>
-            <span className="font-bold text-slate-800 text-base">{student.intendedClass}</span>
+            <span className="block text-xs font-semibold text-slate-400">Intended Class</span>
+            <span className="font-bold text-slate-800">{student.intendedClass}</span>
           </div>
           <div>
-            <span className="block text-xs font-semibold text-slate-400 mb-1">Gender</span>
-            <span className="font-bold text-slate-800 text-base">{student.gender}</span>
+            <span className="block text-xs font-semibold text-slate-400">Gender</span>
+            <span className="font-bold text-slate-800">{student.gender}</span>
           </div>
           <div>
-            <span className="block text-xs font-semibold text-slate-400 mb-1">Date of Birth</span>
-            <span className="font-bold text-slate-800 text-base">{formatDate(student.dateOfBirth)}</span>
+            <span className="block text-xs font-semibold text-slate-400">Date of Birth</span>
+            <span className="font-bold text-slate-800">{formatDate(student.dateOfBirth)}</span>
           </div>
           <div>
-            <span className="block text-xs font-semibold text-slate-400 mb-1">Medical Needs</span>
-            <span className="font-bold text-slate-800 text-base">
+            <span className="block text-xs font-semibold text-slate-400">Medical Needs</span>
+            <span className="font-bold text-slate-800">
               {student.id === 'stud-3' ? 'Peanut Allergy' : 'None Listed'}
             </span>
           </div>
         </div>
 
-        {/* Full admission form details (from form.jpg) */}
-        <div className="mb-6">
-          <div className="p-5 bg-slate-50 border border-slate-200/60 rounded-2xl grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+        {/* Full admission form details */}
+        <div className="mb-4">
+          <div className="p-4 bg-slate-50 border border-slate-200/60 rounded-2xl grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
             <div>
               <span className="block text-slate-400 font-semibold mb-0.5">Father's Name</span>
               <span className="font-bold text-slate-700">{student.fatherName || 'None Listed'}</span>
@@ -261,7 +260,7 @@ export default function VerificationCard({ student }: VerificationCardProps) {
 
         {/* Existing Correction Details Alert */}
         {student.verificationStatus === 'requires_correction' && student.correctionNotes && (
-          <div className="mb-6 p-4 rounded-xl bg-rose-50 border border-rose-100 text-xs text-rose-800 flex items-start gap-2">
+          <div className="mb-4 p-3 rounded-xl bg-rose-50 border border-rose-100 text-xs text-rose-800 flex items-start gap-2">
             <Info className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
             <div>
               <span className="font-bold block mb-1">Submitted Correction Notes:</span>

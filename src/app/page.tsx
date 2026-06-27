@@ -28,23 +28,27 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="glass-container bg-slate-50">
-      {/* Decorative blurred circles for premium glassmorphism */}
-      <div className="glass-circle glass-circle-1" />
-      <div className="glass-circle glass-circle-2" />
-      <div className="glass-circle glass-circle-3" />
+    <div className="relative min-h-screen flex items-center justify-center overflow-hidden" style={{ background: 'linear-gradient(135deg, #f0fdf4 0%, #dcfce7 40%, #bbf7d0 70%, #f0fdf4 100%)' }}>
+
+      {/* Subtle background shapes */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-32 -left-32 w-[500px] h-[500px] rounded-full opacity-30" style={{ background: 'radial-gradient(circle, #86efac, transparent 70%)' }} />
+        <div className="absolute -bottom-40 -right-40 w-[600px] h-[600px] rounded-full opacity-20" style={{ background: 'radial-gradient(circle, #4ade80, transparent 70%)' }} />
+        <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'linear-gradient(#15803d 1px, transparent 1px), linear-gradient(90deg, #15803d 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
+      </div>
 
       {/* Main card */}
-      <div className="w-full max-w-[460px] p-8 md:p-10 mx-4 glass-card animate-slide-up relative rounded-[2.5rem]">
+      <div className="w-full max-w-[460px] p-8 md:p-10 mx-4 animate-slide-up relative rounded-[2.5rem] z-10" style={{ background: 'rgba(255,255,255,0.97)', boxShadow: '0 32px 80px rgba(0,0,0,0.35), 0 0 0 1px rgba(255,255,255,0.1)' }}>
         <div className="flex flex-col items-center text-center">
-          {/* Logo container (Matches logo design in login page.png) */}
-          <div className="relative w-[76px] h-[76px] mb-5 bg-white rounded-full shadow-sm flex items-center justify-center border border-slate-100">
+
+          {/* Logo */}
+          <div className="w-20 h-20 mb-4 rounded-full overflow-hidden border-4 border-green-100 shadow-lg">
             <Image
               src="/logo.jpg"
               alt="AI Integrated Academy Logo"
-              width={66}
-              height={66}
-              className="object-contain rounded-full"
+              width={80}
+              height={80}
+              className="object-cover w-full h-full"
               priority
             />
           </div>
@@ -140,7 +144,7 @@ export default function LoginPage() {
 
       {/* Brand Footer */}
       <div className="absolute bottom-6 left-0 right-0 text-center z-10">
-        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest opacity-80">
+        <span className="text-[10px] font-black text-green-700 uppercase tracking-widest opacity-60">
           LEARNING TODAY, LEADING TOMORROW
         </span>
       </div>
