@@ -4,6 +4,8 @@ import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import {
   getParentByPhone,
+  getParentById,
+  getStudentsByParentId,
   updateStudentStatus,
   getAllStudents,
   getStudentById,
@@ -103,6 +105,63 @@ export async function adminUpdateStudentAction(
     ...student,
     ...updatedFields,
   };
+
+  const oldPhone = student.phone1 || '';
+  const newPhone = updatedFields.phone1 || '';
+
+  if (normalizePhone(oldPhone) !== normalizePhone(newPhone)) {
+    if (newPhone) {
+      const existingParent = await getParentByPhone(newPhone);
+      if (existingParent) {
+        updatedStudent.parentId = existingParent.id;
+      } else {
+        const currentParentId = student.parentId;
+        if (currentParentId) {
+          const siblingStudents = await getStudentsByParentId(currentParentId);
+          const otherStudents = siblingStudents.filter(s => s.id !== studentId);
+          if (otherStudents.length === 0) {
+            const parent = await getParentById(currentParentId);
+            if (parent) {
+              const updatedParent: Parent = {
+                ...parent,
+                phoneNumber: newPhone,
+                parentName: updatedFields.fatherName || updatedFields.guardianName || parent.parentName,
+              };
+              await addOrUpdateParent(updatedParent);
+              updatedStudent.parentId = currentParentId;
+            } else {
+              const newParentId = `parent-${Date.now()}`;
+              const newParent: Parent = {
+                id: newParentId,
+                parentName: updatedFields.fatherName || updatedFields.guardianName || student.fatherName || student.guardianName || 'Unknown',
+                phoneNumber: newPhone,
+              };
+              await addOrUpdateParent(newParent);
+              updatedStudent.parentId = newParentId;
+            }
+          } else {
+            const newParentId = `parent-${Date.now()}`;
+            const newParent: Parent = {
+              id: newParentId,
+              parentName: updatedFields.fatherName || updatedFields.guardianName || student.fatherName || student.guardianName || 'Unknown',
+              phoneNumber: newPhone,
+            };
+            await addOrUpdateParent(newParent);
+            updatedStudent.parentId = newParentId;
+          }
+        } else {
+          const newParentId = `parent-${Date.now()}`;
+          const newParent: Parent = {
+            id: newParentId,
+            parentName: updatedFields.fatherName || updatedFields.guardianName || student.fatherName || student.guardianName || 'Unknown',
+            phoneNumber: newPhone,
+          };
+          await addOrUpdateParent(newParent);
+          updatedStudent.parentId = newParentId;
+        }
+      }
+    }
+  }
 
   await addOrUpdateStudent(updatedStudent);
   return { success: true };

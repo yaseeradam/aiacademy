@@ -287,6 +287,15 @@ export async function getParentByPhone(phone: string): Promise<Parent | undefine
   return all.find(p => normalizePhone(p.phoneNumber) === normalizedSearch);
 }
 
+export async function getParentById(parentId: string): Promise<Parent | undefined> {
+  await ensureSeeded();
+  const db = await getDB();
+  const doc = await db.collection<Parent>(PARENTS_COL).findOne({ id: parentId });
+  if (!doc) return undefined;
+  const { _id, ...rest } = doc;
+  return rest as Parent;
+}
+
 export async function getStudentsByParentId(parentId: string): Promise<Student[]> {
   await ensureSeeded();
   const db = await getDB();
