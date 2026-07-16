@@ -121,25 +121,25 @@ export async function adminUpdateStudentAction(
         updatedStudent.parentId = existingParent.id;
       } else {
         if (currentParentId && parent) {
+          // Update the parent's phone number and name
+          const updatedParent: Parent = {
+            ...parent,
+            phoneNumber: newPhone,
+            parentName: updatedFields.fatherName || updatedFields.guardianName || parent.parentName,
+          };
+          await addOrUpdateParent(updatedParent);
+          updatedStudent.parentId = currentParentId;
+
+          // Sync all sibling students' phone1 fields to the new parent phone
           const siblingStudents = await getStudentsByParentId(currentParentId);
-          const otherStudents = siblingStudents.filter(s => s.id !== studentId);
-          if (otherStudents.length === 0) {
-            const updatedParent: Parent = {
-              ...parent,
-              phoneNumber: newPhone,
-              parentName: updatedFields.fatherName || updatedFields.guardianName || parent.parentName,
-            };
-            await addOrUpdateParent(updatedParent);
-            updatedStudent.parentId = currentParentId;
-          } else {
-            const newParentId = `parent-${Date.now()}`;
-            const newParent: Parent = {
-              id: newParentId,
-              parentName: updatedFields.fatherName || updatedFields.guardianName || student.fatherName || student.guardianName || 'Unknown',
-              phoneNumber: newPhone,
-            };
-            await addOrUpdateParent(newParent);
-            updatedStudent.parentId = newParentId;
+          for (const sibling of siblingStudents) {
+            if (sibling.id !== studentId) {
+              const updatedSibling: Student = {
+                ...sibling,
+                phone1: newPhone,
+              };
+              await addOrUpdateStudent(updatedSibling);
+            }
           }
         } else {
           const newParentId = `parent-${Date.now()}`;

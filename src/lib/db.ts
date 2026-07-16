@@ -253,7 +253,8 @@ const INITIAL_STUDENTS: Student[] = [
 // Helpers
 // ─────────────────────────────────────────────────────────────────────────────
 
-export function normalizePhone(phone: string): string {
+export function normalizePhone(phone: string | undefined | null): string {
+  if (!phone) return '';
   const digits = phone.replace(/\D/g, '');
   return digits.length >= 10 ? digits.slice(-10) : digits;
 }
