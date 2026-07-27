@@ -305,7 +305,7 @@ export async function scanAdmissionFormOCRAction(base64Image: string) {
     const base64Data = base64Image.replace(/^data:image\/\w+;base64,/, '');
 
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
