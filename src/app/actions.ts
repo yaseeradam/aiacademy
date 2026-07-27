@@ -301,31 +301,36 @@ export async function scanAdmissionFormOCRAction(base64Image: string) {
     return { error: 'NO_API_KEY' };
   }
 
-  try {
-    const base64Data = base64Image.replace(/^data:image\/\w+;base64,/, '');
+  const base64Data = base64Image.replace(/^data:image\/\w+;base64,/, '');
 
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [
-            {
-              parts: [
-                {
-                  inlineData: {
-                    mimeType: 'image/jpeg',
-                    data: base64Data,
+  const models = ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-pro'];
+
+  let lastError = 'No output from Gemini Vision AI.';
+
+  for (const model of models) {
+    try {
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [
+              {
+                parts: [
+                  {
+                    inlineData: {
+                      mimeType: 'image/jpeg',
+                      data: base64Data,
+                    },
                   },
-                },
-                {
-                  text: `You are an expert OCR engine specializing in handwritten school admission forms.
+                  {
+                    text: `You are an expert OCR engine specializing in handwritten school admission forms.
 Examine this handwritten admission form image from AI Integrated Academy Argungu.
 Extract ONLY the handwritten blue/black ink answers written in the form fields.
 Ignore printed form labels (like "1. Name of Student:", "2. Date of Birth:", "Father's Name:") and Arabic subtitles.
 
-Return ONLY a valid JSON object matching this schema (no markdown, no backticks):
+Return ONLY a valid JSON object matching this schema:
 {
   "firstName": "string (student's first name, e.g. HAFSAT)",
   "lastName": "string (student's middle/surname, e.g. HARUNA HANZALA)",
@@ -342,25 +347,32 @@ Return ONLY a valid JSON object matching this schema (no markdown, no backticks)
   "religion": "string (e.g. ISLAM)",
   "intendedClass": "string (e.g. NURSERY)"
 }`,
-                },
-              ],
-            },
-          ],
-        }),
+                  },
+                ],
+              },
+            ],
+          }),
+        }
+      );
+
+      const data = await response.json();
+      const textOutput = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+      
+      if (textOutput) {
+        const jsonMatch = textOutput.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          const parsed = JSON.parse(jsonMatch[0]);
+          return { success: true, data: parsed };
+        }
       }
-    );
 
-    const data = await response.json();
-    const textOutput = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-    if (!textOutput) {
-      return { error: 'No output from Gemini Vision AI.' };
+      if (data?.error?.message) {
+        lastError = data.error.message;
+      }
+    } catch (err: unknown) {
+      console.error(`Gemini Vision OCR Error (${model}):`, err);
     }
-
-    const cleanJson = textOutput.replace(/```json/gi, '').replace(/```/g, '').trim();
-    const parsed = JSON.parse(cleanJson);
-    return { success: true, data: parsed };
-  } catch (err: unknown) {
-    console.error('Gemini Vision OCR Error:', err);
-    return { error: 'Failed to process handwritten form image.' };
   }
+
+  return { error: lastError };
 }

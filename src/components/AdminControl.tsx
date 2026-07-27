@@ -21,7 +21,7 @@ interface AdminControlProps {
 export default function AdminControl({ students }: AdminControlProps) {
   const router = useRouter();
 
-  const compressImage = (file: File): Promise<string> => {
+  const compressImage = (file: File, maxDim = 1800, quality = 0.85): Promise<string> => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.readAsDataURL(file);
@@ -30,7 +30,6 @@ export default function AdminControl({ students }: AdminControlProps) {
         img.src = event.target?.result as string;
         img.onload = () => {
           const canvas = document.createElement('canvas');
-          const maxDim = 300;
           let width = img.width;
           let height = img.height;
           if (width > height) {
@@ -48,7 +47,7 @@ export default function AdminControl({ students }: AdminControlProps) {
           canvas.height = height;
           const ctx = canvas.getContext('2d');
           ctx?.drawImage(img, 0, 0, width, height);
-          resolve(canvas.toDataURL('image/jpeg', 0.7));
+          resolve(canvas.toDataURL('image/jpeg', quality));
         };
         img.onerror = reject;
       };
