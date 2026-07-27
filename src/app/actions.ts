@@ -307,7 +307,7 @@ export async function scanAdmissionFormOCRAction(base64Image: string) {
 
   const base64Data = base64Image.replace(/^data:image\/\w+;base64,/, '');
 
-  const models = ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-pro'];
+  const models = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash'];
 
   let lastError = 'No output from Gemini Vision AI.';
 
