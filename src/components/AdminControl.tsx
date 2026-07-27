@@ -120,8 +120,12 @@ export default function AdminControl({ students }: AdminControlProps) {
           religion: d.religion || prev.religion,
           intendedClass: d.intendedClass || prev.intendedClass,
         }));
-        setOcrProgress('Handwritten details extracted successfully!');
+        setOcrProgress('Handwritten details extracted successfully with AI Vision!');
         return;
+      }
+
+      if (aiResult.error && aiResult.error !== 'NO_API_KEY') {
+        alert(`AI Vision OCR Notice:\n${aiResult.error}\n\nFalling back to Tesseract OCR...`);
       }
 
       // Fallback: Clean Tesseract OCR

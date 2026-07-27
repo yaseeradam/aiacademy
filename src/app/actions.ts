@@ -301,6 +301,10 @@ export async function scanAdmissionFormOCRAction(base64Image: string) {
     return { error: 'NO_API_KEY' };
   }
 
+  if (apiKey.startsWith('AQ.')) {
+    return { error: "INVALID_KEY_FORMAT: Google AI Studio keys start with 'AIzaSy...'. Keys starting with 'AQ.' are Auth Tokens and return 0 quota." };
+  }
+
   const base64Data = base64Image.replace(/^data:image\/\w+;base64,/, '');
 
   const models = ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-pro'];
