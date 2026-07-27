@@ -1176,6 +1176,12 @@ export default function AdminControl({ students }: AdminControlProps) {
                     <div>
                       <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider">Scan Physical Form (AI OCR)</h4>
                       <p className="text-[10px] text-slate-500 font-semibold mt-0.5">Upload a photo of form.jpg to auto-fill details (100% Free)</p>
+                      <p className="text-[10px] text-emerald-700 font-bold mt-1">
+                        🔑 Requires a free Google AI Studio key starting with <code className="bg-emerald-100 px-1 rounded text-emerald-900">AIzaSy...</code>.{' '}
+                        <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer" className="underline font-black text-emerald-900">
+                          Get Free Key ($0)
+                        </a>
+                      </p>
                     </div>
                   </div>
                   
