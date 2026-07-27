@@ -10,7 +10,6 @@ const options = {
 
 
 declare global {
-  // eslint-disable-next-line no-var
   var _mongoClientPromise: Promise<MongoClient> | undefined;
 }
 
@@ -40,7 +39,10 @@ function getActualClientPromise(): Promise<MongoClient> {
 
 // Thenable object to satisfy standard Promise structure lazily
 const clientPromise = {
-  then(onfulfilled?: (value: MongoClient) => any, onrejected?: (reason: any) => any) {
+  then<TResult1 = MongoClient, TResult2 = never>(
+    onfulfilled?: ((value: MongoClient) => TResult1 | PromiseLike<TResult1>) | null,
+    onrejected?: ((reason: unknown) => TResult2 | PromiseLike<TResult2>) | null
+  ) {
     try {
       return getActualClientPromise().then(onfulfilled, onrejected);
     } catch (err) {

@@ -21,9 +21,10 @@ export default function LoginPage() {
         setError(result.error);
         setLoading(false);
       }
-    } catch (err: any) {
-      if (err?.digest?.startsWith('NEXT_REDIRECT')) throw err;
-      setError(err.message || 'An unexpected error occurred. Please try again.');
+    } catch (err: unknown) {
+      if (typeof err === 'object' && err !== null && 'digest' in err && typeof (err as { digest: unknown }).digest === 'string' && (err as { digest: string }).digest.startsWith('NEXT_REDIRECT')) throw err;
+      const message = err instanceof Error ? err.message : 'An unexpected error occurred. Please try again.';
+      setError(message);
       setLoading(false);
     }
   };
@@ -63,7 +64,7 @@ export default function LoginPage() {
           </h1>
           
           <p className="text-slate-500 text-sm font-semibold mt-1 mb-8 leading-relaxed max-w-xs">
-            Enter your registered phone number to access your children's profiles.
+            Enter your registered phone number to access your children&apos;s profiles.
           </p>
         </div>
 

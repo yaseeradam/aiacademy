@@ -5,11 +5,11 @@ import { Student } from '@/types';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { 
-  Upload, Download, Search, RefreshCw, CheckCircle, 
+  Upload, Download, Search, RefreshCw, 
   Users, Clock, AlertOctagon, HelpCircle, 
-  User, MessageSquare, ShieldCheck, ChevronRight, X, Menu,
-  Grid, Settings, Plus, LogOut, Check, Edit3, MapPin, Calendar, Trash2, Save, BookOpen,
-  Camera, Loader2
+  ShieldCheck, ChevronRight, X, Menu,
+  Grid, Settings, Plus, LogOut, Trash2, Save, BookOpen,
+  Loader2
 } from 'lucide-react';
 import { logoutAction, adminUpdateStudentAction, adminDeleteStudentAction, adminCreateStudentAction, adminVerifyAction } from '@/app/actions';
 
@@ -60,6 +60,7 @@ export default function AdminControl({ students }: AdminControlProps) {
     return (
       <div className={`${dimensions} rounded-full overflow-hidden shrink-0 bg-slate-100 flex items-center justify-center font-bold border border-slate-200/60 relative`}>
         {student.photo ? (
+          /* eslint-disable-next-line @next/next/no-img-element */
           <img src={student.photo} alt={student.firstName} className="w-full h-full object-cover" />
         ) : (
           <span className="text-slate-500 uppercase">{student.firstName[0]}{student.lastName?.[0] || ''}</span>
@@ -78,7 +79,7 @@ export default function AdminControl({ students }: AdminControlProps) {
   const [classFilter, setClassFilter] = useState('all');
   
   // CSV status state
-  const [importStatus, setImportStatus] = useState<{ success?: boolean; message?: string } | null>(null);
+  const [, setImportStatus] = useState<{ success?: boolean; message?: string } | null>(null);
   const [isImporting, setIsImporting] = useState(false);
   
   // Edit Student Details state
@@ -171,8 +172,9 @@ export default function AdminControl({ students }: AdminControlProps) {
       } else {
         setImportStatus({ success: false, message: data.error || 'Failed to import CSV.' });
       }
-    } catch (err: any) {
-      setImportStatus({ success: false, message: err.message || 'An error occurred during upload.' });
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'An error occurred during upload.';
+      setImportStatus({ success: false, message });
     } finally {
       setIsImporting(false);
       e.target.value = '';
@@ -697,7 +699,7 @@ export default function AdminControl({ students }: AdminControlProps) {
                               {student.fatherName || 'Parent'} <span className="font-normal text-slate-500">submitted correction for</span> {student.firstName} {student.lastName}
                             </p>
                             <p className="text-xs text-rose-600 bg-rose-50/50 border border-rose-100/50 p-2 mt-1.5 rounded-lg italic">
-                              "{student.correctionNotes}"
+                              &quot;{student.correctionNotes}&quot;
                             </p>
                           </div>
                         </div>
@@ -776,7 +778,7 @@ export default function AdminControl({ students }: AdminControlProps) {
 
                   <select
                     value={statusFilter}
-                    onChange={(e) => setStatusFilter(e.target.value as any)}
+                    onChange={(e) => setStatusFilter(e.target.value as 'all' | 'pending' | 'verified' | 'requires_correction')}
                     className="py-3 px-4 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-600 focus:outline-none"
                   >
                     <option value="all">All Statuses</option>
@@ -914,8 +916,8 @@ export default function AdminControl({ students }: AdminControlProps) {
                         </div>
                       </div>
                       <div className="bg-rose-50/40 p-4 rounded-xl border border-rose-100/50 text-xs text-rose-900 leading-relaxed italic">
-                        <span className="block font-bold text-rose-900 mb-1">Parent's Complaint:</span>
-                        "{student.correctionNotes || 'No notes left'}"
+                        <span className="block font-bold text-rose-900 mb-1">Parent&apos;s Complaint:</span>
+                        &quot;{student.correctionNotes || 'No notes left'}&quot;
                       </div>
                     </div>
                   ))
@@ -1042,6 +1044,7 @@ export default function AdminControl({ students }: AdminControlProps) {
                 <div className="flex items-center gap-4 bg-[#f8fafc] p-4 border border-slate-200/60 rounded-2xl shadow-sm">
                   <div className="relative w-16 h-16 rounded-full overflow-hidden shrink-0 bg-slate-100 border border-slate-200">
                     {newStudent.photo ? (
+                      /* eslint-disable-next-line @next/next/no-img-element */
                       <img src={newStudent.photo} alt="Preview" className="w-full h-full object-cover" />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center text-slate-400 font-bold text-lg bg-slate-50 uppercase">
@@ -1111,7 +1114,7 @@ export default function AdminControl({ students }: AdminControlProps) {
                   <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Gender</label>
                   <select
                     value={newStudent.gender}
-                    onChange={(e) => setNewStudent({...newStudent, gender: e.target.value as any})}
+                    onChange={(e) => setNewStudent({...newStudent, gender: e.target.value as 'Male' | 'Female'})}
                     className="w-full soft-input cursor-pointer"
                   >
                     <option value="Male">Male</option>
@@ -1133,7 +1136,7 @@ export default function AdminControl({ students }: AdminControlProps) {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Father's Full Name</label>
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Father&apos;s Full Name</label>
                   <input
                     type="text"
                     value={newStudent.fatherName}
@@ -1143,7 +1146,7 @@ export default function AdminControl({ students }: AdminControlProps) {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Mother's Full Name</label>
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Mother&apos;s Full Name</label>
                   <input
                     type="text"
                     value={newStudent.motherName}
@@ -1287,8 +1290,8 @@ export default function AdminControl({ students }: AdminControlProps) {
               <div className="mb-6 p-4 rounded-2xl bg-rose-50 border border-rose-100 text-xs text-rose-900 leading-relaxed italic flex items-start gap-2.5">
                 <AlertOctagon className="w-4.5 h-4.5 text-rose-500 shrink-0 mt-0.5" />
                 <div>
-                  <span className="font-bold block mb-1">Parent's Complaint:</span>
-                  "{editingStudent.correctionNotes}"
+                  <span className="font-bold block mb-1">Parent&apos;s Complaint:</span>
+                  &quot;{editingStudent.correctionNotes}&quot;
                 </div>
               </div>
             )}
@@ -1300,6 +1303,7 @@ export default function AdminControl({ students }: AdminControlProps) {
                 <div className="flex items-center gap-4 bg-[#f8fafc] p-4 border border-slate-200/60 rounded-2xl shadow-sm">
                   <div className="relative w-16 h-16 rounded-full overflow-hidden shrink-0 bg-slate-100 border border-slate-200">
                     {editingStudent.photo ? (
+                      /* eslint-disable-next-line @next/next/no-img-element */
                       <img src={editingStudent.photo} alt="Preview" className="w-full h-full object-cover" />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center text-slate-400 font-bold text-lg bg-slate-50 uppercase">
@@ -1442,7 +1446,7 @@ export default function AdminControl({ students }: AdminControlProps) {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Father's Name</label>
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Father&apos;s Name</label>
                   <input
                     type="text"
                     value={editingStudent.fatherName || ''}
@@ -1451,7 +1455,7 @@ export default function AdminControl({ students }: AdminControlProps) {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Mother's Name</label>
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Mother&apos;s Name</label>
                   <input
                     type="text"
                     value={editingStudent.motherName || ''}
@@ -1497,7 +1501,7 @@ export default function AdminControl({ students }: AdminControlProps) {
                   <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Verification Status</label>
                   <select
                     value={editingStudent.verificationStatus}
-                    onChange={(e) => setEditingStudent({...editingStudent, verificationStatus: e.target.value as any})}
+                    onChange={(e) => setEditingStudent({...editingStudent, verificationStatus: e.target.value as 'pending' | 'verified' | 'requires_correction'})}
                     className="w-full soft-input text-sm cursor-pointer"
                   >
                     <option value="pending">Review Pending</option>

@@ -136,7 +136,7 @@ export default function VerificationCard({ student, isAdmin = false }: Verificat
       const month = months[date.getMonth()];
       const year = date.getFullYear();
       return `${day} ${month} ${year}`;
-    } catch (e) {
+    } catch {
       return dateStr;
     }
   };
@@ -146,6 +146,7 @@ export default function VerificationCard({ student, isAdmin = false }: Verificat
     return (
       <div className="relative w-20 h-20 rounded-2xl overflow-hidden border border-slate-200 shrink-0 group shadow-md bg-slate-100">
         {student.photo ? (
+          /* eslint-disable-next-line @next/next/no-img-element */
           <img src={student.photo} alt={`${student.firstName}`} className="w-full h-full object-cover" />
         ) : student.gender === 'Female' ? (
           <div className="w-full h-full bg-pink-50 flex items-center justify-center">
@@ -228,11 +229,11 @@ export default function VerificationCard({ student, isAdmin = false }: Verificat
         <div className="mb-4">
           <div className="p-4 bg-slate-50 border border-slate-200/60 rounded-2xl grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
             <div>
-              <span className="block text-slate-400 font-semibold mb-0.5">Father's Name</span>
+              <span className="block text-slate-400 font-semibold mb-0.5">Father&apos;s Name</span>
               <span className="font-bold text-slate-700">{student.fatherName || 'None Listed'}</span>
             </div>
             <div>
-              <span className="block text-slate-400 font-semibold mb-0.5">Mother's Name</span>
+              <span className="block text-slate-400 font-semibold mb-0.5">Mother&apos;s Name</span>
               <span className="font-bold text-slate-700">{student.motherName || 'None Listed'}</span>
             </div>
             <div className="sm:col-span-2">
@@ -264,7 +265,7 @@ export default function VerificationCard({ student, isAdmin = false }: Verificat
             <Info className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
             <div>
               <span className="font-bold block mb-1">Submitted Correction Notes:</span>
-              <p className="leading-relaxed italic">"{student.correctionNotes}"</p>
+              <p className="leading-relaxed italic">&quot;{student.correctionNotes}&quot;</p>
             </div>
           </div>
         )}

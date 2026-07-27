@@ -7,14 +7,13 @@ import {
   getParentById,
   getStudentsByParentId,
   updateStudentStatus,
-  getAllStudents,
   getStudentById,
   addOrUpdateStudent,
   addOrUpdateParent,
   deleteStudent,
   normalizePhone,
 } from '@/lib/db';
-import { Student, Parent, VerificationStatus } from '@/types';
+import { Student, Parent } from '@/types';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Parent Actions

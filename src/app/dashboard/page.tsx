@@ -19,18 +19,15 @@ export default async function DashboardPage() {
 
   const isAdmin = phone === 'admin';
   const displayPhone = phone || '';
-  let parentName = '';
   let studentsData = [];
 
   if (isAdmin) {
-    parentName = 'School Administrator';
     studentsData = await getAllStudents();
   } else {
     const parent = await getParentByPhone(phone);
     if (!parent) {
       redirect('/');
     }
-    parentName = parent.parentName;
     studentsData = await getStudentsByParentId(parent.id);
   }
 
@@ -93,7 +90,7 @@ export default async function DashboardPage() {
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <h1 className="text-2xl font-black text-slate-900 tracking-tight">Student Profiles</h1>
-                  <p className="text-slate-500 text-xs font-semibold mt-0.5">Review and confirm your children's enrollment details.</p>
+                  <p className="text-slate-500 text-xs font-semibold mt-0.5">Review and confirm your children&apos;s enrollment details.</p>
                 </div>
                 <div className="inline-flex items-center gap-2 p-2.5 px-4 rounded-xl bg-[#f8fafc] border border-slate-200 text-slate-700 text-xs font-bold shrink-0">
                   <Info className="w-3.5 h-3.5 text-[#137333]" />

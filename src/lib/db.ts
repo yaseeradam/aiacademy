@@ -1,4 +1,3 @@
-import { ObjectId } from 'mongodb';
 import clientPromise from './mongodb';
 import { Parent, Student, VerificationStatus } from '../types';
 
@@ -269,8 +268,8 @@ async function ensureSeeded() {
   const db = await getDB();
   const parentsCount = await db.collection(PARENTS_COL).countDocuments();
   if (parentsCount === 0) {
-    await db.collection(PARENTS_COL).insertMany(INITIAL_PARENTS as any[]);
-    await db.collection(STUDENTS_COL).insertMany(INITIAL_STUDENTS as any[]);
+    await db.collection<Parent>(PARENTS_COL).insertMany(INITIAL_PARENTS);
+    await db.collection<Student>(STUDENTS_COL).insertMany(INITIAL_STUDENTS);
   }
 }
 
@@ -294,6 +293,7 @@ export async function getParentById(parentId: string): Promise<Parent | undefine
   const doc = await db.collection<Parent>(PARENTS_COL).findOne({ id: parentId });
   if (!doc) return undefined;
   const { _id, ...rest } = doc;
+  void _id;
   return rest as Parent;
 }
 
@@ -301,8 +301,10 @@ export async function getStudentsByParentId(parentId: string): Promise<Student[]
   await ensureSeeded();
   const db = await getDB();
   const docs = await db.collection<Student>(STUDENTS_COL).find({ parentId }).toArray();
-  // Strip MongoDB _id before returning
-  return docs.map(({ _id, ...rest }) => rest as Student);
+  return docs.map(({ _id, ...rest }) => {
+    void _id;
+    return rest as Student;
+  });
 }
 
 export async function getStudentById(studentId: string): Promise<Student | undefined> {
@@ -311,6 +313,7 @@ export async function getStudentById(studentId: string): Promise<Student | undef
   const doc = await db.collection<Student>(STUDENTS_COL).findOne({ id: studentId });
   if (!doc) return undefined;
   const { _id, ...rest } = doc;
+  void _id;
   return rest as Student;
 }
 
@@ -331,36 +334,41 @@ export async function getAllStudents(): Promise<Student[]> {
   await ensureSeeded();
   const db = await getDB();
   const docs = await db.collection<Student>(STUDENTS_COL).find({}).toArray();
-  return docs.map(({ _id, ...rest }) => rest as Student);
+  return docs.map(({ _id, ...rest }) => {
+    void _id;
+    return rest as Student;
+  });
 }
 
 export async function getAllParents(): Promise<Parent[]> {
   await ensureSeeded();
   const db = await getDB();
   const docs = await db.collection<Parent>(PARENTS_COL).find({}).toArray();
-  return docs.map(({ _id, ...rest }) => rest as Parent);
+  return docs.map(({ _id, ...rest }) => {
+    void _id;
+    return rest as Parent;
+  });
 }
 
 export async function addOrUpdateStudent(student: Student): Promise<void> {
   const db = await getDB();
   await db.collection<Student>(STUDENTS_COL).updateOne(
     { id: student.id },
-    { $set: student as any },
+    { $set: student },
     { upsert: true }
   );
 }
 
 export async function addOrUpdateParent(parent: Parent): Promise<void> {
   const db = await getDB();
-  const normalizedPhone = normalizePhone(parent.phoneNumber);
   const existing = await db.collection<Parent>(PARENTS_COL).findOne({ id: parent.id });
   if (existing) {
     await db.collection<Parent>(PARENTS_COL).updateOne(
       { id: parent.id },
-      { $set: parent as any }
+      { $set: parent }
     );
   } else {
-    await db.collection<Parent>(PARENTS_COL).insertOne(parent as any);
+    await db.collection<Parent>(PARENTS_COL).insertOne(parent);
   }
 }
 

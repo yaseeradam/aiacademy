@@ -152,8 +152,9 @@ export async function POST(request: NextRequest) {
       message: `Successfully imported ${importCount} student records.`,
       count: importCount
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('CSV import error:', error);
-    return NextResponse.json({ error: error.message || 'Failed to process CSV file.' }, { status: 500 });
+    const message = error instanceof Error ? error.message : 'Failed to process CSV file.';
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
