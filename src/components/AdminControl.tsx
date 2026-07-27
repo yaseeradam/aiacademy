@@ -1,17 +1,18 @@
 'use client';
 
-import { useState } from 'react';
-import { Student } from '@/types';
+import { useState, useEffect } from 'react';
+import { Student, AuditLog } from '@/types';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
+import { createWorker } from 'tesseract.js';
 import { 
   Upload, Download, Search, RefreshCw, 
   Users, Clock, AlertOctagon, HelpCircle, 
   ShieldCheck, ChevronRight, X, Menu,
   Grid, Settings, Plus, LogOut, Trash2, Save, BookOpen,
-  Loader2
+  Loader2, Scan, History, MessageSquare
 } from 'lucide-react';
-import { logoutAction, adminUpdateStudentAction, adminDeleteStudentAction, adminCreateStudentAction, adminVerifyAction } from '@/app/actions';
+import { logoutAction, adminUpdateStudentAction, adminDeleteStudentAction, adminCreateStudentAction, adminVerifyAction, getAuditLogsAction } from '@/app/actions';
 
 interface AdminControlProps {
   students: Student[];
@@ -70,8 +71,68 @@ export default function AdminControl({ students }: AdminControlProps) {
   };
 
   // Sidebar tab state
-  const [activeTab, setActiveTab] = useState<'overview' | 'directory' | 'pending' | 'corrections' | 'settings' | 'new-verification'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'directory' | 'pending' | 'corrections' | 'settings' | 'new-verification' | 'audit-log'>('overview');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  // Audit Logs state
+  const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
+  const [isLoadingAudit, setIsLoadingAudit] = useState(false);
+
+  // OCR Form Scanning state
+  const [isScanningOCR, setIsScanningOCR] = useState(false);
+  const [ocrProgress, setOcrProgress] = useState('');
+
+  useEffect(() => {
+    if (activeTab === 'audit-log') {
+      setIsLoadingAudit(true);
+      getAuditLogsAction(100).then(res => {
+        if (res.success && res.logs) {
+          setAuditLogs(res.logs);
+        }
+        setIsLoadingAudit(false);
+      });
+    }
+  }, [activeTab]);
+
+  const handleScanOCR = async (file: File) => {
+    setIsScanningOCR(true);
+    setOcrProgress('Initializing OCR engine...');
+    try {
+      const worker = await createWorker('eng');
+      setOcrProgress('Scanning admission form...');
+      const ret = await worker.recognize(file);
+      await worker.terminate();
+
+      const text = ret.data.text;
+      setOcrProgress('Extracting fields...');
+
+      const nameMatch = text.match(/(?:Name|Student Name|Full Name)[:\s]+([A-Za-z\s]+)/i);
+      const dobMatch = text.match(/(?:DoB|Date of Birth|Birth)[:\s]+([\d\/\-]+)/i);
+      const phoneMatch = text.match(/(?:Phone|Tel|Mobile)[:\s]+([\d\s\-\+]{10,15})/i);
+      const classMatch = text.match(/(?:Class|Grade|Intended Class)[:\s]+([A-Za-z0-9\s]+)/i);
+      const fatherMatch = text.match(/(?:Father|Father's Name|Parent)[:\s]+([A-Za-z\s]+)/i);
+
+      const parts = nameMatch ? nameMatch[1].trim().split(/\s+/) : [];
+      const firstName = parts[0] || '';
+      const lastName = parts.slice(1).join(' ') || '';
+
+      setNewStudent(prev => ({
+        ...prev,
+        firstName: firstName || prev.firstName,
+        lastName: lastName || prev.lastName,
+        dateOfBirth: dobMatch ? dobMatch[1].trim() : prev.dateOfBirth,
+        phone1: phoneMatch ? phoneMatch[1].replace(/\s+/g, '').trim() : prev.phone1,
+        intendedClass: classMatch ? classMatch[1].trim() : prev.intendedClass,
+        fatherName: fatherMatch ? fatherMatch[1].trim() : prev.fatherName,
+      }));
+    } catch (err) {
+      console.error('OCR Error:', err);
+      alert('Could not extract text automatically. Please fill in the details manually.');
+    } finally {
+      setIsScanningOCR(false);
+      setOcrProgress('');
+    }
+  };
   
   // Search & Filter state for Student Directory
   const [searchQuery, setSearchQuery] = useState('');
@@ -536,6 +597,17 @@ export default function AdminControl({ students }: AdminControlProps) {
               <Settings className="w-4 h-4" />
               <span>School Settings</span>
             </button>
+            <button 
+              onClick={() => setActiveTab('audit-log')}
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl font-bold text-sm transition-all text-left cursor-pointer ${
+                activeTab === 'audit-log' 
+                  ? 'bg-slate-900 text-white shadow-sm shadow-slate-900/10' 
+                  : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'
+              }`}
+            >
+              <History className="w-4 h-4" />
+              <span>Audit History</span>
+            </button>
           </nav>
         </div>
 
@@ -821,6 +893,18 @@ export default function AdminControl({ students }: AdminControlProps) {
                         )}
 
                         <div className="flex gap-2">
+                          {student.phone1 && (
+                            <a
+                              href={`https://wa.me/${student.phone1.replace(/[^\d]/g, '')}?text=${encodeURIComponent(`Dear Parent, your child ${student.firstName} ${student.lastName}'s details (Form: ${student.formNumber}) have been verified at AI Integrated Academy Argungu. Thank you!`)}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="px-3.5 py-1.5 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-700 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer"
+                              title="Send WhatsApp Update"
+                            >
+                              <MessageSquare className="w-3.5 h-3.5 text-emerald-600" />
+                              <span className="hidden sm:inline">WhatsApp</span>
+                            </a>
+                          )}
                           <button
                             onClick={() => startEditStudent(student)}
                             className="px-3.5 py-1.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg text-xs font-bold text-slate-600 transition-all cursor-pointer"
@@ -1037,6 +1121,45 @@ export default function AdminControl({ students }: AdminControlProps) {
               <div className="text-center pb-4 border-b border-slate-100">
                 <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">AI INTEGRATED ACADEMY ARGUNGU</span>
                 <h3 className="text-lg font-bold text-slate-800 mt-1">Nursery & Primary Application Form</h3>
+              </div>
+
+              {/* AI OCR Form Scanner Banner */}
+              <div className="bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200/80 p-4 rounded-2xl">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-bold shrink-0">
+                      <Scan className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider">Scan Physical Form (AI OCR)</h4>
+                      <p className="text-[10px] text-slate-500 font-semibold mt-0.5">Upload a photo of form.jpg to auto-fill details (100% Free)</p>
+                    </div>
+                  </div>
+                  
+                  <label className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl cursor-pointer flex items-center justify-center gap-2 transition-all shadow-xs shrink-0">
+                    {isScanningOCR ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span>{ocrProgress || 'Scanning...'}</span>
+                      </>
+                    ) : (
+                      <>
+                        <Scan className="w-4 h-4" />
+                        <span>Upload & Scan Form</span>
+                      </>
+                    )}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      disabled={isScanningOCR}
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) handleScanOCR(file);
+                      }}
+                      className="hidden"
+                    />
+                  </label>
+                </div>
               </div>
 
               <div>
@@ -1259,6 +1382,72 @@ export default function AdminControl({ students }: AdminControlProps) {
                 </button>
               </div>
             </form>
+          </div>
+        )}
+
+        {/* TAB 7: AUDIT HISTORY LOG */}
+        {activeTab === 'audit-log' && (
+          <div className="space-y-6 animate-slide-down">
+            <div>
+              <h1 className="text-3xl font-black text-slate-800 tracking-tight leading-none">Audit History & Activity Log</h1>
+              <p className="text-slate-500 text-sm font-semibold mt-2.5">
+                Real-time log of parent logins, verifications, admin updates, and system events.
+              </p>
+            </div>
+
+            <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden p-6 md:p-8">
+              {isLoadingAudit ? (
+                <div className="flex flex-col items-center justify-center py-12 text-slate-400 space-y-3">
+                  <Loader2 className="w-8 h-8 text-[#0f7343] animate-spin" />
+                  <span className="text-xs font-bold">Loading system audit logs...</span>
+                </div>
+              ) : auditLogs.length === 0 ? (
+                <div className="text-center py-12 text-slate-400 space-y-2">
+                  <History className="w-10 h-10 mx-auto text-slate-300" />
+                  <p className="text-sm font-bold">No activity recorded yet.</p>
+                </div>
+              ) : (
+                <div className="relative border-l-2 border-slate-100 ml-4 space-y-6 my-2">
+                  {auditLogs.map((log) => (
+                    <div key={log.id} className="relative pl-6 group">
+                      {/* Circle indicator */}
+                      <div className={`absolute -left-[9px] top-1 w-4 h-4 rounded-full border-2 bg-white ${
+                        log.action === 'VERIFY' ? 'border-green-600 bg-green-50' :
+                        log.action === 'CORRECTION' ? 'border-rose-500 bg-rose-50' :
+                        log.action === 'LOGIN' ? 'border-blue-500 bg-blue-50' :
+                        log.action === 'CREATE' ? 'border-emerald-600 bg-emerald-50' :
+                        log.action === 'DELETE' ? 'border-red-600 bg-red-50' :
+                        'border-slate-400'
+                      }`} />
+                      
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-black text-slate-900">{log.actor}</span>
+                          <span className={`text-[10px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider ${
+                            log.action === 'VERIFY' ? 'bg-green-100 text-green-800' :
+                            log.action === 'CORRECTION' ? 'bg-rose-100 text-rose-800' :
+                            log.action === 'LOGIN' ? 'bg-blue-100 text-blue-800' :
+                            log.action === 'CREATE' ? 'bg-emerald-100 text-emerald-800' :
+                            log.action === 'DELETE' ? 'bg-red-100 text-red-800' :
+                            'bg-slate-100 text-slate-700'
+                          }`}>
+                            {log.action}
+                          </span>
+                        </div>
+                        <span className="text-[10px] text-slate-400 font-semibold font-mono">
+                          {new Date(log.timestamp).toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                        </span>
+                      </div>
+
+                      <p className="text-xs text-slate-600 font-semibold mt-1">
+                        {log.details}
+                        {log.studentName && <span className="font-bold text-slate-800"> ({log.studentName})</span>}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         )}
       </main>

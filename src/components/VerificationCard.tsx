@@ -3,8 +3,9 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Student, VerificationStatus } from '@/types';
-import { Check, Lock, Edit3, Info, Camera, Loader2 } from 'lucide-react';
+import { Check, Edit3, Info, Camera, Loader2, Printer } from 'lucide-react';
 import { confirmStudentAction, submitCorrectionAction, updateStudentPhotoAction } from '@/app/actions';
+import VerificationSlipModal from './VerificationSlipModal';
 
 interface VerificationCardProps {
   student: Student;
@@ -18,6 +19,7 @@ export default function VerificationCard({ student, isAdmin = false }: Verificat
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isConfirming, setIsConfirming] = useState(false);
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+  const [isSlipOpen, setIsSlipOpen] = useState(false);
 
   const handleConfirm = async () => {
     setIsConfirming(true);
@@ -277,11 +279,11 @@ export default function VerificationCard({ student, isAdmin = false }: Verificat
           <div className="flex gap-4">
             {student.verificationStatus === 'verified' ? (
               <button
-                disabled
-                className="flex-1 py-3.5 px-4 rounded-xl bg-[#e8eaed] text-[#80868b] font-bold text-sm flex items-center justify-center gap-2 cursor-not-allowed border border-[#d2d2d2]"
+                onClick={() => setIsSlipOpen(true)}
+                className="flex-1 py-3.5 px-4 rounded-xl bg-green-700 hover:bg-green-800 text-white font-bold text-sm flex items-center justify-center gap-2 transition-all cursor-pointer shadow-sm"
               >
-                <Lock className="w-4 h-4 text-[#80868b]" />
-                Details Confirmed
+                <Printer className="w-4 h-4 text-white" />
+                Download Verification Slip & ID
               </button>
             ) : (
               <button
@@ -362,6 +364,12 @@ export default function VerificationCard({ student, isAdmin = false }: Verificat
           </div>
         </div>
       )}
+      {/* Verification Slip & ID Card Modal */}
+      <VerificationSlipModal
+        student={student}
+        isOpen={isSlipOpen}
+        onClose={() => setIsSlipOpen(false)}
+      />
     </div>
   );
 }

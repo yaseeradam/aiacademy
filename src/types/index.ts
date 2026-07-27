@@ -30,3 +30,13 @@ export interface Student {
   religion?: string;
   photo?: string;
 }
+
+export interface AuditLog {
+  id: string;
+  timestamp: string; // ISO string
+  action: 'LOGIN' | 'VERIFY' | 'CORRECTION' | 'UPDATE' | 'CREATE' | 'DELETE';
+  actor: string; // 'Parent (080...)' or 'Administrator'
+  details: string;
+  studentId?: string;
+  studentName?: string;
+}

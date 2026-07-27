@@ -1,9 +1,10 @@
 import clientPromise from './mongodb';
-import { Parent, Student, VerificationStatus } from '../types';
+import { Parent, Student, VerificationStatus, AuditLog } from '../types';
 
 const DB_NAME = 'ai_academy';
 const PARENTS_COL = 'parents';
 const STUDENTS_COL = 'students';
+const AUDIT_COL = 'audit_logs';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Seed data — only inserted once when the database is empty
@@ -376,4 +377,28 @@ export async function deleteStudent(studentId: string): Promise<boolean> {
   const db = await getDB();
   const result = await db.collection<Student>(STUDENTS_COL).deleteOne({ id: studentId });
   return result.deletedCount > 0;
+}
+
+export async function addAuditLog(log: Omit<AuditLog, 'id' | 'timestamp'>): Promise<void> {
+  const db = await getDB();
+  const newLog: AuditLog = {
+    id: `log-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+    timestamp: new Date().toISOString(),
+    ...log,
+  };
+  await db.collection<AuditLog>(AUDIT_COL).insertOne(newLog);
+}
+
+export async function getAuditLogs(limit = 50): Promise<AuditLog[]> {
+  await ensureSeeded();
+  const db = await getDB();
+  const docs = await db.collection<AuditLog>(AUDIT_COL)
+    .find({})
+    .sort({ timestamp: -1 })
+    .limit(limit)
+    .toArray();
+  return docs.map(({ _id, ...rest }) => {
+    void _id;
+    return rest as AuditLog;
+  });
 }

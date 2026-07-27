@@ -12,6 +12,8 @@ import {
   addOrUpdateParent,
   deleteStudent,
   normalizePhone,
+  addAuditLog,
+  getAuditLogs,
 } from '@/lib/db';
 import { Student, Parent } from '@/types';
 
@@ -35,6 +37,11 @@ export async function loginAction(formData: FormData) {
       sameSite: 'strict',
       maxAge: 60 * 60 * 24, // 1 day
     });
+    await addAuditLog({
+      action: 'LOGIN',
+      actor: 'School Administrator',
+      details: 'Logged into Admin Control Portal',
+    });
     redirect('/dashboard');
   }
 
@@ -54,6 +61,12 @@ export async function loginAction(formData: FormData) {
     maxAge: 60 * 60 * 24, // 1 day
   });
 
+  await addAuditLog({
+    action: 'LOGIN',
+    actor: `Parent (${parent.phoneNumber})`,
+    details: `Parent ${parent.parentName} logged into Parent Portal`,
+  });
+
   redirect('/dashboard');
 }
 
@@ -64,18 +77,36 @@ export async function logoutAction() {
 }
 
 export async function confirmStudentAction(studentId: string) {
+  const student = await getStudentById(studentId);
   const success = await updateStudentStatus(studentId, 'verified');
   if (!success) {
     throw new Error('Failed to update student status');
   }
+  const studentName = student ? `${student.firstName} ${student.lastName}` : studentId;
+  await addAuditLog({
+    action: 'VERIFY',
+    actor: 'Parent',
+    details: `Confirmed student details as correct`,
+    studentId,
+    studentName,
+  });
   return { success: true };
 }
 
 export async function submitCorrectionAction(studentId: string, notes: string) {
+  const student = await getStudentById(studentId);
   const success = await updateStudentStatus(studentId, 'requires_correction', notes);
   if (!success) {
     throw new Error('Failed to submit correction');
   }
+  const studentName = student ? `${student.firstName} ${student.lastName}` : studentId;
+  await addAuditLog({
+    action: 'CORRECTION',
+    actor: 'Parent',
+    details: `Submitted correction request: "${notes}"`,
+    studentId,
+    studentName,
+  });
   return { success: true };
 }
 
@@ -84,10 +115,19 @@ export async function submitCorrectionAction(studentId: string, notes: string) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export async function adminVerifyAction(studentId: string) {
+  const student = await getStudentById(studentId);
   const success = await updateStudentStatus(studentId, 'verified', '');
   if (!success) {
     throw new Error('Failed to verify student');
   }
+  const studentName = student ? `${student.firstName} ${student.lastName}` : studentId;
+  await addAuditLog({
+    action: 'VERIFY',
+    actor: 'School Administrator',
+    details: `Admin verified student profile details`,
+    studentId,
+    studentName,
+  });
   return { success: true };
 }
 
@@ -155,14 +195,33 @@ export async function adminUpdateStudentAction(
   }
 
   await addOrUpdateStudent(updatedStudent);
+
+  const studentName = `${updatedStudent.firstName} ${updatedStudent.lastName}`;
+  await addAuditLog({
+    action: 'UPDATE',
+    actor: 'School Administrator',
+    details: `Admin updated student profile and phone details`,
+    studentId,
+    studentName,
+  });
+
   return { success: true };
 }
 
 export async function adminDeleteStudentAction(studentId: string) {
+  const student = await getStudentById(studentId);
   const deleted = await deleteStudent(studentId);
   if (!deleted) {
     return { error: 'Student not found.' };
   }
+  const studentName = student ? `${student.firstName} ${student.lastName}` : studentId;
+  await addAuditLog({
+    action: 'DELETE',
+    actor: 'School Administrator',
+    details: `Admin deleted student record`,
+    studentId,
+    studentName,
+  });
   return { success: true };
 }
 
@@ -193,6 +252,16 @@ export async function adminCreateStudentAction(studentData: Omit<Student, 'id' |
   }
 
   await addOrUpdateStudent(newStudent);
+
+  const studentName = `${newStudent.firstName} ${newStudent.lastName}`;
+  await addAuditLog({
+    action: 'CREATE',
+    actor: 'School Administrator',
+    details: `Admin registered new student record`,
+    studentId: newId,
+    studentName,
+  });
+
   return { success: true, id: newId };
 }
 
@@ -208,5 +277,20 @@ export async function updateStudentPhotoAction(studentId: string, photoBase64: s
   };
 
   await addOrUpdateStudent(updatedStudent);
+
+  const studentName = `${student.firstName} ${student.lastName}`;
+  await addAuditLog({
+    action: 'UPDATE',
+    actor: 'School Administrator',
+    details: `Admin updated photo for student`,
+    studentId,
+    studentName,
+  });
+
   return { success: true };
+}
+
+export async function getAuditLogsAction(limit = 50) {
+  const logs = await getAuditLogs(limit);
+  return { success: true, logs };
 }
