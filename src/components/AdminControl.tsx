@@ -12,7 +12,7 @@ import {
   Grid, Settings, Plus, LogOut, Trash2, Save, BookOpen,
   Loader2, Scan, History, MessageSquare
 } from 'lucide-react';
-import { logoutAction, adminUpdateStudentAction, adminDeleteStudentAction, adminCreateStudentAction, adminVerifyAction, getAuditLogsAction } from '@/app/actions';
+import { logoutAction, adminUpdateStudentAction, adminDeleteStudentAction, adminCreateStudentAction, adminVerifyAction, getAuditLogsAction, scanAdmissionFormOCRAction } from '@/app/actions';
 
 interface AdminControlProps {
   students: Student[];
@@ -96,23 +96,61 @@ export default function AdminControl({ students }: AdminControlProps) {
 
   const handleScanOCR = async (file: File) => {
     setIsScanningOCR(true);
-    setOcrProgress('Initializing OCR engine...');
+    setOcrProgress('Processing handwritten form image...');
     try {
+      const base64 = await compressImage(file);
+      
+      // Attempt Gemini Vision AI first
+      const aiResult = await scanAdmissionFormOCRAction(base64);
+      if (aiResult.success && aiResult.data) {
+        const d = aiResult.data;
+        setNewStudent(prev => ({
+          ...prev,
+          firstName: d.firstName || prev.firstName,
+          lastName: d.lastName || prev.lastName,
+          dateOfBirth: d.dateOfBirth || prev.dateOfBirth,
+          gender: (d.gender === 'Female' ? 'Female' : 'Male') as 'Male' | 'Female',
+          fatherName: d.fatherName || prev.fatherName,
+          motherName: d.motherName || prev.motherName,
+          residentialAddress: d.residentialAddress || prev.residentialAddress,
+          phone1: d.phone1 || prev.phone1,
+          phone2: d.phone2 || prev.phone2,
+          guardianName: d.guardianName || prev.guardianName,
+          guardianAddress: d.guardianAddress || prev.guardianAddress,
+          nationality: d.nationality || prev.nationality,
+          religion: d.religion || prev.religion,
+          intendedClass: d.intendedClass || prev.intendedClass,
+        }));
+        setOcrProgress('Handwritten details extracted successfully!');
+        return;
+      }
+
+      // Fallback: Clean Tesseract OCR
+      setOcrProgress('Scanning form with Tesseract OCR...');
       const worker = await createWorker('eng');
-      setOcrProgress('Scanning admission form...');
       const ret = await worker.recognize(file);
       await worker.terminate();
 
-      const text = ret.data.text;
-      setOcrProgress('Extracting fields...');
+      // Clean printed text & Arabic characters
+      let rawText = ret.data.text;
+      rawText = rawText.replace(/[\u0600-\u06FF]/g, ''); // Strip Arabic text
+      
+      // Extract phones
+      const phoneMatches = rawText.match(/(?:0\d{10})/g);
+      const phone1 = phoneMatches?.[0] || '';
+      const phone2 = phoneMatches?.[1] || '';
 
-      const nameMatch = text.match(/(?:Name|Student Name|Full Name)[:\s]+([A-Za-z\s]+)/i);
-      const dobMatch = text.match(/(?:DoB|Date of Birth|Birth)[:\s]+([\d\/\-]+)/i);
-      const phoneMatch = text.match(/(?:Phone|Tel|Mobile)[:\s]+([\d\s\-\+]{10,15})/i);
-      const classMatch = text.match(/(?:Class|Grade|Intended Class)[:\s]+([A-Za-z0-9\s]+)/i);
-      const fatherMatch = text.match(/(?:Father|Father's Name|Parent)[:\s]+([A-Za-z\s]+)/i);
+      // Extract DoB (DD/MM/YYYY)
+      const dobMatch = rawText.match(/\b(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4})\b/);
 
-      const parts = nameMatch ? nameMatch[1].trim().split(/\s+/) : [];
+      // Clean lines and filter out template labels
+      const lines = rawText
+        .split('\n')
+        .map(l => l.replace(/^(?:\d+\.|\w+:|Phone\s*NoI|Phone\s*II|Name\s*of\s*Student|Father's\s*Name|Mother's\s*Name|Residential\s*Address|Nationality|Religion|Class\s*in\s*which|Sex|Male|Female|Date\s*of\s*Birth|Motto|Address|Email|Tel|APPLICATION|ADMISSION|NOTE|Sign|Director|Parent)/gi, '').trim())
+        .filter(l => l.length > 2 && !l.includes('ACADEMY') && !l.includes('Motto') && !l.includes('Argungu'));
+
+      const studentName = lines[0] || '';
+      const parts = studentName.split(/\s+/);
       const firstName = parts[0] || '';
       const lastName = parts.slice(1).join(' ') || '';
 
@@ -120,14 +158,16 @@ export default function AdminControl({ students }: AdminControlProps) {
         ...prev,
         firstName: firstName || prev.firstName,
         lastName: lastName || prev.lastName,
-        dateOfBirth: dobMatch ? dobMatch[1].trim() : prev.dateOfBirth,
-        phone1: phoneMatch ? phoneMatch[1].replace(/\s+/g, '').trim() : prev.phone1,
-        intendedClass: classMatch ? classMatch[1].trim() : prev.intendedClass,
-        fatherName: fatherMatch ? fatherMatch[1].trim() : prev.fatherName,
+        dateOfBirth: dobMatch ? dobMatch[1] : prev.dateOfBirth,
+        phone1: phone1 || prev.phone1,
+        phone2: phone2 || prev.phone2,
+        fatherName: lines[1] || prev.fatherName,
+        motherName: lines[2] || prev.motherName,
+        residentialAddress: lines[3] || prev.residentialAddress,
       }));
     } catch (err) {
       console.error('OCR Error:', err);
-      alert('Could not extract text automatically. Please fill in the details manually.');
+      alert('Could not process form. Please enter details manually.');
     } finally {
       setIsScanningOCR(false);
       setOcrProgress('');

@@ -294,3 +294,73 @@ export async function getAuditLogsAction(limit = 50) {
   const logs = await getAuditLogs(limit);
   return { success: true, logs };
 }
+
+export async function scanAdmissionFormOCRAction(base64Image: string) {
+  const apiKey = process.env.GEMINI_API_KEY || process.env.NEXT_PUBLIC_GEMINI_API_KEY;
+  if (!apiKey) {
+    return { error: 'NO_API_KEY' };
+  }
+
+  try {
+    const base64Data = base64Image.replace(/^data:image\/\w+;base64,/, '');
+
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [
+            {
+              parts: [
+                {
+                  inlineData: {
+                    mimeType: 'image/jpeg',
+                    data: base64Data,
+                  },
+                },
+                {
+                  text: `You are an expert OCR engine specializing in handwritten school admission forms.
+Examine this handwritten admission form image from AI Integrated Academy Argungu.
+Extract ONLY the handwritten blue/black ink answers written in the form fields.
+Ignore printed form labels (like "1. Name of Student:", "2. Date of Birth:", "Father's Name:") and Arabic subtitles.
+
+Return ONLY a valid JSON object matching this schema (no markdown, no backticks):
+{
+  "firstName": "string (student's first name, e.g. HAFSAT)",
+  "lastName": "string (student's middle/surname, e.g. HARUNA HANZALA)",
+  "dateOfBirth": "string (e.g. 14/11/2021)",
+  "gender": "Male or Female (detect tick mark ✓ in checkboxes)",
+  "fatherName": "string (e.g. HARUNA ABUBAKAR)",
+  "motherName": "string (e.g. SAMANIYYA MUSTAPHA)",
+  "residentialAddress": "string (e.g. UNGUWAR MALAMAI ARGUNGU)",
+  "phone1": "string (e.g. 08100423094)",
+  "phone2": "string (e.g. 09063683651)",
+  "guardianName": "string (e.g. HASSAN GARBA)",
+  "guardianAddress": "string (e.g. BAKIN KASUWA AREA ARGUNGU)",
+  "nationality": "string (e.g. NIGERIA)",
+  "religion": "string (e.g. ISLAM)",
+  "intendedClass": "string (e.g. NURSERY)"
+}`,
+                },
+              ],
+            },
+          ],
+        }),
+      }
+    );
+
+    const data = await response.json();
+    const textOutput = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (!textOutput) {
+      return { error: 'No output from Gemini Vision AI.' };
+    }
+
+    const cleanJson = textOutput.replace(/```json/gi, '').replace(/```/g, '').trim();
+    const parsed = JSON.parse(cleanJson);
+    return { success: true, data: parsed };
+  } catch (err: unknown) {
+    console.error('Gemini Vision OCR Error:', err);
+    return { error: 'Failed to process handwritten form image.' };
+  }
+}
