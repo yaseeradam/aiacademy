@@ -116,7 +116,7 @@ export default function VerificationSlipModal({ student, isOpen, onClose, initia
         </div>
 
         {/* Modal Printable Content Container */}
-        <div className="p-6 md:p-8 overflow-y-auto flex-1 bg-slate-50 print:bg-white print:p-0 print:overflow-visible">
+        <div id="printable-slip-area" className="p-6 md:p-8 overflow-y-auto flex-1 bg-slate-50 print:bg-white print:p-0 print:overflow-visible">
           
           {/* FORMAT 1: OFFICIAL FULL VERIFICATION SLIP */}
           {activeFormat === 'slip' && (
