@@ -4,7 +4,6 @@ import { useState } from 'react';
 import { Student } from '@/types';
 import { QRCodeSVG } from 'qrcode.react';
 import { X, Printer, ShieldCheck, CheckCircle2 } from 'lucide-react';
-import Image from 'next/image';
 
 interface VerificationSlipModalProps {
   student: Student;
@@ -14,6 +13,18 @@ interface VerificationSlipModalProps {
 
 export default function VerificationSlipModal({ student, isOpen, onClose }: VerificationSlipModalProps) {
   const [activeFormat, setActiveFormat] = useState<'slip' | 'id-card'>('slip');
+  const [logoSrc] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('ai_academy_school_settings');
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          if (parsed.logo) return parsed.logo;
+        } catch {}
+      }
+    }
+    return '/logo.jpg';
+  });
 
   if (!isOpen) return null;
 
@@ -107,12 +118,12 @@ export default function VerificationSlipModal({ student, isOpen, onClose }: Veri
               {/* Header */}
               <div className="flex items-center justify-between border-b-2 border-green-700 pb-4 mb-6">
                 <div className="flex items-center gap-4">
-                  <div className="relative w-16 h-16 rounded-full overflow-hidden shrink-0 border border-slate-200">
-                    <Image
-                      src="/logo.jpg"
+                  <div className="relative w-16 h-16 rounded-full overflow-hidden shrink-0 border border-slate-200 flex items-center justify-center p-0.5 bg-white">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={logoSrc}
                       alt="AI Integrated Academy Logo"
-                      fill
-                      className="object-contain"
+                      className="w-full h-full object-contain rounded-full"
                     />
                   </div>
                   <div>
@@ -240,8 +251,9 @@ export default function VerificationSlipModal({ student, isOpen, onClose }: Veri
                 {/* ID Header */}
                 <div className="bg-gradient-to-r from-green-800 to-green-600 text-white p-4 text-center relative">
                   <div className="flex items-center justify-center gap-2">
-                    <div className="relative w-8 h-8 rounded-full overflow-hidden bg-white shrink-0">
-                      <Image src="/logo.jpg" alt="Logo" fill className="object-contain" />
+                    <div className="relative w-8 h-8 rounded-full overflow-hidden bg-white shrink-0 p-0.5 border border-white/20">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={logoSrc} alt="Logo" className="w-full h-full object-contain rounded-full" />
                     </div>
                     <h3 className="font-black text-sm tracking-tight leading-tight uppercase">
                       AI INTEGRATED ACADEMY

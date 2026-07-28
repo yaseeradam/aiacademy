@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { Student, AuditLog } from '@/types';
-import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { createWorker } from 'tesseract.js';
 import { 
@@ -202,9 +201,21 @@ export default function AdminControl({ students }: AdminControlProps) {
     address: "Behind Buben Ta'Ololo's Residence, Tudun Wada, Argungu",
     tel1: '08069676697',
     tel2: '07034784861',
-    email: 'alijabahintegratedacademyarg@gmail.com'
+    email: 'alijabahintegratedacademyarg@gmail.com',
+    logo: '/logo.jpg',
   });
   const [settingsSaved, setSettingsSaved] = useState(false);
+
+  useEffect(() => {
+    const saved = localStorage.getItem('ai_academy_school_settings');
+    if (saved) {
+      try {
+        setSchoolSettings(prev => ({ ...prev, ...JSON.parse(saved) }));
+      } catch (err) {
+        console.error('Error loading school settings:', err);
+      }
+    }
+  }, []);
 
   // New Student Verification form state
   const [newStudent, setNewStudent] = useState({
@@ -413,6 +424,7 @@ export default function AdminControl({ students }: AdminControlProps) {
 
   const handleSaveSettings = (e: React.FormEvent) => {
     e.preventDefault();
+    localStorage.setItem('ai_academy_school_settings', JSON.stringify(schoolSettings));
     setSettingsSaved(true);
     setTimeout(() => setSettingsSaved(false), 3000);
   };
@@ -434,13 +446,12 @@ export default function AdminControl({ students }: AdminControlProps) {
               {/* Header: Logo & Title, Close Button */}
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="relative w-8 h-8 rounded-full overflow-hidden bg-white shadow-sm border border-slate-100 flex items-center justify-center shrink-0">
-                    <Image
-                      src="/logo.jpg"
+                  <div className="relative w-8 h-8 rounded-full overflow-hidden bg-white shadow-sm border border-slate-100 flex items-center justify-center shrink-0 p-0.5">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={schoolSettings.logo || '/logo.jpg'}
                       alt="School Logo"
-                      width={28}
-                      height={28}
-                      className="object-contain rounded-full"
+                      className="w-full h-full object-contain rounded-full"
                     />
                   </div>
                   <div>
@@ -581,13 +592,12 @@ export default function AdminControl({ students }: AdminControlProps) {
         <div className="space-y-8">
           {/* Brand Logo and Name */}
           <div className="flex items-center gap-3">
-            <div className="relative w-8 h-8 rounded-full overflow-hidden bg-white shadow-sm border border-slate-100 flex items-center justify-center shrink-0">
-              <Image
-                src="/logo.jpg"
+            <div className="relative w-8 h-8 rounded-full overflow-hidden bg-white shadow-sm border border-slate-100 flex items-center justify-center shrink-0 p-0.5">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={schoolSettings.logo || '/logo.jpg'}
                 alt="School Logo"
-                width={28}
-                height={28}
-                className="object-contain rounded-full"
+                className="w-full h-full object-contain rounded-full"
               />
             </div>
             <div>
@@ -719,7 +729,10 @@ export default function AdminControl({ students }: AdminControlProps) {
               <Menu className="w-6 h-6" />
             </button>
             <div className="flex items-center gap-2">
-              <Image src="/logo.jpg" alt="Logo" width={28} height={28} className="rounded-full" />
+              <div className="w-7 h-7 rounded-full overflow-hidden bg-white border border-slate-100 flex items-center justify-center p-0.5">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={schoolSettings.logo || '/logo.jpg'} alt="Logo" className="w-full h-full object-contain rounded-full" />
+              </div>
               <div>
                 <span className="block font-black text-slate-800 text-sm leading-tight">Admin Portal</span>
                 <span className="block text-[9px] font-bold text-slate-400">Private Academy v2.0</span>
@@ -1096,6 +1109,57 @@ export default function AdminControl({ students }: AdminControlProps) {
             </div>
 
             <form onSubmit={handleSaveSettings} className="soft-card p-6 md:p-8 bg-white rounded-[2rem] border border-slate-200 space-y-5">
+              {/* School Crest / Logo Upload */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">School Crest / Logo</label>
+                <div className="flex flex-col sm:flex-row items-center gap-5 p-4 bg-[#f8fafc] border border-slate-200 rounded-2xl">
+                  <div className="relative w-20 h-20 rounded-2xl overflow-hidden shrink-0 bg-white border-2 border-slate-200 shadow-xs flex items-center justify-center p-1">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={schoolSettings.logo || '/logo.jpg'}
+                      alt="School Logo"
+                      className="w-full h-full object-contain rounded-xl"
+                    />
+                  </div>
+
+                  <div className="space-y-2 text-center sm:text-left flex-1">
+                    <h5 className="text-xs font-bold text-slate-800">Official School Badge</h5>
+                    <p className="text-[11px] text-slate-500 font-semibold leading-relaxed">
+                      Upload a custom square image (PNG/JPG) to update the school logo across ID cards, printable slips, and navigation headers.
+                    </p>
+                    
+                    <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 pt-1">
+                      <label className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold cursor-pointer transition-all shadow-xs flex items-center gap-2">
+                        <Upload className="w-3.5 h-3.5" />
+                        <span>Upload New Logo</span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={async (e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              const base64 = await compressImage(file, 600, 0.9);
+                              setSchoolSettings(prev => ({ ...prev, logo: base64 }));
+                            }
+                          }}
+                          className="hidden"
+                        />
+                      </label>
+
+                      {schoolSettings.logo && schoolSettings.logo !== '/logo.jpg' && (
+                        <button
+                          type="button"
+                          onClick={() => setSchoolSettings(prev => ({ ...prev, logo: '/logo.jpg' }))}
+                          className="px-3 py-2 text-xs font-bold text-red-600 hover:text-red-700 hover:bg-red-50 rounded-xl transition-all cursor-pointer"
+                        >
+                          Reset to Default
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               <div>
                 <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">School Name</label>
                 <input
