@@ -15,6 +15,7 @@ import {
   addAuditLog,
   getAuditLogs,
   findDuplicateStudent,
+  getStudentByFormNumber,
 } from '@/lib/db';
 import { Student, Parent } from '@/types';
 
@@ -398,4 +399,12 @@ Return ONLY a valid JSON object matching this schema:
   }
 
   return { error: lastError };
+}
+
+export async function publicVerifyStudentAction(formNumber: string): Promise<{ success: boolean; student?: Student; error?: string }> {
+  const student = await getStudentByFormNumber(formNumber);
+  if (!student) {
+    return { success: false, error: `No student enrollment record found for Form Serial No: "${formNumber}".` };
+  }
+  return { success: true, student };
 }

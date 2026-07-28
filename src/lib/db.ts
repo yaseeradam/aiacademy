@@ -318,6 +318,18 @@ export async function getStudentById(studentId: string): Promise<Student | undef
   return rest as Student;
 }
 
+export async function getStudentByFormNumber(formNumber: string): Promise<Student | undefined> {
+  await ensureSeeded();
+  const db = await getDB();
+  const doc = await db.collection<Student>(STUDENTS_COL).findOne({
+    formNumber: { $regex: new RegExp(`^${formNumber.trim()}$`, 'i') }
+  });
+  if (!doc) return undefined;
+  const { _id, ...rest } = doc;
+  void _id;
+  return rest as Student;
+}
+
 export async function findDuplicateStudent(studentData: Partial<Student>): Promise<Student | undefined> {
   await ensureSeeded();
   const db = await getDB();

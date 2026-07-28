@@ -1,13 +1,37 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import Image from 'next/image';
-import { ArrowRight, AlertTriangle, Phone } from 'lucide-react';
-import { loginAction } from './actions';
+import { useSearchParams } from 'next/navigation';
+import { ArrowRight, AlertTriangle, Phone, ShieldCheck, X } from 'lucide-react';
+import { loginAction, publicVerifyStudentAction } from './actions';
+import { Student } from '@/types';
 
-export default function LoginPage() {
+function LoginContent() {
+  const searchParams = useSearchParams();
+  const verifyParam = searchParams.get('verify') || searchParams.get('form');
+
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [verifiedStudent, setVerifiedStudent] = useState<Student | null>(null);
+  const [verifyError, setVerifyError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let isSubscribed = true;
+    if (verifyParam) {
+      publicVerifyStudentAction(verifyParam).then(res => {
+        if (!isSubscribed) return;
+        if (res.success && res.student) {
+          setVerifiedStudent(res.student);
+        } else {
+          setVerifyError(res.error || 'Student serial number not found.');
+        }
+      });
+    }
+    return () => {
+      isSubscribed = false;
+    };
+  }, [verifyParam]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -150,6 +174,94 @@ export default function LoginPage() {
           LEARNING TODAY, LEADING TOMORROW
         </span>
       </div>
+
+      {/* Public QR Code Verification Modal */}
+      {(verifiedStudent || verifyError) && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl p-6 md:p-8 max-w-md w-full shadow-2xl border border-slate-100 animate-slide-up space-y-5 relative">
+            <button
+              onClick={() => {
+                setVerifiedStudent(null);
+                setVerifyError(null);
+              }}
+              className="absolute right-4 top-4 p-1.5 hover:bg-slate-100 rounded-full text-slate-400 cursor-pointer"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            {verifyError ? (
+              <div className="py-6 text-center space-y-3">
+                <AlertTriangle className="w-12 h-12 text-rose-500 mx-auto" />
+                <h3 className="text-lg font-black text-slate-900">Verification Failed</h3>
+                <p className="text-xs font-semibold text-rose-700 bg-rose-50 p-3 rounded-xl border border-rose-100">
+                  {verifyError}
+                </p>
+              </div>
+            ) : verifiedStudent ? (
+              <div className="space-y-4">
+                <div className="flex items-center gap-3 border-b border-slate-100 pb-4">
+                  <div className="w-12 h-12 rounded-2xl bg-emerald-600 text-white flex items-center justify-center font-bold shrink-0 shadow-md">
+                    <ShieldCheck className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-black uppercase text-emerald-700 tracking-wider block">
+                      OFFICIAL ENROLLMENT CERTIFICATE
+                    </span>
+                    <h3 className="text-lg font-black text-slate-900 leading-tight">
+                      Authentic Student Record
+                    </h3>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-4 bg-emerald-50/70 p-3.5 rounded-2xl border border-emerald-200/80">
+                  <div className="w-14 h-14 rounded-xl bg-white border border-emerald-200 overflow-hidden shrink-0 flex items-center justify-center font-bold text-emerald-800 text-lg uppercase shadow-xs">
+                    {verifiedStudent.photo ? (
+                      /* eslint-disable-next-line @next/next/no-img-element */
+                      <img src={verifiedStudent.photo} alt={verifiedStudent.firstName} className="w-full h-full object-cover" />
+                    ) : (
+                      <span>{verifiedStudent.firstName[0]}</span>
+                    )}
+                  </div>
+                  <div>
+                    <h4 className="font-extrabold text-slate-900 text-base leading-snug">
+                      {verifiedStudent.firstName} {verifiedStudent.lastName}
+                    </h4>
+                    <p className="text-xs font-semibold text-slate-600">
+                      Form No: <code className="font-mono font-bold text-emerald-900">{verifiedStudent.formNumber}</code>
+                    </p>
+                    <p className="text-[11px] font-bold text-emerald-700 mt-0.5">
+                      Class: {verifiedStudent.intendedClass} • {verifiedStudent.gender}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="space-y-2 text-xs text-slate-600 bg-slate-50 p-3.5 rounded-xl border border-slate-100 font-semibold">
+                  <p><strong className="text-slate-800">School:</strong> AI Integrated Academy Argungu</p>
+                  <p><strong className="text-slate-800">Parent/Guardian:</strong> {verifiedStudent.fatherName || verifiedStudent.guardianName || 'N/A'}</p>
+                  <p><strong className="text-slate-800">Verification Status:</strong> <span className="text-emerald-700 font-extrabold uppercase">Officially Verified ✓</span></p>
+                </div>
+
+                <div className="pt-2 text-center">
+                  <button
+                    onClick={() => setVerifiedStudent(null)}
+                    className="w-full py-3 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl transition-all cursor-pointer"
+                  >
+                    Done / Close Certificate
+                  </button>
+                </div>
+              </div>
+            ) : null}
+          </div>
+        </div>
+      )}
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-slate-50 text-xs font-bold text-slate-400">Loading Portal...</div>}>
+      <LoginContent />
+    </Suspense>
   );
 }
