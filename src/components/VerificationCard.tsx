@@ -25,6 +25,7 @@ export default function VerificationCard({ student, isAdmin = false }: Verificat
     setIsConfirming(true);
     try {
       await confirmStudentAction(student.id);
+      setIsSlipOpen(true);
       router.refresh();
     } catch (err) {
       console.error(err);
