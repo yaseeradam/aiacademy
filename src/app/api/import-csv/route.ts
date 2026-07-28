@@ -44,13 +44,14 @@ export async function POST(request: NextRequest) {
     const header = lines[0].split(',').map(h => h.trim().toLowerCase());
     
     let importCount = 0;
+    let skippedDuplicateCount = 0;
     
     // Process each data line
     for (let i = 1; i < lines.length; i++) {
       const line = lines[i].trim();
       if (!line) continue; // Skip empty rows
 
-      // Handle simple comma separation (ignoring quoted commas for simplicity, but basic split)
+      // Handle simple comma separation
       const values = line.split(',').map(v => v.trim());
       if (values.length < header.length) continue; // Skip malformed rows
 
@@ -84,6 +85,17 @@ export async function POST(request: NextRequest) {
 
       if (!phone1) continue; // Skip if no parent phone number is provided
 
+      // Check if student already exists (duplicate check by formNumber or Name+Phone)
+      const isDuplicate = students.some(s => 
+        (formNumber && s.formNumber.trim().toLowerCase() === formNumber.trim().toLowerCase()) ||
+        (firstName && lastName && s.firstName.trim().toLowerCase() === firstName.trim().toLowerCase() && s.lastName.trim().toLowerCase() === lastName.trim().toLowerCase() && normalizePhone(s.phone1 || '') === normalizePhone(phone1))
+      );
+
+      if (isDuplicate) {
+        skippedDuplicateCount++;
+        continue;
+      }
+
       // 1. Find or create the parent
       let parent = parents.find(p => normalizePhone(p.phoneNumber) === normalizePhone(phone1));
       let parentUpdated = false;
@@ -106,10 +118,9 @@ export async function POST(request: NextRequest) {
         parentsToSave.set(parent.id, parent);
       }
 
-      // 2. Find or create the student
-      const existingStudentIndex = students.findIndex(s => s.formNumber === formNumber);
+      // 2. Create the student
       const studentData: Student = {
-        id: existingStudentIndex !== -1 ? students[existingStudentIndex].id : generateId('stud'),
+        id: generateId('stud'),
         parentId: parent.id,
         formNumber,
         firstName,
@@ -130,11 +141,7 @@ export async function POST(request: NextRequest) {
         religion
       };
 
-      if (existingStudentIndex !== -1) {
-        students[existingStudentIndex] = studentData;
-      } else {
-        students.push(studentData);
-      }
+      students.push(studentData);
       studentsToSave.set(studentData.id, studentData);
       importCount++;
     }
@@ -147,10 +154,15 @@ export async function POST(request: NextRequest) {
       await addOrUpdateStudent(student);
     }
 
+    const message = skippedDuplicateCount > 0
+      ? `Successfully imported ${importCount} new student records. Skipped ${skippedDuplicateCount} duplicate records.`
+      : `Successfully imported ${importCount} student records.`;
+
     return NextResponse.json({
       success: true,
-      message: `Successfully imported ${importCount} student records.`,
-      count: importCount
+      message,
+      count: importCount,
+      skippedDuplicates: skippedDuplicateCount
     });
   } catch (error: unknown) {
     console.error('CSV import error:', error);

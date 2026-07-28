@@ -14,6 +14,7 @@ import {
   normalizePhone,
   addAuditLog,
   getAuditLogs,
+  findDuplicateStudent,
 } from '@/lib/db';
 import { Student, Parent } from '@/types';
 
@@ -225,7 +226,25 @@ export async function adminDeleteStudentAction(studentId: string) {
   return { success: true };
 }
 
-export async function adminCreateStudentAction(studentData: Omit<Student, 'id' | 'parentId'> & { parentId?: string }): Promise<{ success: boolean; id?: string; error?: string }> {
+export async function checkDuplicateStudentAction(studentData: Partial<Student>): Promise<{ duplicate: boolean; existingStudent?: Student }> {
+  const existing = await findDuplicateStudent(studentData);
+  if (existing) {
+    return { duplicate: true, existingStudent: existing };
+  }
+  return { duplicate: false };
+}
+
+export async function adminCreateStudentAction(studentData: Omit<Student, 'id' | 'parentId'> & { parentId?: string }): Promise<{ success: boolean; id?: string; error?: string; existingStudent?: Student }> {
+  // Check for duplicates before creation
+  const duplicate = await findDuplicateStudent(studentData);
+  if (duplicate) {
+    return {
+      success: false,
+      error: `Duplicate student detected! A record for "${duplicate.firstName} ${duplicate.lastName}" (Form No: ${duplicate.formNumber}) already exists in Class ${duplicate.intendedClass}.`,
+      existingStudent: duplicate,
+    };
+  }
+
   const newId = `stud-${Date.now()}`;
   const newStudent: Student = {
     id: newId,

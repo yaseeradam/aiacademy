@@ -81,6 +81,9 @@ export default function AdminControl({ students }: AdminControlProps) {
   const [isScanningOCR, setIsScanningOCR] = useState(false);
   const [ocrProgress, setOcrProgress] = useState('');
 
+  // Duplicate Student Warning state
+  const [duplicateWarning, setDuplicateWarning] = useState<Student | null>(null);
+
   useEffect(() => {
     if (activeTab === 'audit-log') {
       setIsLoadingAudit(true);
@@ -221,6 +224,30 @@ export default function AdminControl({ students }: AdminControlProps) {
     religion: 'Islam',
     photo: '',
   });
+
+  useEffect(() => {
+    const first = newStudent.firstName.trim().toLowerCase();
+    const last = newStudent.lastName.trim().toLowerCase();
+    const phone = newStudent.phone1.replace(/[^\d]/g, '');
+    const dob = newStudent.dateOfBirth.trim().toLowerCase();
+
+    if (first && last && (phone || dob)) {
+      const match = students.find(s => {
+        const sFirst = s.firstName.trim().toLowerCase();
+        const sLast = s.lastName.trim().toLowerCase();
+        const sPhone = (s.phone1 || '').replace(/[^\d]/g, '');
+        const sDob = (s.dateOfBirth || '').trim().toLowerCase();
+
+        if (phone && sFirst === first && sLast === last && sPhone === phone) return true;
+        if (dob && sFirst === first && sLast === last && sDob === dob) return true;
+        return false;
+      });
+      setDuplicateWarning(match || null);
+    } else {
+      setDuplicateWarning(null);
+    }
+  }, [newStudent.firstName, newStudent.lastName, newStudent.phone1, newStudent.dateOfBirth, students]);
+
   const [isCreatingStudent, setIsCreatingStudent] = useState(false);
   const [createSuccess, setCreateSuccess] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
@@ -1211,6 +1238,28 @@ export default function AdminControl({ students }: AdminControlProps) {
                 </div>
               </div>
 
+              {/* Duplicate Student Warning Card */}
+              {duplicateWarning && (
+                <div className="p-4 rounded-2xl bg-amber-50 border-2 border-amber-300/80 text-amber-900 text-xs space-y-2 animate-slide-down shadow-xs">
+                  <div className="flex items-center gap-2 font-black text-amber-900">
+                    <AlertOctagon className="w-5 h-5 text-amber-600 shrink-0" />
+                    <span className="uppercase tracking-wider">Duplicate Student Record Detected!</span>
+                  </div>
+                  <p className="leading-relaxed text-slate-700 font-medium">
+                    A student record for <strong className="font-extrabold text-amber-950">{duplicateWarning.firstName} {duplicateWarning.lastName}</strong> (Form No: <code className="font-mono bg-amber-100 px-1.5 py-0.5 rounded text-amber-900 font-bold">{duplicateWarning.formNumber}</code>) already exists in <strong>Class {duplicateWarning.intendedClass}</strong>.
+                  </p>
+                  <div className="pt-1 flex gap-3">
+                    <button
+                      type="button"
+                      onClick={() => startEditStudent(duplicateWarning)}
+                      className="px-3.5 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-xl font-bold text-xs transition-all cursor-pointer shadow-xs flex items-center gap-1.5"
+                    >
+                      <span>View / Edit Existing Record</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+
               <div>
                 <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Student Photo</label>
                 <div className="flex items-center gap-4 bg-[#f8fafc] p-4 border border-slate-200/60 rounded-2xl shadow-sm">
@@ -1424,10 +1473,14 @@ export default function AdminControl({ students }: AdminControlProps) {
                 </button>
                 <button 
                   type="submit" 
-                  disabled={isCreatingStudent}
-                  className="py-3 px-6 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-sm transition-all cursor-pointer"
+                  disabled={isCreatingStudent || !!duplicateWarning}
+                  className={`py-3 px-6 rounded-xl font-bold text-sm transition-all cursor-pointer ${
+                    duplicateWarning 
+                      ? 'bg-amber-200 text-amber-800 cursor-not-allowed border border-amber-300' 
+                      : 'bg-slate-900 hover:bg-slate-800 text-white'
+                  }`}
                 >
-                  {isCreatingStudent ? 'Saving...' : 'Add & Register Student'}
+                  {isCreatingStudent ? 'Saving...' : duplicateWarning ? 'Duplicate Record Blocked' : 'Add & Register Student'}
                 </button>
               </div>
             </form>

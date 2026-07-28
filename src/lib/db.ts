@@ -318,6 +318,39 @@ export async function getStudentById(studentId: string): Promise<Student | undef
   return rest as Student;
 }
 
+export async function findDuplicateStudent(studentData: Partial<Student>): Promise<Student | undefined> {
+  await ensureSeeded();
+  const db = await getDB();
+  const all = await db.collection<Student>(STUDENTS_COL).find({}).toArray();
+
+  const formNum = studentData.formNumber?.trim().toLowerCase();
+  const first = studentData.firstName?.trim().toLowerCase();
+  const last = studentData.lastName?.trim().toLowerCase();
+  const phone = studentData.phone1 ? normalizePhone(studentData.phone1) : '';
+  const dob = studentData.dateOfBirth?.trim().toLowerCase();
+
+  return all.map(({ _id, ...rest }) => { void _id; return rest as Student; }).find(s => {
+    if (studentData.id && s.id === studentData.id) return false;
+
+    // Check 1: Form serial number match
+    if (formNum && s.formNumber.trim().toLowerCase() === formNum) {
+      return true;
+    }
+
+    // Check 2: Full Name + Phone match
+    if (first && last && phone && s.firstName.trim().toLowerCase() === first && s.lastName.trim().toLowerCase() === last && normalizePhone(s.phone1 || '') === phone) {
+      return true;
+    }
+
+    // Check 3: Full Name + DoB match
+    if (first && last && dob && s.firstName.trim().toLowerCase() === first && s.lastName.trim().toLowerCase() === last && s.dateOfBirth?.trim().toLowerCase() === dob) {
+      return true;
+    }
+
+    return false;
+  });
+}
+
 export async function updateStudentStatus(
   studentId: string,
   status: VerificationStatus,
