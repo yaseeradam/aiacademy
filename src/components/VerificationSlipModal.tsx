@@ -9,10 +9,17 @@ interface VerificationSlipModalProps {
   student: Student;
   isOpen: boolean;
   onClose: () => void;
+  initialFormat?: 'slip' | 'id-card';
 }
 
-export default function VerificationSlipModal({ student, isOpen, onClose }: VerificationSlipModalProps) {
-  const [activeFormat, setActiveFormat] = useState<'slip' | 'id-card'>('slip');
+export default function VerificationSlipModal({ student, isOpen, onClose, initialFormat = 'slip' }: VerificationSlipModalProps) {
+  const [activeFormat, setActiveFormat] = useState<'slip' | 'id-card'>(initialFormat);
+  const [prevInitialFormat, setPrevInitialFormat] = useState(initialFormat);
+
+  if (initialFormat !== prevInitialFormat) {
+    setPrevInitialFormat(initialFormat);
+    setActiveFormat(initialFormat);
+  }
   const [logoSrc] = useState<string>(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('ai_academy_school_settings');

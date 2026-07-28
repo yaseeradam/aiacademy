@@ -12,6 +12,7 @@ import {
   Loader2, Scan, History, MessageSquare
 } from 'lucide-react';
 import { logoutAction, adminUpdateStudentAction, adminDeleteStudentAction, adminCreateStudentAction, adminVerifyAction, getAuditLogsAction, scanAdmissionFormOCRAction } from '@/app/actions';
+import VerificationSlipModal from './VerificationSlipModal';
 
 interface AdminControlProps {
   students: Student[];
@@ -69,8 +70,12 @@ export default function AdminControl({ students }: AdminControlProps) {
   };
 
   // Sidebar tab state
-  const [activeTab, setActiveTab] = useState<'overview' | 'directory' | 'pending' | 'corrections' | 'settings' | 'new-verification' | 'audit-log'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'directory' | 'pending' | 'corrections' | 'settings' | 'new-verification' | 'audit-log' | 'slips-and-ids'>('overview');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  // Modal State for generating ID Cards & Slips
+  const [slipModalStudent, setSlipModalStudent] = useState<Student | null>(null);
+  const [slipModalFormat, setSlipModalFormat] = useState<'slip' | 'id-card'>('slip');
 
   // Audit Logs state
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
@@ -504,6 +509,25 @@ export default function AdminControl({ students }: AdminControlProps) {
                 </button>
                 <button 
                   onClick={() => {
+                    setActiveTab('slips-and-ids');
+                    setIsMobileMenuOpen(false);
+                  }}
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl font-bold text-sm transition-all text-left cursor-pointer ${
+                    activeTab === 'slips-and-ids' 
+                      ? 'bg-slate-900 text-white shadow-sm shadow-slate-900/10' 
+                      : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'
+                  }`}
+                >
+                  <ShieldCheck className="w-4 h-4 text-emerald-500" />
+                  <span>ID Cards & Slips</span>
+                  {verifiedCount > 0 && (
+                    <span className="ml-auto bg-emerald-600 text-white text-[10px] font-black px-1.5 py-0.5 rounded-full shrink-0">
+                      {verifiedCount}
+                    </span>
+                  )}
+                </button>
+                <button 
+                  onClick={() => {
                     setActiveTab('pending');
                     setIsMobileMenuOpen(false);
                   }}
@@ -633,6 +657,22 @@ export default function AdminControl({ students }: AdminControlProps) {
             >
               <Users className="w-4 h-4" />
               <span>Student Directory</span>
+            </button>
+            <button 
+              onClick={() => setActiveTab('slips-and-ids')}
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl font-bold text-sm transition-all text-left cursor-pointer ${
+                activeTab === 'slips-and-ids' 
+                  ? 'bg-slate-900 text-white shadow-sm shadow-slate-900/10' 
+                  : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'
+              }`}
+            >
+              <ShieldCheck className="w-4 h-4 text-emerald-500" />
+              <span>ID Cards & Slips</span>
+              {verifiedCount > 0 && (
+                <span className="ml-auto bg-emerald-600 text-white text-[10px] font-black px-1.5 py-0.5 rounded-full shrink-0">
+                  {verifiedCount}
+                </span>
+              )}
             </button>
             <button 
               onClick={() => setActiveTab('pending')}
@@ -1616,7 +1656,151 @@ export default function AdminControl({ students }: AdminControlProps) {
             </div>
           </div>
         )}
+
+        {/* TAB 8: ID CARDS & VERIFICATION SLIPS */}
+        {activeTab === 'slips-and-ids' && (
+          <div className="space-y-6 animate-slide-down">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <h1 className="text-3xl font-black text-slate-800 tracking-tight leading-none">Student ID Cards & Slips</h1>
+                <p className="text-slate-500 text-sm font-semibold mt-2.5">
+                  Generate, print, preview, or WhatsApp official ID cards and slips for verified students.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <span className="px-3.5 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 font-bold text-xs">
+                  {verifiedCount} Verified Students
+                </span>
+              </div>
+            </div>
+
+            {/* Filter controls */}
+            <div className="flex flex-col sm:flex-row gap-4 bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
+              <div className="relative flex-1">
+                <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  placeholder="Search verified student by name, form number, or phone..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                />
+              </div>
+
+              <select
+                value={classFilter}
+                onChange={(e) => setClassFilter(e.target.value)}
+                className="py-2.5 px-4 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              >
+                <option value="all">All Classes</option>
+                {classes.map(c => (
+                  <option key={c} value={c}>{c}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Grid of Verified Students */}
+            {filteredStudents.filter(s => s.verificationStatus === 'verified').length === 0 ? (
+              <div className="bg-white rounded-3xl p-12 border border-slate-200 text-center space-y-3">
+                <ShieldCheck className="w-12 h-12 text-slate-300 mx-auto" />
+                <h3 className="text-base font-bold text-slate-800">No Verified Students Found</h3>
+                <p className="text-xs text-slate-400 font-medium max-w-md mx-auto">
+                  Students will appear here once their registration is confirmed or verified by parents and school administrators.
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                {filteredStudents
+                  .filter(s => s.verificationStatus === 'verified')
+                  .map((student) => {
+                    const parentPhone = student.phone1 ? student.phone1.replace(/[^\d]/g, '') : '';
+                    const waMessage = encodeURIComponent(
+                      `Hello ${student.fatherName || 'Parent'}, your student ${student.firstName} ${student.lastName} (Form No: ${student.formNumber}) is officially verified at AI Integrated Academy Argungu. Verification link: ${typeof window !== 'undefined' ? window.location.origin : ''}/dashboard?verify=${student.formNumber}`
+                    );
+                    const waUrl = parentPhone ? `https://wa.me/${parentPhone.replace('0', '234')}?text=${waMessage}` : '#';
+
+                    return (
+                      <div key={student.id} className="bg-white rounded-2xl border border-slate-200 shadow-xs p-5 hover:shadow-md transition-all flex flex-col justify-between space-y-4">
+                        <div className="flex items-start gap-4">
+                          <StudentAvatar student={student} size="lg" />
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between gap-1">
+                              <span className="text-[10px] font-mono font-bold bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md">
+                                {student.formNumber}
+                              </span>
+                              <span className="text-[10px] font-black uppercase text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200/60">
+                                Verified
+                              </span>
+                            </div>
+                            <h4 className="font-extrabold text-slate-900 text-sm mt-1 truncate">
+                              {student.firstName} {student.lastName}
+                            </h4>
+                            <p className="text-xs font-semibold text-slate-500 mt-0.5">
+                              {student.intendedClass} • {student.gender}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="text-xs space-y-1 text-slate-500 pt-3 border-t border-slate-100 font-medium">
+                          <p><strong className="text-slate-700 font-bold">Parent:</strong> {student.fatherName || student.guardianName || 'N/A'}</p>
+                          <p><strong className="text-slate-700 font-bold">Phone:</strong> {student.phone1 || 'N/A'}</p>
+                        </div>
+
+                        <div className="pt-2 flex flex-col gap-2">
+                          <div className="grid grid-cols-2 gap-2">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSlipModalFormat('id-card');
+                                setSlipModalStudent(student);
+                              }}
+                              className="py-2 px-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-xs"
+                            >
+                              <span>🪪 Print ID Card</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSlipModalFormat('slip');
+                                setSlipModalStudent(student);
+                              }}
+                              className="py-2 px-3 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-xs"
+                            >
+                              <span>📄 Print Slip</span>
+                            </button>
+                          </div>
+
+                          {parentPhone && (
+                            <a
+                              href={waUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="py-2 px-3 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-800 font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+                            >
+                              <MessageSquare className="w-3.5 h-3.5 text-emerald-600" />
+                              <span>Send Slip Link via WhatsApp</span>
+                            </a>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+              </div>
+            )}
+          </div>
+        )}
       </main>
+
+      {/* Verification Slip & Student ID Card Modal */}
+      {slipModalStudent && (
+        <VerificationSlipModal
+          student={slipModalStudent}
+          isOpen={!!slipModalStudent}
+          initialFormat={slipModalFormat}
+          onClose={() => setSlipModalStudent(null)}
+        />
+      )}
 
       {/* ================= EDIT STUDENT DETAILS MODAL OVERLAY (Matches students edit page.png) ================= */}
       {editingStudent && (
