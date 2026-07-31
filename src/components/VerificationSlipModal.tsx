@@ -54,61 +54,75 @@ export default function VerificationSlipModal({ student, isOpen, onClose, initia
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-0 md:p-4 bg-slate-900/80 backdrop-blur-sm overflow-hidden">
       
       {/* Modal Card Container */}
-      <div className="bg-white rounded-3xl max-w-3xl w-full mx-auto shadow-2xl overflow-hidden flex flex-col max-h-[90vh] animate-slide-down">
+      <div className="bg-white md:rounded-3xl max-w-4xl w-full h-full md:h-auto md:max-h-[92vh] shadow-2xl overflow-hidden flex flex-col animate-slide-down">
         
         {/* Modal Top Bar (Non-Printable) */}
-        <div className="p-4 md:p-6 bg-slate-900 text-white flex items-center justify-between print:hidden">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-green-500/20 border border-green-500/30 flex items-center justify-center text-green-400">
-              <ShieldCheck className="w-5 h-5" />
+        <div className="p-4 md:p-6 bg-slate-900 text-white flex flex-col md:flex-row md:items-center justify-between gap-4 shrink-0 print:hidden border-b border-slate-800">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shrink-0">
+                <ShieldCheck className="w-5 h-5" />
+              </div>
+              <div>
+                <h2 className="text-sm md:text-base font-black tracking-tight leading-tight">Official Verification Certificate</h2>
+                <p className="text-[11px] text-slate-400 font-semibold">Form No: {student.formNumber}</p>
+              </div>
             </div>
-            <div>
-              <h2 className="text-base md:text-lg font-black tracking-tight">Official Verification Certificate</h2>
-              <p className="text-xs text-slate-400 font-semibold">Form No: {student.formNumber}</p>
-            </div>
+
+            {/* Mobile Close Button */}
+            <button
+              type="button"
+              onClick={onClose}
+              className="p-2 md:hidden hover:bg-slate-800 rounded-xl text-slate-400 hover:text-white transition-all cursor-pointer"
+              aria-label="Close"
+            >
+              <X className="w-6 h-6" />
+            </button>
           </div>
 
-          <div className="flex items-center gap-2">
+          {/* Controls Row (Format Selector + Download/Print Button) */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
             {/* Format Toggle */}
-            <div className="bg-slate-800 p-1 rounded-xl flex gap-1 text-xs font-bold">
+            <div className="bg-slate-800 p-1 rounded-xl grid grid-cols-2 text-xs font-bold gap-1">
               <button
                 type="button"
                 onClick={() => setActiveFormat('slip')}
-                className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
-                  activeFormat === 'slip' ? 'bg-green-600 text-white shadow-xs' : 'text-slate-400 hover:text-white'
+                className={`py-2 px-3 rounded-lg text-center transition-all cursor-pointer ${
+                  activeFormat === 'slip' ? 'bg-emerald-600 text-white shadow-xs' : 'text-slate-400 hover:text-white'
                 }`}
               >
-                Verification Slip
+                📄 Slip
               </button>
               <button
                 type="button"
                 onClick={() => setActiveFormat('id-card')}
-                className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
-                  activeFormat === 'id-card' ? 'bg-green-600 text-white shadow-xs' : 'text-slate-400 hover:text-white'
+                className={`py-2 px-3 rounded-lg text-center transition-all cursor-pointer ${
+                  activeFormat === 'id-card' ? 'bg-emerald-600 text-white shadow-xs' : 'text-slate-400 hover:text-white'
                 }`}
               >
-                Student ID Card
+                🪪 ID Card
               </button>
             </div>
 
-            {/* Print / Download Button */}
+            {/* Print / Save PDF Button */}
             <button
               type="button"
               onClick={handlePrint}
-              className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-xl font-bold text-xs flex items-center gap-2 transition-all cursor-pointer shadow-sm ml-2"
+              className="w-full sm:w-auto py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer shadow-md active:scale-98"
             >
               <Printer className="w-4 h-4" />
               <span>Print / Save PDF</span>
             </button>
 
-            {/* Close Button */}
+            {/* Desktop Close Button */}
             <button
               type="button"
               onClick={onClose}
-              className="p-2 hover:bg-slate-800 rounded-xl text-slate-400 hover:text-white transition-all cursor-pointer"
+              className="hidden md:block p-2 hover:bg-slate-800 rounded-xl text-slate-400 hover:text-white transition-all cursor-pointer"
+              aria-label="Close"
             >
               <X className="w-5 h-5" />
             </button>
@@ -116,11 +130,11 @@ export default function VerificationSlipModal({ student, isOpen, onClose, initia
         </div>
 
         {/* Modal Printable Content Container */}
-        <div id="printable-slip-area" className="p-6 md:p-8 overflow-y-auto flex-1 bg-slate-50 print:bg-white print:p-0 print:overflow-visible">
+        <div id="printable-slip-area" className="p-3 sm:p-6 md:p-8 overflow-y-auto overflow-x-auto flex-1 bg-slate-50 print:bg-white print:p-0 print:overflow-visible">
           
           {/* FORMAT 1: OFFICIAL FULL VERIFICATION SLIP */}
           {activeFormat === 'slip' && (
-            <div className="bg-white p-6 md:p-8 rounded-2xl border border-slate-200 shadow-sm max-w-2xl mx-auto print:border-0 print:shadow-none print:p-0">
+            <div className="bg-white p-4 sm:p-8 rounded-2xl border border-slate-200 shadow-xs max-w-2xl mx-auto print:border-0 print:shadow-none print:p-0">
               
               {/* Header */}
               <div className="flex items-center justify-between border-b-2 border-green-700 pb-4 mb-6">

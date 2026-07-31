@@ -4,12 +4,13 @@ import { useState, useEffect } from 'react';
 import { Student, AuditLog } from '@/types';
 import { useRouter } from 'next/navigation';
 import { createWorker } from 'tesseract.js';
+import JSZip from 'jszip';
 import { 
   Upload, Download, Search, RefreshCw, 
   Users, Clock, AlertOctagon, HelpCircle, 
   ShieldCheck, ChevronRight, X, Menu,
   Grid, Settings, Plus, LogOut, Trash2, Save, BookOpen,
-  Loader2, Scan, History, MessageSquare
+  Loader2, Scan, History, MessageSquare, Camera
 } from 'lucide-react';
 import { logoutAction, adminUpdateStudentAction, adminDeleteStudentAction, adminCreateStudentAction, adminVerifyAction, getAuditLogsAction, scanAdmissionFormOCRAction } from '@/app/actions';
 import VerificationSlipModal from './VerificationSlipModal';
@@ -424,6 +425,71 @@ export default function AdminControl({ students }: AdminControlProps) {
       console.error(err);
     } finally {
       setIsCreatingStudent(false);
+    }
+  };
+
+  const [isExportingPhotos, setIsExportingPhotos] = useState(false);
+
+  const handleExportPhotos = async () => {
+    setIsExportingPhotos(true);
+    try {
+      const zip = new JSZip();
+      const folder = zip.folder("Student_Photos");
+      let count = 0;
+
+      for (const student of students) {
+        if (!student.photo) continue;
+
+        // Clean student name for filename
+        const cleanFirst = (student.firstName || '').trim().replace(/[^a-zA-Z0-9]/g, '_');
+        const cleanLast = (student.lastName || '').trim().replace(/[^a-zA-Z0-9]/g, '_');
+        const cleanForm = (student.formNumber || '').trim().replace(/[^a-zA-Z0-9]/g, '_');
+        const fileName = `${cleanFirst}_${cleanLast}_${cleanForm}`;
+
+        try {
+          if (student.photo.startsWith('data:image/')) {
+            // Base64 string
+            const matches = student.photo.match(/^data:image\/([a-zA-Z0-9]+);base64,(.+)$/);
+            if (matches) {
+              const ext = matches[1] === 'jpeg' ? 'jpg' : matches[1];
+              const base64Data = matches[2];
+              folder?.file(`${fileName}.${ext}`, base64Data, { base64: true });
+              count++;
+            }
+          } else if (student.photo.startsWith('http://') || student.photo.startsWith('https://') || student.photo.startsWith('/')) {
+            // URL fetch
+            const res = await fetch(student.photo);
+            if (res.ok) {
+              const blob = await res.blob();
+              const ext = blob.type.split('/')[1] || 'jpg';
+              folder?.file(`${fileName}.${ext}`, blob);
+              count++;
+            }
+          }
+        } catch (err) {
+          console.error(`Failed to export photo for ${student.firstName}:`, err);
+        }
+      }
+
+      if (count === 0) {
+        alert("No student profile photos found to export.");
+        return;
+      }
+
+      const zipBlob = await zip.generateAsync({ type: "blob" });
+      const url = URL.createObjectURL(zipBlob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `AI_Academy_Student_Photos_${new Date().toISOString().split('T')[0]}.zip`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("Error creating photos zip:", err);
+      alert("Failed to package photos into ZIP file.");
+    } finally {
+      setIsExportingPhotos(false);
     }
   };
 
@@ -860,7 +926,7 @@ export default function AdminControl({ students }: AdminControlProps) {
                   <h3 className="text-lg font-bold text-slate-800">CSV Excel Data Management</h3>
                   <p className="text-xs font-semibold text-slate-400 mt-1">Import new lists from Excel or export corrections back.</p>
                 </div>
-                <div className="flex gap-3">
+                <div className="flex flex-wrap gap-3">
                   <label className="flex items-center justify-center gap-2.5 py-2.5 px-4 rounded-xl border border-slate-200 hover:border-green-600 bg-white hover:bg-green-50/10 text-slate-600 font-bold text-xs transition-all cursor-pointer">
                     {isImporting ? <RefreshCw className="w-4 h-4 animate-spin text-green-600" /> : <Upload className="w-4 h-4" />}
                     <span>Upload CSV File</span>
@@ -868,8 +934,17 @@ export default function AdminControl({ students }: AdminControlProps) {
                   </label>
                   <a href="/api/export-csv" className="flex items-center justify-center gap-2.5 py-2.5 px-4 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs transition-all cursor-pointer">
                     <Download className="w-4 h-4" />
-                    <span>Download Updated Excel / CSV</span>
+                    <span>Download Excel / CSV</span>
                   </a>
+                  <button
+                    type="button"
+                    onClick={handleExportPhotos}
+                    disabled={isExportingPhotos}
+                    className="flex items-center justify-center gap-2.5 py-2.5 px-4 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs transition-all cursor-pointer shadow-xs disabled:opacity-50"
+                  >
+                    {isExportingPhotos ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Camera className="w-4 h-4" />}
+                    <span>{isExportingPhotos ? "Packaging ZIP..." : "Export Photos (ZIP)"}</span>
+                  </button>
                 </div>
               </div>
             </div>
@@ -1668,10 +1743,19 @@ export default function AdminControl({ students }: AdminControlProps) {
                 </p>
               </div>
 
-              <div className="flex items-center gap-3">
+              <div className="flex flex-wrap items-center gap-3">
                 <span className="px-3.5 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 font-bold text-xs">
                   {verifiedCount} Verified Students
                 </span>
+                <button
+                  type="button"
+                  onClick={handleExportPhotos}
+                  disabled={isExportingPhotos}
+                  className="flex items-center gap-2 py-2 px-3.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs transition-all cursor-pointer shadow-xs disabled:opacity-50"
+                >
+                  {isExportingPhotos ? <RefreshCw className="w-4 h-4 animate-spin text-emerald-400" /> : <Camera className="w-4 h-4 text-emerald-400" />}
+                  <span>{isExportingPhotos ? "Packaging ZIP..." : "Export Photos (ZIP)"}</span>
+                </button>
               </div>
             </div>
 
