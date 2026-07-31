@@ -40,3 +40,11 @@ export interface AuditLog {
   studentId?: string;
   studentName?: string;
 }
+
+export interface SchoolSettings {
+  schoolName: string;
+  motto: string;
+  address: string;
+  phones: string;
+  logo: string;
+}

@@ -1,10 +1,9 @@
 'use client';
 
 import { useState, useEffect, Suspense } from 'react';
-import Image from 'next/image';
 import { useSearchParams } from 'next/navigation';
 import { ArrowRight, AlertTriangle, Phone, ShieldCheck, X } from 'lucide-react';
-import { loginAction, publicVerifyStudentAction } from './actions';
+import { loginAction, publicVerifyStudentAction, getSchoolSettingsAction } from './actions';
 import { Student } from '@/types';
 
 function LoginContent() {
@@ -15,6 +14,15 @@ function LoginContent() {
   const [loading, setLoading] = useState(false);
   const [verifiedStudent, setVerifiedStudent] = useState<Student | null>(null);
   const [verifyError, setVerifyError] = useState<string | null>(null);
+  const [schoolLogo, setSchoolLogo] = useState<string>('/logo.jpg');
+  const [schoolName, setSchoolName] = useState<string>('AI INTEGRATED ACADEMY ARGUNGU');
+
+  useEffect(() => {
+    getSchoolSettingsAction().then(settings => {
+      if (settings?.logo) setSchoolLogo(settings.logo);
+      if (settings?.schoolName) setSchoolName(settings.schoolName);
+    });
+  }, []);
 
   useEffect(() => {
     let isSubscribed = true;
@@ -68,19 +76,17 @@ function LoginContent() {
         <div className="flex flex-col items-center text-center">
 
           {/* Logo */}
-          <div className="w-20 h-20 mb-4 rounded-full overflow-hidden border-4 border-green-100 shadow-lg">
-            <Image
-              src="/logo.jpg"
-              alt="AI Integrated Academy Logo"
-              width={80}
-              height={80}
-              className="object-cover w-full h-full"
-              priority
+          <div className="w-20 h-20 mb-4 rounded-full overflow-hidden border-4 border-green-100 shadow-lg flex items-center justify-center bg-white p-0.5">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={schoolLogo}
+              alt={schoolName}
+              className="w-full h-full object-contain rounded-full"
             />
           </div>
 
           <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2.5">
-            AI INTEGRATED ACADEMY ARGUNGU
+            {schoolName}
           </span>
           
           <h1 className="text-3xl font-black text-slate-800 tracking-tight leading-none mb-3">

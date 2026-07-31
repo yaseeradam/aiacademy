@@ -1,9 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Student } from '@/types';
 import { QRCodeSVG } from 'qrcode.react';
 import { X, Printer, ShieldCheck, CheckCircle2 } from 'lucide-react';
+import { getSchoolSettingsAction } from '@/app/actions';
 
 interface VerificationSlipModalProps {
   student: Student;
@@ -20,7 +21,8 @@ export default function VerificationSlipModal({ student, isOpen, onClose, initia
     setPrevInitialFormat(initialFormat);
     setActiveFormat(initialFormat);
   }
-  const [logoSrc] = useState<string>(() => {
+
+  const [logoSrc, setLogoSrc] = useState<string>(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('ai_academy_school_settings');
       if (saved) {
@@ -32,6 +34,18 @@ export default function VerificationSlipModal({ student, isOpen, onClose, initia
     }
     return '/logo.jpg';
   });
+
+  useEffect(() => {
+    let isSubscribed = true;
+    getSchoolSettingsAction().then(settings => {
+      if (isSubscribed && settings?.logo) {
+        setLogoSrc(settings.logo);
+      }
+    });
+    return () => {
+      isSubscribed = false;
+    };
+  }, []);
 
   if (!isOpen) return null;
 

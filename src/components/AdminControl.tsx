@@ -12,7 +12,7 @@ import {
   Grid, Settings, Plus, LogOut, Trash2, Save, BookOpen,
   Loader2, Scan, History, MessageSquare, Camera
 } from 'lucide-react';
-import { logoutAction, adminUpdateStudentAction, adminDeleteStudentAction, adminCreateStudentAction, adminVerifyAction, getAuditLogsAction, scanAdmissionFormOCRAction } from '@/app/actions';
+import { logoutAction, adminUpdateStudentAction, adminDeleteStudentAction, adminCreateStudentAction, adminVerifyAction, getAuditLogsAction, scanAdmissionFormOCRAction, getSchoolSettingsAction, updateSchoolSettingsAction } from '@/app/actions';
 import VerificationSlipModal from './VerificationSlipModal';
 
 interface AdminControlProps {
@@ -213,14 +213,19 @@ export default function AdminControl({ students }: AdminControlProps) {
   const [settingsSaved, setSettingsSaved] = useState(false);
 
   useEffect(() => {
-    const saved = localStorage.getItem('ai_academy_school_settings');
-    if (saved) {
-      try {
-        setSchoolSettings(prev => ({ ...prev, ...JSON.parse(saved) }));
-      } catch (err) {
-        console.error('Error loading school settings:', err);
+    getSchoolSettingsAction().then(dbSettings => {
+      if (dbSettings) {
+        setSchoolSettings(prev => ({
+          ...prev,
+          name: dbSettings.schoolName || prev.name,
+          motto: dbSettings.motto || prev.motto,
+          address: dbSettings.address || prev.address,
+          tel1: dbSettings.phones ? dbSettings.phones.split(',')[0]?.trim() || prev.tel1 : prev.tel1,
+          tel2: dbSettings.phones ? dbSettings.phones.split(',')[1]?.trim() || prev.tel2 : prev.tel2,
+          logo: dbSettings.logo || prev.logo,
+        }));
       }
-    }
+    });
   }, []);
 
   // New Student Verification form state
@@ -493,9 +498,16 @@ export default function AdminControl({ students }: AdminControlProps) {
     }
   };
 
-  const handleSaveSettings = (e: React.FormEvent) => {
+  const handleSaveSettings = async (e: React.FormEvent) => {
     e.preventDefault();
     localStorage.setItem('ai_academy_school_settings', JSON.stringify(schoolSettings));
+    await updateSchoolSettingsAction({
+      schoolName: schoolSettings.name,
+      motto: schoolSettings.motto,
+      address: schoolSettings.address,
+      phones: `${schoolSettings.tel1}, ${schoolSettings.tel2}`,
+      logo: schoolSettings.logo,
+    });
     setSettingsSaved(true);
     setTimeout(() => setSettingsSaved(false), 3000);
   };

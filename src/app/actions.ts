@@ -16,8 +16,10 @@ import {
   getAuditLogs,
   findDuplicateStudent,
   getStudentByFormNumber,
+  getSchoolSettings,
+  updateSchoolSettings,
 } from '@/lib/db';
-import { Student, Parent } from '@/types';
+import { Student, Parent, SchoolSettings } from '@/types';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Parent Actions
@@ -407,4 +409,23 @@ export async function publicVerifyStudentAction(formNumber: string): Promise<{ s
     return { success: false, error: `No student enrollment record found for Form Serial No: "${formNumber}".` };
   }
   return { success: true, student };
+}
+
+export async function getSchoolSettingsAction(): Promise<SchoolSettings> {
+  return await getSchoolSettings();
+}
+
+export async function updateSchoolSettingsAction(settings: SchoolSettings): Promise<{ success: boolean; error?: string }> {
+  try {
+    await updateSchoolSettings(settings);
+    await addAuditLog({
+      action: 'UPDATE',
+      actor: 'Administrator',
+      details: 'Updated global school settings and custom logo.',
+    });
+    return { success: true };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : 'Failed to update settings';
+    return { success: false, error: msg };
+  }
 }

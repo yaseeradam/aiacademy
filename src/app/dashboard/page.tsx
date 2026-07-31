@@ -1,7 +1,6 @@
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import Image from 'next/image';
-import { getParentByPhone, getStudentsByParentId, getAllStudents } from '@/lib/db';
+import { getParentByPhone, getStudentsByParentId, getAllStudents, getSchoolSettings } from '@/lib/db';
 import VerificationCard from '@/components/VerificationCard';
 import AdminControl from '@/components/AdminControl';
 import { logoutAction } from '../actions';
@@ -20,6 +19,7 @@ export default async function DashboardPage() {
   const isAdmin = phone === 'admin';
   const displayPhone = phone || '';
   let studentsData = [];
+  const settings = await getSchoolSettings();
 
   if (isAdmin) {
     studentsData = await getAllStudents();
@@ -46,16 +46,16 @@ export default async function DashboardPage() {
               <div className="flex justify-between items-center h-14">
                 {/* Logo and school name exactly matches children list.png */}
                 <div className="flex items-center gap-3">
-                  <div className="relative w-9 h-9 rounded-full overflow-hidden shrink-0">
-                    <Image
-                      src="/logo.jpg"
-                      alt="AI Integrated Academy Logo"
-                      fill
-                      className="object-contain rounded-full"
+                  <div className="relative w-9 h-9 rounded-full overflow-hidden shrink-0 border border-slate-200 flex items-center justify-center p-0.5 bg-white">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={settings.logo || '/logo.jpg'}
+                      alt={settings.schoolName || "AI Integrated Academy Logo"}
+                      className="w-full h-full object-contain rounded-full"
                     />
                   </div>
                   <span className="font-bold text-slate-900 text-lg md:text-xl tracking-tight">
-                    AI Integrated Academy Argungu
+                    {settings.schoolName || 'AI Integrated Academy Argungu'}
                   </span>
                 </div>
 

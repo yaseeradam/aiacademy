@@ -1,10 +1,11 @@
 import clientPromise from './mongodb';
-import { Parent, Student, VerificationStatus, AuditLog } from '../types';
+import { Parent, Student, VerificationStatus, AuditLog, SchoolSettings } from '../types';
 
 const DB_NAME = 'ai_academy';
 const PARENTS_COL = 'parents';
 const STUDENTS_COL = 'students';
 const AUDIT_COL = 'audit_logs';
+const SETTINGS_COL = 'settings';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Seed data — only inserted once when the database is empty
@@ -446,4 +447,31 @@ export async function getAuditLogs(limit = 50): Promise<AuditLog[]> {
     void _id;
     return rest as AuditLog;
   });
+}
+
+export async function getSchoolSettings(): Promise<SchoolSettings> {
+  await ensureSeeded();
+  const db = await getDB();
+  const doc = await db.collection<{ id: string } & SchoolSettings>(SETTINGS_COL).findOne({ id: 'school_settings' });
+  if (doc) {
+    const { _id, id, ...rest } = doc;
+    void _id; void id;
+    return rest as SchoolSettings;
+  }
+  return {
+    schoolName: 'AI INTEGRATED ACADEMY ARGUNGU',
+    motto: 'Learning Today, Leading Tomorrow',
+    address: "Behind Buben Ta'Ololo's Residence, Tudun Wada, Argungu",
+    phones: '08069676697, 07034784861',
+    logo: '/logo.jpg'
+  };
+}
+
+export async function updateSchoolSettings(settings: SchoolSettings): Promise<void> {
+  const db = await getDB();
+  await db.collection<{ id: string } & SchoolSettings>(SETTINGS_COL).updateOne(
+    { id: 'school_settings' },
+    { $set: { id: 'school_settings', ...settings } },
+    { upsert: true }
+  );
 }
