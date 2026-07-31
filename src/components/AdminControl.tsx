@@ -441,43 +441,56 @@ export default function AdminControl({ students }: AdminControlProps) {
       const zip = new JSZip();
       const folder = zip.folder("Student_Photos");
       let count = 0;
+      let skippedNoPhoto = 0;
 
       for (const student of students) {
-        if (!student.photo) continue;
+        if (!student.photo || !student.photo.trim()) {
+          skippedNoPhoto++;
+          continue;
+        }
 
-        // Clean student name for filename
-        const cleanFirst = (student.firstName || '').trim().replace(/[^a-zA-Z0-9]/g, '_');
+        const rawPhoto = student.photo.trim();
+        const cleanFirst = (student.firstName || 'Student').trim().replace(/[^a-zA-Z0-9]/g, '_');
         const cleanLast = (student.lastName || '').trim().replace(/[^a-zA-Z0-9]/g, '_');
-        const cleanForm = (student.formNumber || '').trim().replace(/[^a-zA-Z0-9]/g, '_');
+        const cleanForm = (student.formNumber || student.id).trim().replace(/[^a-zA-Z0-9]/g, '_');
         const fileName = `${cleanFirst}_${cleanLast}_${cleanForm}`;
 
         try {
-          if (student.photo.startsWith('data:image/')) {
-            // Base64 string
-            const matches = student.photo.match(/^data:image\/([a-zA-Z0-9]+);base64,(.+)$/);
-            if (matches) {
-              const ext = matches[1] === 'jpeg' ? 'jpg' : matches[1];
-              const base64Data = matches[2];
-              folder?.file(`${fileName}.${ext}`, base64Data, { base64: true });
-              count++;
-            }
-          } else if (student.photo.startsWith('http://') || student.photo.startsWith('https://') || student.photo.startsWith('/')) {
-            // URL fetch
-            const res = await fetch(student.photo);
+          if (rawPhoto.includes(';base64,')) {
+            // Data URL format: data:image/png;base64,iVBORw0KGgo...
+            const parts = rawPhoto.split(';base64,');
+            const header = parts[0];
+            const base64Content = parts[1].replace(/\s+/g, '');
+            const extMatch = header.match(/image\/([a-zA-Z0-9]+)/);
+            let ext = extMatch ? extMatch[1].toLowerCase() : 'jpg';
+            if (ext === 'jpeg') ext = 'jpg';
+            
+            folder?.file(`${fileName}.${ext}`, base64Content, { base64: true });
+            count++;
+          } else if (rawPhoto.startsWith('http://') || rawPhoto.startsWith('https://') || rawPhoto.startsWith('/')) {
+            // Remote or relative URL fetch
+            const res = await fetch(rawPhoto);
             if (res.ok) {
               const blob = await res.blob();
-              const ext = blob.type.split('/')[1] || 'jpg';
+              let ext = 'jpg';
+              if (blob.type.includes('png')) ext = 'png';
+              else if (blob.type.includes('webp')) ext = 'webp';
               folder?.file(`${fileName}.${ext}`, blob);
               count++;
             }
+          } else {
+            // Raw base64 string without data:image prefix
+            const cleanBase64 = rawPhoto.replace(/\s+/g, '');
+            folder?.file(`${fileName}.jpg`, cleanBase64, { base64: true });
+            count++;
           }
         } catch (err) {
-          console.error(`Failed to export photo for ${student.firstName}:`, err);
+          console.error(`Failed to package photo for ${student.firstName} (${student.formNumber}):`, err);
         }
       }
 
       if (count === 0) {
-        alert("No student profile photos found to export.");
+        alert(`No exportable student photos found among ${students.length} student records (${skippedNoPhoto} students have no photo uploaded).`);
         return;
       }
 
@@ -490,9 +503,11 @@ export default function AdminControl({ students }: AdminControlProps) {
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
+
+      alert(`Successfully exported ${count} student photo(s) into AI_Academy_Student_Photos.zip!\n(${skippedNoPhoto} student(s) had no photo uploaded).`);
     } catch (err) {
       console.error("Error creating photos zip:", err);
-      alert("Failed to package photos into ZIP file.");
+      alert("Failed to package photos into ZIP file. Please try again.");
     } finally {
       setIsExportingPhotos(false);
     }
