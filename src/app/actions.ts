@@ -135,6 +135,35 @@ export async function adminVerifyAction(studentId: string) {
   return { success: true };
 }
 
+export async function adminTogglePaymentStatusAction(studentId: string, paymentStatus: 'paid' | 'pending') {
+  const student = await getStudentById(studentId);
+  if (!student) {
+    return { error: 'Student not found.' };
+  }
+
+  const todayStr = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+  const updatedStudent: Student = {
+    ...student,
+    paymentStatus,
+    admissionDate: student.admissionDate || todayStr,
+    academicSession: student.academicSession || '2026/2027',
+    resumptionDate: student.resumptionDate || '15th September, 2026',
+  };
+
+  await addOrUpdateStudent(updatedStudent);
+
+  const studentName = `${student.firstName} ${student.lastName}`;
+  await addAuditLog({
+    action: 'UPDATE',
+    actor: 'School Administrator',
+    details: `Admin ${paymentStatus === 'paid' ? 'marked payment as PAID & approved admission letter' : 'set payment status to PENDING'} for student`,
+    studentId,
+    studentName,
+  });
+
+  return { success: true };
+}
+
 export async function adminUpdateStudentAction(
   studentId: string,
   updatedFields: Partial<Student>

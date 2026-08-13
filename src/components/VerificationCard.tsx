@@ -3,9 +3,9 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Student, VerificationStatus } from '@/types';
-import { Check, Edit3, Info, Camera, Loader2, Printer } from 'lucide-react';
-import { confirmStudentAction, submitCorrectionAction, updateStudentPhotoAction } from '@/app/actions';
-import VerificationSlipModal from './VerificationSlipModal';
+import { Check, Edit3, Info, Camera, Loader2, FileText, CheckCircle2, CreditCard } from 'lucide-react';
+import { confirmStudentAction, submitCorrectionAction, updateStudentPhotoAction, adminTogglePaymentStatusAction } from '@/app/actions';
+import AdmissionLetterModal from './AdmissionLetterModal';
 
 interface VerificationCardProps {
   student: Student;
@@ -19,18 +19,36 @@ export default function VerificationCard({ student, isAdmin = false }: Verificat
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isConfirming, setIsConfirming] = useState(false);
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
-  const [isSlipOpen, setIsSlipOpen] = useState(false);
+  const [isTogglingPayment, setIsTogglingPayment] = useState(false);
+  const [isLetterOpen, setIsLetterOpen] = useState(false);
+
+  const isPaid = student.paymentStatus === 'paid';
 
   const handleConfirm = async () => {
     setIsConfirming(true);
     try {
       await confirmStudentAction(student.id);
-      setIsSlipOpen(true);
+      if (isPaid) {
+        setIsLetterOpen(true);
+      }
       router.refresh();
     } catch (err) {
       console.error(err);
     } finally {
       setIsConfirming(false);
+    }
+  };
+
+  const handleTogglePayment = async () => {
+    setIsTogglingPayment(true);
+    try {
+      const newStatus = isPaid ? 'pending' : 'paid';
+      await adminTogglePaymentStatusAction(student.id, newStatus);
+      router.refresh();
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsTogglingPayment(false);
     }
   };
 
@@ -101,14 +119,13 @@ export default function VerificationCard({ student, isAdmin = false }: Verificat
     }
   };
 
-  // Status badge to match children list.png exactly
   const getStatusBadge = (status: VerificationStatus) => {
     switch (status) {
       case 'verified':
         return (
           <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-[#e6f4ea] text-[#137333] border border-[#ceead6]">
             <Check className="w-3.5 h-3.5 stroke-[3]" />
-            Verified
+            Verified Profile
           </span>
         );
       case 'requires_correction':
@@ -129,7 +146,6 @@ export default function VerificationCard({ student, isAdmin = false }: Verificat
     }
   };
 
-  // Format date to match children list.png (e.g. 14 Mar 2019)
   const formatDate = (dateStr?: string) => {
     if (!dateStr) return 'None Listed';
     try {
@@ -144,7 +160,6 @@ export default function VerificationCard({ student, isAdmin = false }: Verificat
     }
   };
 
-  // Avatar SVG depending on Gender or Custom Photo
   const AvatarIcon = () => {
     return (
       <div className="relative w-20 h-20 rounded-2xl overflow-hidden border border-slate-200 shrink-0 group shadow-md bg-slate-100">
@@ -165,7 +180,6 @@ export default function VerificationCard({ student, isAdmin = false }: Verificat
           </div>
         )}
 
-        {/* Hover overlay for uploading photo — admin only */}
         {isAdmin && (
           <label className="absolute inset-0 bg-black/45 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer text-white text-xs font-bold">
             {isUploadingPhoto ? (
@@ -192,21 +206,32 @@ export default function VerificationCard({ student, isAdmin = false }: Verificat
   return (
     <div className="soft-card p-4 md:p-6 bg-white flex flex-col justify-between h-full rounded-[2rem]">
       <div>
-        {/* Top Card Header - Photo left, info right */}
         <div className="flex items-center gap-4 mb-4">
           <AvatarIcon />
           <div className="flex-1 min-w-0">
-            {getStatusBadge(student.verificationStatus)}
+            <div className="flex flex-wrap items-center gap-2">
+              {getStatusBadge(student.verificationStatus)}
+              {isPaid ? (
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-black bg-emerald-100 text-emerald-800 border border-emerald-300">
+                  <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                  Fees Paid ✓
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-50 text-amber-800 border border-amber-200">
+                  <CreditCard className="w-3 h-3 text-amber-600" />
+                  Fee Unpaid
+                </span>
+              )}
+            </div>
             <h3 className="text-lg font-black text-slate-800 leading-tight mt-1">
               {student.firstName} {student.lastName}
             </h3>
             <p className="text-xs font-semibold text-slate-400 mt-0.5">
-              Form: <span className="text-slate-600">{student.formNumber}</span>
+              Form: <span className="text-slate-600 font-mono font-bold">{student.formNumber}</span>
             </p>
           </div>
         </div>
 
-        {/* Info Grid */}
         <div className="grid grid-cols-2 gap-x-6 gap-y-3 p-4 bg-[#f8fafc] rounded-2xl border border-slate-100 text-sm mb-4">
           <div>
             <span className="block text-xs font-semibold text-slate-400">Intended Class</span>
@@ -221,14 +246,13 @@ export default function VerificationCard({ student, isAdmin = false }: Verificat
             <span className="font-bold text-slate-800">{formatDate(student.dateOfBirth)}</span>
           </div>
           <div>
-            <span className="block text-xs font-semibold text-slate-400">Medical Needs</span>
-            <span className="font-bold text-slate-800">
-              {student.id === 'stud-3' ? 'Peanut Allergy' : 'None Listed'}
+            <span className="block text-xs font-semibold text-slate-400">Admission Letter Status</span>
+            <span className={`font-bold ${isPaid ? 'text-emerald-700' : 'text-amber-700'}`}>
+              {isPaid ? 'Approved & Ready' : 'Awaiting Payment Approval'}
             </span>
           </div>
         </div>
 
-        {/* Full admission form details */}
         <div className="mb-4">
           <div className="p-4 bg-slate-50 border border-slate-200/60 rounded-2xl grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
             <div>
@@ -248,21 +272,12 @@ export default function VerificationCard({ student, isAdmin = false }: Verificat
               <span className="font-bold text-slate-700">{student.guardianName || 'None Listed'}</span>
             </div>
             <div>
-              <span className="block text-slate-400 font-semibold mb-0.5">Guardian Address</span>
-              <span className="font-bold text-slate-700">{student.guardianAddress || 'None Listed'}</span>
-            </div>
-            <div>
               <span className="block text-slate-400 font-semibold mb-0.5">Phone numbers</span>
               <span className="font-bold text-slate-700">{student.phone1} {student.phone2 ? `/ ${student.phone2}` : ''}</span>
-            </div>
-            <div>
-              <span className="block text-slate-400 font-semibold mb-0.5">Religion / Nationality</span>
-              <span className="font-bold text-slate-700">{student.religion} / {student.nationality}</span>
             </div>
           </div>
         </div>
 
-        {/* Existing Correction Details Alert */}
         {student.verificationStatus === 'requires_correction' && student.correctionNotes && (
           <div className="mb-4 p-3 rounded-xl bg-rose-50 border border-rose-100 text-xs text-rose-800 flex items-start gap-2">
             <Info className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
@@ -272,21 +287,48 @@ export default function VerificationCard({ student, isAdmin = false }: Verificat
             </div>
           </div>
         )}
+
+        {/* Notice if Payment is Pending */}
+        {!isPaid && (
+          <div className="mb-4 p-3.5 rounded-xl bg-amber-50/80 border border-amber-200 text-xs text-amber-900 flex items-start gap-2.5">
+            <CreditCard className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+            <div className="leading-relaxed">
+              <strong className="font-bold block mb-0.5">Admission Letter Download Notice:</strong>
+              The A4 Admission Letter will be unlocked for download once school fees/payment is approved by the school administrator.
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* Action Zone (Matches children list with complaint box oen.png) */}
-      <div className="mt-2 pt-5 border-t border-slate-100">
+      <div className="mt-2 pt-5 border-t border-slate-100 space-y-3">
+        {isAdmin && (
+          <div className="p-3 bg-slate-900 rounded-xl flex items-center justify-between text-xs text-white">
+            <span className="font-bold">Admin Fee & Admission Control:</span>
+            <button
+              type="button"
+              onClick={handleTogglePayment}
+              disabled={isTogglingPayment}
+              className={`py-1.5 px-3 rounded-lg font-bold text-xs transition-all cursor-pointer flex items-center gap-1.5 ${
+                isPaid ? 'bg-amber-600 hover:bg-amber-700 text-white' : 'bg-emerald-600 hover:bg-emerald-700 text-white'
+              }`}
+            >
+              {isTogglingPayment && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+              <span>{isPaid ? 'Revoke Payment Approval' : 'Approve Fee Payment & Issue Letter'}</span>
+            </button>
+          </div>
+        )}
+
         {!isCorrecting ? (
-          <div className="flex gap-4">
-            {student.verificationStatus === 'verified' ? (
+          <div className="flex flex-col sm:flex-row gap-3">
+            {isPaid ? (
               <button
-                onClick={() => setIsSlipOpen(true)}
-                className="flex-1 py-3.5 px-4 rounded-xl bg-green-700 hover:bg-green-800 text-white font-bold text-sm flex items-center justify-center gap-2 transition-all cursor-pointer shadow-sm"
+                onClick={() => setIsLetterOpen(true)}
+                className="flex-1 py-3.5 px-4 rounded-xl bg-[#0f7343] hover:bg-[#0b5c34] text-white font-black text-sm flex items-center justify-center gap-2 transition-all cursor-pointer shadow-md active:scale-98"
               >
-                <Printer className="w-4 h-4 text-white" />
-                Download Verification Slip & ID
+                <FileText className="w-4.5 h-4.5 text-white" />
+                <span>Download A4 Admission Letter</span>
               </button>
-            ) : (
+            ) : student.verificationStatus !== 'verified' ? (
               <button
                 onClick={handleConfirm}
                 disabled={isConfirming}
@@ -299,11 +341,15 @@ export default function VerificationCard({ student, isAdmin = false }: Verificat
                 )}
                 Confirm Details are Correct
               </button>
+            ) : (
+              <div className="flex-1 py-3 px-4 rounded-xl bg-slate-100 text-slate-500 font-bold text-xs text-center border border-slate-200">
+                Profile Verified • Awaiting Admin Payment Approval
+              </div>
             )}
             
             <button
               onClick={() => setIsCorrecting(true)}
-              className="py-3.5 px-5 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold text-sm flex items-center justify-center gap-2 transition-all active:scale-[0.98] cursor-pointer"
+              className="py-3.5 px-5 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold text-sm flex items-center justify-center gap-2 transition-all active:scale-[0.98] cursor-pointer shrink-0"
             >
               <Edit3 className="w-4 h-4 text-slate-400" />
               Request Correction
@@ -347,8 +393,8 @@ export default function VerificationCard({ student, isAdmin = false }: Verificat
           </form>
         )}
       </div>
-      {/* Loading Overlay Modal */}
-      {(isConfirming || isSubmitting || isUploadingPhoto) && (
+
+      {(isConfirming || isSubmitting || isUploadingPhoto || isTogglingPayment) && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/40 backdrop-blur-xs">
           <div className="bg-white rounded-3xl p-8 max-w-sm w-full mx-4 shadow-2xl flex flex-col items-center text-center space-y-4 animate-slide-down">
             <div className="w-16 h-16 rounded-2xl bg-slate-50 flex items-center justify-center border border-slate-100">
@@ -359,18 +405,21 @@ export default function VerificationCard({ student, isAdmin = false }: Verificat
                 {isConfirming && 'Confirming Student Details...'}
                 {isSubmitting && 'Submitting Correction Request...'}
                 {isUploadingPhoto && 'Uploading Student Photo...'}
+                {isTogglingPayment && 'Updating Payment & Admission Status...'}
               </h3>
               <p className="text-xs text-slate-500 font-semibold mt-1">Please wait while we process your request...</p>
             </div>
           </div>
         </div>
       )}
-      {/* Verification Slip & ID Card Modal */}
-      <VerificationSlipModal
+
+      {/* Admission Letter Modal Component */}
+      <AdmissionLetterModal
         student={student}
-        isOpen={isSlipOpen}
-        onClose={() => setIsSlipOpen(false)}
+        isOpen={isLetterOpen}
+        onClose={() => setIsLetterOpen(false)}
       />
     </div>
   );
 }
+

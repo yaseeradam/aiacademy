@@ -1,0 +1,299 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import { Student } from '@/types';
+import { X, Printer, FileText, CheckCircle2 } from 'lucide-react';
+import { getSchoolSettingsAction } from '@/app/actions';
+
+interface AdmissionLetterModalProps {
+  student: Student;
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+export default function AdmissionLetterModal({ student, isOpen, onClose }: AdmissionLetterModalProps) {
+  const [logoSrc, setLogoSrc] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('ai_academy_school_settings');
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          if (parsed.logo) return parsed.logo;
+        } catch {}
+      }
+    }
+    return '/logo.jpg';
+  });
+
+  useEffect(() => {
+    let isSubscribed = true;
+    getSchoolSettingsAction().then(settings => {
+      if (isSubscribed && settings?.logo) {
+        setLogoSrc(settings.logo);
+      }
+    });
+    return () => {
+      isSubscribed = false;
+    };
+  }, []);
+
+  if (!isOpen) return null;
+
+  const handlePrint = () => {
+    window.print();
+  };
+
+  const formattedDate = student.admissionDate || new Date().toLocaleDateString('en-GB', {
+    day: '2-digit',
+    month: 'long',
+    year: 'numeric',
+  });
+
+  const academicSession = student.academicSession || '2026/2027';
+  const resumptionDate = student.resumptionDate || '15th September, 2026';
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-0 md:p-4 bg-slate-900/80 backdrop-blur-sm overflow-hidden print:p-0 print:bg-white print:static print:inset-auto">
+      
+      {/* Modal Container */}
+      <div className="bg-white md:rounded-3xl max-w-4xl w-full h-full md:h-auto md:max-h-[95vh] shadow-2xl overflow-hidden flex flex-col animate-slide-down print:max-w-none print:w-full print:h-auto print:max-h-none print:shadow-none print:rounded-none">
+        
+        {/* Top Control Bar (Hidden on Print) */}
+        <div className="p-4 md:p-5 bg-slate-900 text-white flex flex-col sm:flex-row sm:items-center justify-between gap-4 shrink-0 print:hidden border-b border-slate-800">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400 shrink-0">
+                <FileText className="w-5 h-5" />
+              </div>
+              <div>
+                <h2 className="text-sm md:text-base font-black tracking-tight leading-tight">Official A4 Admission Letter</h2>
+                <p className="text-[11px] text-slate-400 font-semibold">Student: {student.firstName} {student.lastName} ({student.formNumber})</p>
+              </div>
+            </div>
+
+            {/* Mobile Close Button */}
+            <button
+              type="button"
+              onClick={onClose}
+              className="p-2 sm:hidden hover:bg-slate-800 rounded-xl text-slate-400 hover:text-white transition-all cursor-pointer"
+              aria-label="Close"
+            >
+              <X className="w-6 h-6" />
+            </button>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={handlePrint}
+              className="w-full sm:w-auto py-2.5 px-5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer shadow-md active:scale-98"
+            >
+              <Printer className="w-4 h-4" />
+              <span>Print / Save PDF (A4)</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={onClose}
+              className="hidden sm:block p-2 hover:bg-slate-800 rounded-xl text-slate-400 hover:text-white transition-all cursor-pointer"
+              aria-label="Close"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+
+        {/* Printable Document Body Area */}
+        <div id="printable-admission-letter" className="p-4 sm:p-8 md:p-12 overflow-y-auto flex-1 bg-slate-100 print:bg-white print:p-0 print:overflow-visible">
+          
+          {/* A4 Paper Sheet Container */}
+          <div className="bg-white p-6 sm:p-10 md:p-12 rounded-2xl border border-slate-200 shadow-md max-w-3xl mx-auto relative overflow-hidden print:border-0 print:shadow-none print:p-0 print:max-w-none print:w-full min-h-[297mm]">
+            
+            {/* Watermark background logo */}
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-[0.06] select-none z-0">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={logoSrc} alt="" className="w-[450px] h-[450px] object-contain" />
+            </div>
+
+            {/* Main Letter Content (Above Watermark) */}
+            <div className="relative z-10 space-y-6 text-slate-900 font-serif">
+              
+              {/* 1. Header Section */}
+              <div className="text-center space-y-2">
+                <div className="flex items-center justify-center gap-4">
+                  <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full border-2 border-amber-600/30 overflow-hidden bg-white p-1 shrink-0">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={logoSrc} alt="School Logo" className="w-full h-full object-contain rounded-full" />
+                  </div>
+                  
+                  <div className="text-left font-sans">
+                    <h1 className="text-2xl sm:text-3xl font-black text-[#1e2b4f] tracking-tight uppercase leading-none">
+                      AI INTEGRATED ACADEMY ARGUNGU
+                    </h1>
+                    <div className="mt-1.5 inline-block bg-[#d97706] text-white px-4 py-0.5 text-[11px] sm:text-xs font-bold uppercase rounded-sm shadow-xs">
+                      Motto: Learning Today Leading Tomorrow
+                    </div>
+                  </div>
+                </div>
+
+                {/* Contact Info Row */}
+                <div className="pt-2 text-[11px] sm:text-xs text-slate-700 font-semibold font-sans space-y-0.5 leading-relaxed">
+                  <div className="flex flex-wrap justify-center items-center gap-x-4 gap-y-1">
+                    <span>📍 Behind Buben Ta&apos;Ololo&apos;s Residence, Tudun Wada, Argungu, Kebbi State</span>
+                  </div>
+                  <div className="flex flex-wrap justify-center items-center gap-x-4 gap-y-1">
+                    <span>📞 08069676697, 07034784861</span>
+                    <span>✉️ alijabaintegratedacademyarg@gmail.com</span>
+                  </div>
+                </div>
+
+                {/* Double Divider Line */}
+                <div className="pt-2">
+                  <div className="h-0.5 bg-slate-800 w-full" />
+                  <div className="h-0.5 bg-slate-800 w-full mt-0.5" />
+                </div>
+              </div>
+
+              {/* 2. Top Info Row: Date, Student Meta & Passport Photograph */}
+              <div className="font-sans flex flex-col sm:flex-row justify-between items-start gap-4 pt-2">
+                
+                {/* Left Meta Info */}
+                <div className="space-y-1.5 text-xs sm:text-sm font-semibold text-slate-800">
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-slate-600">Student Name:</span>
+                    <span className="font-black text-slate-900 border-b border-slate-400 pb-0.5 px-1 min-w-[200px] inline-block uppercase">
+                      {student.firstName} {student.lastName}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-slate-600">Admission Number:</span>
+                    <span className="font-black text-slate-900 font-mono border-b border-slate-400 pb-0.5 px-1 min-w-[180px] inline-block">
+                      {student.formNumber}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-slate-600">Class:</span>
+                    <span className="font-black text-slate-900 border-b border-slate-400 pb-0.5 px-1 min-w-[150px] inline-block">
+                      {student.intendedClass}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Right Column: Date & Passport Photograph */}
+                <div className="flex flex-col items-end gap-3 w-full sm:w-auto">
+                  <div className="text-xs sm:text-sm font-bold text-slate-800">
+                    <span>Date: </span>
+                    <span className="border-b border-slate-400 pb-0.5 px-2 font-semibold">
+                      {formattedDate}
+                    </span>
+                  </div>
+
+                  {/* Passport Photo Box (User Prompt Requirement) */}
+                  <div className="w-28 h-32 border-2 border-slate-700 p-1 bg-white shadow-xs rounded-sm flex flex-col items-center justify-center shrink-0 relative">
+                    {student.photo ? (
+                      /* eslint-disable-next-line @next/next/no-img-element */
+                      <img src={student.photo} alt="Student Passport" className="w-full h-full object-cover rounded-xs" />
+                    ) : (
+                      <div className="w-full h-full bg-slate-100 flex flex-col items-center justify-center text-slate-400 text-center p-2">
+                        <span className="text-[10px] font-black uppercase tracking-wider text-slate-500">PASSPORT</span>
+                        <span className="text-[9px] font-semibold text-slate-400 mt-1">PHOTOGRAPH</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* 3. Letter Subject Line */}
+              <div className="text-center pt-2 pb-1 font-sans">
+                <h2 className="text-base sm:text-lg font-black text-slate-900 underline uppercase tracking-wide">
+                  SUBJECT: ADMISSION LETTER
+                </h2>
+              </div>
+
+              {/* 4. Letter Body Paragraphs */}
+              <div className="space-y-4 text-xs sm:text-sm leading-relaxed text-slate-800 font-normal text-justify">
+                <p className="font-bold font-sans">Dear Parent/Guardian,</p>
+
+                <p>
+                  We are pleased to inform you that your child has been offered admission into{' '}
+                  <strong className="font-bold font-sans">AI Integrated Academy Argungu</strong> for the{' '}
+                  <span className="font-bold border-b border-slate-400 px-1">{academicSession}</span> Academic Session.
+                </p>
+
+                <p>
+                  The admission is offered based on the assessment and admission requirements of the school. We are
+                  delighted to welcome your child into our learning community and look forward to supporting his/her
+                  academic, moral, and personal development.
+                </p>
+
+                <p>
+                  Please complete the registration process and settle the applicable school fees and other required charges on
+                  or before the stated deadline. Admission is subject to compliance with the school&apos;s rules, regulations, and
+                  code of conduct.
+                </p>
+
+                <p>
+                  We kindly request that the parent/guardian report to the school for final registration and submission of the
+                  required documents.
+                </p>
+
+                <p>
+                  We congratulate you and your child on this opportunity and look forward to a successful and rewarding
+                  academic journey together.
+                </p>
+              </div>
+
+              {/* 5. Summary Table */}
+              <div className="pt-2 font-sans">
+                <table className="w-full border-collapse border border-slate-400 text-xs sm:text-sm">
+                  <tbody>
+                    <tr className="border border-slate-400">
+                      <td className="p-2.5 font-bold text-slate-800 bg-slate-50 w-1/2 border-r border-slate-400">Student Name</td>
+                      <td className="p-2.5 font-extrabold text-slate-900 uppercase">{student.firstName} {student.lastName}</td>
+                    </tr>
+                    <tr className="border border-slate-400">
+                      <td className="p-2.5 font-bold text-slate-800 bg-slate-50 border-r border-slate-400">Class / Level</td>
+                      <td className="p-2.5 font-extrabold text-slate-900">{student.intendedClass}</td>
+                    </tr>
+                    <tr className="border border-slate-400">
+                      <td className="p-2.5 font-bold text-slate-800 bg-slate-50 border-r border-slate-400">Academic Session</td>
+                      <td className="p-2.5 font-bold text-slate-900">{academicSession}</td>
+                    </tr>
+                    <tr className="border border-slate-400">
+                      <td className="p-2.5 font-bold text-slate-800 bg-slate-50 border-r border-slate-400">Resumption Date</td>
+                      <td className="p-2.5 font-bold text-slate-900">{resumptionDate}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              {/* 6. Sign-off Block */}
+              <div className="pt-6 font-sans space-y-4">
+                <p className="text-xs sm:text-sm font-semibold text-slate-800">Yours faithfully,</p>
+                
+                <div className="pt-4">
+                  <div className="w-56 border-b-2 border-slate-800 mb-1" />
+                  <p className="font-extrabold text-sm text-slate-900">Prof. Murtala Ahmed Rufa&apos;i</p>
+                  <p className="text-xs font-semibold text-slate-700">Executive Director</p>
+                  <p className="text-xs font-bold text-slate-800">AI Integrated Academy Argungu</p>
+                </div>
+              </div>
+
+              {/* Official Seal / Paid Stamp */}
+              <div className="pt-4 flex justify-between items-center border-t border-slate-200 font-sans text-[10px] text-slate-400">
+                <div className="flex items-center gap-1.5 text-emerald-700 font-bold">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                  <span>OFFICIALLY APPROVED & ISSUED BY SCHOOL ADMINISTRATION</span>
+                </div>
+                <div className="font-mono">
+                  REF: {student.formNumber}-ADM
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

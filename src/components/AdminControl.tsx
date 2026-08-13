@@ -10,10 +10,10 @@ import {
   Users, Clock, AlertOctagon, HelpCircle, 
   ShieldCheck, ChevronRight, X, Menu,
   Grid, Settings, Plus, LogOut, Trash2, Save, BookOpen,
-  Loader2, Scan, History, MessageSquare, Camera
+  Loader2, Scan, History, MessageSquare, Camera, FileText, CheckCircle2, CreditCard
 } from 'lucide-react';
-import { logoutAction, adminUpdateStudentAction, adminDeleteStudentAction, adminCreateStudentAction, adminVerifyAction, getAuditLogsAction, scanAdmissionFormOCRAction, getSchoolSettingsAction, updateSchoolSettingsAction } from '@/app/actions';
-import VerificationSlipModal from './VerificationSlipModal';
+import { logoutAction, adminUpdateStudentAction, adminDeleteStudentAction, adminCreateStudentAction, adminVerifyAction, adminTogglePaymentStatusAction, getAuditLogsAction, scanAdmissionFormOCRAction, getSchoolSettingsAction, updateSchoolSettingsAction } from '@/app/actions';
+import AdmissionLetterModal from './AdmissionLetterModal';
 
 interface AdminControlProps {
   students: Student[];
@@ -71,12 +71,12 @@ export default function AdminControl({ students }: AdminControlProps) {
   };
 
   // Sidebar tab state
-  const [activeTab, setActiveTab] = useState<'overview' | 'directory' | 'pending' | 'corrections' | 'settings' | 'new-verification' | 'audit-log' | 'slips-and-ids'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'directory' | 'pending' | 'corrections' | 'settings' | 'new-verification' | 'audit-log' | 'admission-letters'>('overview');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  // Modal State for generating ID Cards & Slips
-  const [slipModalStudent, setSlipModalStudent] = useState<Student | null>(null);
-  const [slipModalFormat, setSlipModalFormat] = useState<'slip' | 'id-card'>('slip');
+  // Modal State for viewing Admission Letter
+  const [letterModalStudent, setLetterModalStudent] = useState<Student | null>(null);
+  const [isTogglingFee, setIsTogglingFee] = useState<string | null>(null);
 
   // Audit Logs state
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
@@ -602,20 +602,20 @@ export default function AdminControl({ students }: AdminControlProps) {
                 </button>
                 <button 
                   onClick={() => {
-                    setActiveTab('slips-and-ids');
+                    setActiveTab('admission-letters');
                     setIsMobileMenuOpen(false);
                   }}
                   className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl font-bold text-sm transition-all text-left cursor-pointer ${
-                    activeTab === 'slips-and-ids' 
+                    activeTab === 'admission-letters' 
                       ? 'bg-slate-900 text-white shadow-sm shadow-slate-900/10' 
                       : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'
                   }`}
                 >
-                  <ShieldCheck className="w-4 h-4 text-emerald-500" />
-                  <span>ID Cards & Slips</span>
-                  {verifiedCount > 0 && (
+                  <FileText className="w-4 h-4 text-emerald-500" />
+                  <span>Admission Letters</span>
+                  {totalStudents > 0 && (
                     <span className="ml-auto bg-emerald-600 text-white text-[10px] font-black px-1.5 py-0.5 rounded-full shrink-0">
-                      {verifiedCount}
+                      {students.filter(s => s.paymentStatus === 'paid').length}
                     </span>
                   )}
                 </button>
@@ -752,18 +752,18 @@ export default function AdminControl({ students }: AdminControlProps) {
               <span>Student Directory</span>
             </button>
             <button 
-              onClick={() => setActiveTab('slips-and-ids')}
+              onClick={() => setActiveTab('admission-letters')}
               className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl font-bold text-sm transition-all text-left cursor-pointer ${
-                activeTab === 'slips-and-ids' 
+                activeTab === 'admission-letters' 
                   ? 'bg-slate-900 text-white shadow-sm shadow-slate-900/10' 
                   : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'
               }`}
             >
-              <ShieldCheck className="w-4 h-4 text-emerald-500" />
-              <span>ID Cards & Slips</span>
-              {verifiedCount > 0 && (
+              <FileText className="w-4 h-4 text-emerald-500" />
+              <span>Admission Letters</span>
+              {totalStudents > 0 && (
                 <span className="ml-auto bg-emerald-600 text-white text-[10px] font-black px-1.5 py-0.5 rounded-full shrink-0">
-                  {verifiedCount}
+                  {students.filter(s => s.paymentStatus === 'paid').length}
                 </span>
               )}
             </button>
@@ -1759,20 +1759,20 @@ export default function AdminControl({ students }: AdminControlProps) {
           </div>
         )}
 
-        {/* TAB 8: ID CARDS & VERIFICATION SLIPS */}
-        {activeTab === 'slips-and-ids' && (
+        {/* TAB 8: ADMISSION LETTERS MANAGEMENT */}
+        {activeTab === 'admission-letters' && (
           <div className="space-y-6 animate-slide-down">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
-                <h1 className="text-3xl font-black text-slate-800 tracking-tight leading-none">Student ID Cards & Slips</h1>
+                <h1 className="text-3xl font-black text-slate-800 tracking-tight leading-none">Student Admission Letters</h1>
                 <p className="text-slate-500 text-sm font-semibold mt-2.5">
-                  Generate, print, preview, or WhatsApp official ID cards and slips for verified students.
+                  Approve school fee payments to unlock and issue official A4 Admission Letters to parents.
                 </p>
               </div>
 
               <div className="flex flex-wrap items-center gap-3">
                 <span className="px-3.5 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 font-bold text-xs">
-                  {verifiedCount} Verified Students
+                  {students.filter(s => s.paymentStatus === 'paid').length} Approved / Paid Letters
                 </span>
                 <button
                   type="button"
@@ -1792,7 +1792,7 @@ export default function AdminControl({ students }: AdminControlProps) {
                 <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                 <input
                   type="text"
-                  placeholder="Search verified student by name, form number, or phone..."
+                  placeholder="Search student by name, form number, or phone..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500"
@@ -1811,105 +1811,127 @@ export default function AdminControl({ students }: AdminControlProps) {
               </select>
             </div>
 
-            {/* Grid of Verified Students */}
-            {filteredStudents.filter(s => s.verificationStatus === 'verified').length === 0 ? (
+            {/* Grid of Students */}
+            {filteredStudents.length === 0 ? (
               <div className="bg-white rounded-3xl p-12 border border-slate-200 text-center space-y-3">
-                <ShieldCheck className="w-12 h-12 text-slate-300 mx-auto" />
-                <h3 className="text-base font-bold text-slate-800">No Verified Students Found</h3>
+                <FileText className="w-12 h-12 text-slate-300 mx-auto" />
+                <h3 className="text-base font-bold text-slate-800">No Student Records Found</h3>
                 <p className="text-xs text-slate-400 font-medium max-w-md mx-auto">
-                  Students will appear here once their registration is confirmed or verified by parents and school administrators.
+                  Registered students will appear here to manage fee approval and issue admission letters.
                 </p>
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                {filteredStudents
-                  .filter(s => s.verificationStatus === 'verified')
-                  .map((student) => {
-                    const parentPhone = student.phone1 ? student.phone1.replace(/[^\d]/g, '') : '';
-                    const waMessage = encodeURIComponent(
-                      `Hello ${student.fatherName || 'Parent'}, your student ${student.firstName} ${student.lastName} (Form No: ${student.formNumber}) is officially verified at AI Integrated Academy Argungu. Verification link: ${typeof window !== 'undefined' ? window.location.origin : ''}/dashboard?verify=${student.formNumber}`
-                    );
-                    const waUrl = parentPhone ? `https://wa.me/${parentPhone.replace('0', '234')}?text=${waMessage}` : '#';
+                {filteredStudents.map((student) => {
+                  const isPaid = student.paymentStatus === 'paid';
+                  const parentPhone = student.phone1 ? student.phone1.replace(/[^\d]/g, '') : '';
+                  const waMessage = encodeURIComponent(
+                    `Hello ${student.fatherName || 'Parent'}, your student ${student.firstName} ${student.lastName} (Form No: ${student.formNumber}) has been approved for admission at AI Integrated Academy Argungu. View/Download Admission Letter: ${typeof window !== 'undefined' ? window.location.origin : ''}/dashboard`
+                  );
+                  const waUrl = parentPhone ? `https://wa.me/${parentPhone.replace('0', '234')}?text=${waMessage}` : '#';
 
-                    return (
-                      <div key={student.id} className="bg-white rounded-2xl border border-slate-200 shadow-xs p-5 hover:shadow-md transition-all flex flex-col justify-between space-y-4">
-                        <div className="flex items-start gap-4">
-                          <StudentAvatar student={student} size="lg" />
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center justify-between gap-1">
-                              <span className="text-[10px] font-mono font-bold bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md">
-                                {student.formNumber}
-                              </span>
+                  return (
+                    <div key={student.id} className="bg-white rounded-2xl border border-slate-200 shadow-xs p-5 hover:shadow-md transition-all flex flex-col justify-between space-y-4">
+                      <div className="flex items-start gap-4">
+                        <StudentAvatar student={student} size="lg" />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between gap-1">
+                            <span className="text-[10px] font-mono font-bold bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md">
+                              {student.formNumber}
+                            </span>
+                            {isPaid ? (
                               <span className="text-[10px] font-black uppercase text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200/60">
-                                Verified
+                                Fee Paid ✓
                               </span>
-                            </div>
-                            <h4 className="font-extrabold text-slate-900 text-sm mt-1 truncate">
-                              {student.firstName} {student.lastName}
-                            </h4>
-                            <p className="text-xs font-semibold text-slate-500 mt-0.5">
-                              {student.intendedClass} • {student.gender}
-                            </p>
+                            ) : (
+                              <span className="text-[10px] font-black uppercase text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200/60">
+                                Fee Unpaid
+                              </span>
+                            )}
                           </div>
-                        </div>
-
-                        <div className="text-xs space-y-1 text-slate-500 pt-3 border-t border-slate-100 font-medium">
-                          <p><strong className="text-slate-700 font-bold">Parent:</strong> {student.fatherName || student.guardianName || 'N/A'}</p>
-                          <p><strong className="text-slate-700 font-bold">Phone:</strong> {student.phone1 || 'N/A'}</p>
-                        </div>
-
-                        <div className="pt-2 flex flex-col gap-2">
-                          <div className="grid grid-cols-2 gap-2">
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setSlipModalFormat('id-card');
-                                setSlipModalStudent(student);
-                              }}
-                              className="py-2 px-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-xs"
-                            >
-                              <span>🪪 Print ID Card</span>
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setSlipModalFormat('slip');
-                                setSlipModalStudent(student);
-                              }}
-                              className="py-2 px-3 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-xs"
-                            >
-                              <span>📄 Print Slip</span>
-                            </button>
-                          </div>
-
-                          {parentPhone && (
-                            <a
-                              href={waUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="py-2 px-3 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-800 font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 transition-all cursor-pointer"
-                            >
-                              <MessageSquare className="w-3.5 h-3.5 text-emerald-600" />
-                              <span>Send Slip Link via WhatsApp</span>
-                            </a>
-                          )}
+                          <h4 className="font-extrabold text-slate-900 text-sm mt-1 truncate">
+                            {student.firstName} {student.lastName}
+                          </h4>
+                          <p className="text-xs font-semibold text-slate-500 mt-0.5">
+                            {student.intendedClass} • {student.gender}
+                          </p>
                         </div>
                       </div>
-                    );
-                  })}
+
+                      <div className="text-xs space-y-1 text-slate-500 pt-3 border-t border-slate-100 font-medium">
+                        <p><strong className="text-slate-700 font-bold">Parent:</strong> {student.fatherName || student.guardianName || 'N/A'}</p>
+                        <p><strong className="text-slate-700 font-bold">Phone:</strong> {student.phone1 || 'N/A'}</p>
+                      </div>
+
+                      <div className="pt-2 flex flex-col gap-2">
+                        {/* Admin Action: Approve / Revoke Fee Payment Button */}
+                        <button
+                          type="button"
+                          disabled={isTogglingFee === student.id}
+                          onClick={async () => {
+                            setIsTogglingFee(student.id);
+                            try {
+                              await adminTogglePaymentStatusAction(student.id, isPaid ? 'pending' : 'paid');
+                              router.refresh();
+                            } catch (err) {
+                              console.error(err);
+                            } finally {
+                              setIsTogglingFee(null);
+                            }
+                          }}
+                          className={`w-full py-2.5 px-3 font-bold text-xs rounded-xl flex items-center justify-center gap-2 transition-all cursor-pointer shadow-xs ${
+                            isPaid
+                              ? 'bg-amber-100 hover:bg-amber-200 text-amber-900 border border-amber-300'
+                              : 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                          }`}
+                        >
+                          {isTogglingFee === student.id ? (
+                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          ) : isPaid ? (
+                            <CreditCard className="w-3.5 h-3.5 text-amber-700" />
+                          ) : (
+                            <CheckCircle2 className="w-3.5 h-3.5 text-white" />
+                          )}
+                          <span>{isPaid ? 'Revoke Fee Approval' : 'Approve Fee & Issue Admission Letter'}</span>
+                        </button>
+
+                        {/* View/Download A4 Admission Letter */}
+                        <button
+                          type="button"
+                          onClick={() => setLetterModalStudent(student)}
+                          className="w-full py-2.5 px-3 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl flex items-center justify-center gap-2 transition-all cursor-pointer shadow-xs"
+                        >
+                          <FileText className="w-4 h-4 text-emerald-400" />
+                          <span>Download A4 Admission Letter</span>
+                        </button>
+
+                        {parentPhone && (
+                          <a
+                            href={waUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="w-full py-2 px-3 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-800 font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+                          >
+                            <MessageSquare className="w-3.5 h-3.5 text-emerald-600" />
+                            <span>Notify Parent via WhatsApp</span>
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>
         )}
       </main>
 
-      {/* Verification Slip & Student ID Card Modal */}
-      {slipModalStudent && (
-        <VerificationSlipModal
-          student={slipModalStudent}
-          isOpen={!!slipModalStudent}
-          initialFormat={slipModalFormat}
-          onClose={() => setSlipModalStudent(null)}
+      {/* Official A4 Admission Letter Modal */}
+      {letterModalStudent && (
+        <AdmissionLetterModal
+          student={letterModalStudent}
+          isOpen={!!letterModalStudent}
+          onClose={() => setLetterModalStudent(null)}
         />
       )}
 
