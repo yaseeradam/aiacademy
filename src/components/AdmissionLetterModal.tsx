@@ -121,44 +121,44 @@ export default function AdmissionLetterModal({ student, isOpen, onClose }: Admis
               {/* 1. Header Section — Matching Letterhead Design */}
               <div className="space-y-3">
                 {/* Logo + School Name + Motto */}
-                <div className="flex items-center gap-4 sm:gap-6">
+                <div className="flex items-center gap-5 sm:gap-7">
                   {/* Circular Logo Badge */}
-                  <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full border-[3px] border-[#1B3A6B] overflow-hidden bg-white p-1 shrink-0 flex items-center justify-center">
+                  <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-full border-[4px] border-[#1B3A6B] overflow-hidden bg-white p-1.5 shrink-0 flex items-center justify-center">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={logoSrc} alt="School Logo" className="w-full h-full object-contain rounded-full" />
                   </div>
                   
                   {/* School Name + Motto */}
                   <div className="font-sans">
-                    <h1 className="text-[22px] sm:text-[30px] font-black text-[#1B3A6B] tracking-tight uppercase leading-tight">
+                    <h1 className="text-[28px] sm:text-[38px] md:text-[42px] font-black text-[#1B3A6B] tracking-tight uppercase leading-[1.1]">
                       AI INTEGRATED<br />ACADEMY ARGUNGU
                     </h1>
-                    <div className="mt-2 inline-block bg-[#D4851F] text-white px-5 py-1 text-[11px] sm:text-[13px] font-semibold italic rounded-[3px] shadow-sm">
-                      Motto: <em>Learning Today Leading Tomorrow</em>
+                    <div className="mt-2.5 inline-block bg-[#D4851F] text-white px-5 py-1.5 text-[12px] sm:text-[14px] font-semibold italic rounded-[3px] shadow-sm">
+                      Motto: <em className="font-semibold">Learning Today Leading Tomorrow</em>
                     </div>
                   </div>
                 </div>
 
                 {/* Contact Details — Each on its own row with icons */}
-                <div className="pl-1 text-[11px] sm:text-[12.5px] text-[#333] font-sans space-y-1 leading-snug">
-                  <div className="flex items-center gap-2">
-                    <MapPin className="w-3.5 h-3.5 text-[#1B3A6B] shrink-0" strokeWidth={2.5} />
+                <div className="pl-1 text-[12px] sm:text-[13px] text-[#333] font-sans space-y-1.5 leading-snug">
+                  <div className="flex items-center gap-2.5">
+                    <MapPin className="w-4 h-4 text-[#1B3A6B] shrink-0" strokeWidth={2.5} />
                     <span>Behind Buben Ta&apos;Ololo&apos;s Residence, Tudun Wada, Argungu, Kebbi State</span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Phone className="w-3.5 h-3.5 text-[#1B3A6B] shrink-0" strokeWidth={2.5} />
+                  <div className="flex items-center gap-2.5">
+                    <Phone className="w-4 h-4 text-[#1B3A6B] shrink-0" strokeWidth={2.5} />
                     <span>08069676697, 07034784861</span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Mail className="w-3.5 h-3.5 text-[#1B3A6B] shrink-0" strokeWidth={2.5} />
+                  <div className="flex items-center gap-2.5">
+                    <Mail className="w-4 h-4 text-[#1B3A6B] shrink-0" strokeWidth={2.5} />
                     <span>alijabaintegratedacademyarg@gmail.com</span>
                   </div>
                 </div>
 
                 {/* Double Divider — Navy Blue top, Orange bottom */}
                 <div className="pt-1">
-                  <div className="h-[3px] bg-[#1B3A6B] w-full" />
-                  <div className="h-[3px] bg-[#D4851F] w-full mt-[2px]" />
+                  <div className="h-[4px] bg-[#1B3A6B] w-full rounded-sm" />
+                  <div className="h-[4px] bg-[#D4851F] w-full mt-[3px] rounded-sm" />
                 </div>
               </div>
 
