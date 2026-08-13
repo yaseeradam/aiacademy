@@ -176,7 +176,7 @@ export default function AdmissionLetterModal({ student, isOpen, onClose }: Admis
                   <div className="flex items-center gap-2">
                     <span className="font-bold text-slate-600">Admission Number:</span>
                     <span className="font-black text-slate-900 font-mono border-b border-slate-400 pb-0.5 px-1 min-w-[180px] inline-block">
-                      {student.formNumber}
+                      {student.admissionNumber || student.formNumber}
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
@@ -294,7 +294,7 @@ export default function AdmissionLetterModal({ student, isOpen, onClose }: Admis
                   <span>OFFICIALLY APPROVED & ISSUED BY SCHOOL ADMINISTRATION</span>
                 </div>
                 <div className="font-mono">
-                  REF: {student.formNumber}-ADM
+                  REF: {student.admissionNumber || student.formNumber}
                 </div>
               </div>
 

@@ -142,11 +142,23 @@ export async function adminTogglePaymentStatusAction(studentId: string, paymentS
   }
 
   const todayStr = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+  const currentYear = new Date().getFullYear();
+
+  // Generate admission number if approving and not already assigned
+  let admissionNumber = student.admissionNumber;
+  if (paymentStatus === 'paid' && !admissionNumber) {
+    const allStudents = await getAllStudents();
+    const paidCount = allStudents.filter(s => s.admissionNumber && s.id !== studentId).length;
+    const nextNum = String(paidCount + 1).padStart(3, '0');
+    admissionNumber = `AIAA/${currentYear}/${nextNum}`;
+  }
+
   const updatedStudent: Student = {
     ...student,
     paymentStatus,
+    admissionNumber: paymentStatus === 'paid' ? admissionNumber : student.admissionNumber,
     admissionDate: student.admissionDate || todayStr,
-    academicSession: student.academicSession || '2026/2027',
+    academicSession: student.academicSession || `${currentYear}/${currentYear + 1}`,
     resumptionDate: student.resumptionDate || '15th September, 2026',
   };
 

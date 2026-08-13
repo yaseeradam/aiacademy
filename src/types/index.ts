@@ -33,6 +33,7 @@ export interface Student {
 
   // Admission Letter & Payment Approval fields
   paymentStatus?: PaymentStatus;
+  admissionNumber?: string; // e.g. AIAA/2026/001
   academicSession?: string;
   resumptionDate?: string;
   admissionDate?: string;
