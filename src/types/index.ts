@@ -4,6 +4,7 @@ export interface Parent {
   phoneNumber: string; // E.g., '09038863534' or '+1 (555) 019-8372'
 }
 
+export type VerificationStatus = 'pending' | 'verified' | 'requires_correction';
 export type PaymentStatus = 'pending' | 'paid';
 
 export interface Student {
