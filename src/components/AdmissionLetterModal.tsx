@@ -123,7 +123,7 @@ export default function AdmissionLetterModal({ student, isOpen, onClose }: Admis
                 {/* Logo + School Name + Motto */}
                 <div className="flex items-center gap-5 sm:gap-7">
                   {/* Circular Logo Badge */}
-                  <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-full border-[4px] border-[#1B3A6B] overflow-hidden bg-white p-1.5 shrink-0 flex items-center justify-center">
+                  <div className="w-[120px] h-[120px] sm:w-[140px] sm:h-[140px] rounded-full border-[4px] border-[#1B3A6B] overflow-hidden bg-white p-1.5 shrink-0 flex items-center justify-center">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={logoSrc} alt="School Logo" className="w-full h-full object-contain rounded-full" />
                   </div>
