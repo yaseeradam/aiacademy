@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Student } from '@/types';
-import { X, Printer, FileText, CheckCircle2 } from 'lucide-react';
+import { X, Printer, FileText, CheckCircle2, MapPin, Phone, Mail } from 'lucide-react';
 import { getSchoolSettingsAction } from '@/app/actions';
 
 interface AdmissionLetterModalProps {
@@ -110,47 +110,55 @@ export default function AdmissionLetterModal({ student, isOpen, onClose }: Admis
           <div className="bg-white p-6 sm:p-10 md:p-12 rounded-2xl border border-slate-200 shadow-md max-w-3xl mx-auto relative overflow-hidden print:border-0 print:shadow-none print:p-0 print:max-w-none print:w-full min-h-[297mm]">
             
             {/* Watermark background logo */}
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-[0.06] select-none z-0">
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-[0.08] select-none z-0">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={logoSrc} alt="" className="w-[450px] h-[450px] object-contain" />
+              <img src={logoSrc} alt="" className="w-[500px] h-[500px] object-contain" />
             </div>
 
             {/* Main Letter Content (Above Watermark) */}
             <div className="relative z-10 space-y-6 text-slate-900 font-serif">
               
-              {/* 1. Header Section */}
-              <div className="text-center space-y-2">
-                <div className="flex items-center justify-center gap-4">
-                  <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full border-2 border-amber-600/30 overflow-hidden bg-white p-1 shrink-0">
+              {/* 1. Header Section — Matching Letterhead Design */}
+              <div className="space-y-3">
+                {/* Logo + School Name + Motto */}
+                <div className="flex items-center gap-4 sm:gap-6">
+                  {/* Circular Logo Badge */}
+                  <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full border-[3px] border-[#1B3A6B] overflow-hidden bg-white p-1 shrink-0 flex items-center justify-center">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={logoSrc} alt="School Logo" className="w-full h-full object-contain rounded-full" />
                   </div>
                   
-                  <div className="text-left font-sans">
-                    <h1 className="text-2xl sm:text-3xl font-black text-[#1e2b4f] tracking-tight uppercase leading-none">
-                      AI INTEGRATED ACADEMY ARGUNGU
+                  {/* School Name + Motto */}
+                  <div className="font-sans">
+                    <h1 className="text-[22px] sm:text-[30px] font-black text-[#1B3A6B] tracking-tight uppercase leading-tight">
+                      AI INTEGRATED<br />ACADEMY ARGUNGU
                     </h1>
-                    <div className="mt-1.5 inline-block bg-[#d97706] text-white px-4 py-0.5 text-[11px] sm:text-xs font-bold uppercase rounded-sm shadow-xs">
-                      Motto: Learning Today Leading Tomorrow
+                    <div className="mt-2 inline-block bg-[#D4851F] text-white px-5 py-1 text-[11px] sm:text-[13px] font-semibold italic rounded-[3px] shadow-sm">
+                      Motto: <em>Learning Today Leading Tomorrow</em>
                     </div>
                   </div>
                 </div>
 
-                {/* Contact Info Row */}
-                <div className="pt-2 text-[11px] sm:text-xs text-slate-700 font-semibold font-sans space-y-0.5 leading-relaxed">
-                  <div className="flex flex-wrap justify-center items-center gap-x-4 gap-y-1">
-                    <span>📍 Behind Buben Ta&apos;Ololo&apos;s Residence, Tudun Wada, Argungu, Kebbi State</span>
+                {/* Contact Details — Each on its own row with icons */}
+                <div className="pl-1 text-[11px] sm:text-[12.5px] text-[#333] font-sans space-y-1 leading-snug">
+                  <div className="flex items-center gap-2">
+                    <MapPin className="w-3.5 h-3.5 text-[#1B3A6B] shrink-0" strokeWidth={2.5} />
+                    <span>Behind Buben Ta&apos;Ololo&apos;s Residence, Tudun Wada, Argungu, Kebbi State</span>
                   </div>
-                  <div className="flex flex-wrap justify-center items-center gap-x-4 gap-y-1">
-                    <span>📞 08069676697, 07034784861</span>
-                    <span>✉️ alijabaintegratedacademyarg@gmail.com</span>
+                  <div className="flex items-center gap-2">
+                    <Phone className="w-3.5 h-3.5 text-[#1B3A6B] shrink-0" strokeWidth={2.5} />
+                    <span>08069676697, 07034784861</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Mail className="w-3.5 h-3.5 text-[#1B3A6B] shrink-0" strokeWidth={2.5} />
+                    <span>alijabaintegratedacademyarg@gmail.com</span>
                   </div>
                 </div>
 
-                {/* Double Divider Line */}
-                <div className="pt-2">
-                  <div className="h-0.5 bg-slate-800 w-full" />
-                  <div className="h-0.5 bg-slate-800 w-full mt-0.5" />
+                {/* Double Divider — Navy Blue top, Orange bottom */}
+                <div className="pt-1">
+                  <div className="h-[3px] bg-[#1B3A6B] w-full" />
+                  <div className="h-[3px] bg-[#D4851F] w-full mt-[2px]" />
                 </div>
               </div>
 
