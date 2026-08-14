@@ -39,10 +39,6 @@ export default function AdmissionLetterModal({ student, isOpen, onClose }: Admis
 
   if (!isOpen) return null;
 
-  const handlePrint = () => {
-    window.print();
-  };
-
   const formattedDate = student.admissionDate || new Date().toLocaleDateString('en-GB', {
     day: '2-digit',
     month: 'long',
@@ -51,74 +47,400 @@ export default function AdmissionLetterModal({ student, isOpen, onClose }: Admis
 
   const academicSession = student.academicSession || '2026/2027';
   const resumptionDate = student.resumptionDate || '15th September, 2026';
+  const admissionNumber = student.admissionNumber || student.formNumber;
+  const studentName = `${student.firstName} ${student.lastName}`;
+  const photoSrc = student.photo || '';
+
+  const handlePrint = () => {
+    // Build standalone HTML for a clean print window
+    const printHTML = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Admission Letter - ${studentName}</title>
+  <style>
+    @page {
+      size: A4 portrait;
+      margin: 12mm 15mm;
+    }
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      color: #1a1a1a;
+      background: white;
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
+    .page {
+      width: 100%;
+      max-width: 210mm;
+      margin: 0 auto;
+      position: relative;
+      padding: 0;
+    }
+    /* Watermark */
+    .watermark {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      opacity: 0.06;
+      pointer-events: none;
+      z-index: 0;
+    }
+    .watermark img {
+      width: 400px;
+      height: 400px;
+      object-fit: contain;
+    }
+    .content {
+      position: relative;
+      z-index: 1;
+    }
+    /* Header */
+    .header {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      margin-bottom: 10px;
+    }
+    .logo-circle {
+      width: 110px;
+      height: 110px;
+      border-radius: 50%;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+    .logo-circle img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+    .school-info h1 {
+      font-size: 30px;
+      font-weight: 900;
+      color: #1B3A6B;
+      text-transform: uppercase;
+      line-height: 1.1;
+      letter-spacing: -0.5px;
+    }
+    .motto-banner {
+      display: inline-block;
+      background: #D4851F;
+      color: white;
+      padding: 4px 18px;
+      font-size: 13px;
+      font-weight: 600;
+      font-style: italic;
+      border-radius: 3px;
+      margin-top: 8px;
+    }
+    /* Contact */
+    .contact-row {
+      margin-top: 8px;
+      font-size: 12px;
+      color: #333;
+    }
+    .contact-row div {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 4px;
+    }
+    .contact-row .icon {
+      color: #1B3A6B;
+      font-size: 13px;
+      font-weight: bold;
+      flex-shrink: 0;
+    }
+    /* Divider */
+    .divider {
+      margin-top: 10px;
+      margin-bottom: 14px;
+    }
+    .divider .line1 {
+      height: 4px;
+      background: #1B3A6B;
+      border-radius: 1px;
+    }
+    .divider .line2 {
+      height: 4px;
+      background: #D4851F;
+      border-radius: 1px;
+      margin-top: 3px;
+    }
+    /* Info row */
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 10px;
+    }
+    .meta-info {
+      font-size: 13px;
+    }
+    .meta-info div {
+      margin-bottom: 6px;
+    }
+    .meta-info .label {
+      color: #555;
+      font-weight: 600;
+    }
+    .meta-info .value {
+      font-weight: 800;
+      color: #111;
+      border-bottom: 1px solid #999;
+      padding-bottom: 2px;
+      padding-left: 4px;
+      padding-right: 4px;
+      text-transform: uppercase;
+    }
+    .right-col {
+      text-align: right;
+    }
+    .date-line {
+      font-size: 13px;
+      font-weight: 700;
+      color: #333;
+      margin-bottom: 10px;
+    }
+    .date-line .value {
+      border-bottom: 1px solid #999;
+      padding-bottom: 2px;
+      padding-left: 6px;
+      font-weight: 600;
+    }
+    .passport-box {
+      width: 100px;
+      height: 115px;
+      border: 2px solid #333;
+      padding: 3px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-left: auto;
+    }
+    .passport-box img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .passport-placeholder {
+      font-size: 10px;
+      color: #999;
+      text-align: center;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+    /* Subject */
+    .subject {
+      text-align: center;
+      font-size: 16px;
+      font-weight: 800;
+      text-decoration: underline;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin: 8px 0 12px;
+    }
+    /* Body */
+    .letter-body {
+      font-size: 13px;
+      line-height: 1.7;
+      text-align: justify;
+      color: #222;
+    }
+    .letter-body p {
+      margin-bottom: 10px;
+    }
+    .letter-body .greeting {
+      font-weight: 700;
+      margin-bottom: 10px;
+    }
+    .letter-body strong {
+      font-weight: 700;
+    }
+    /* Table */
+    .summary-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      margin: 12px 0;
+    }
+    .summary-table td {
+      padding: 8px 10px;
+      border: 1px solid #888;
+    }
+    .summary-table .label-cell {
+      font-weight: 700;
+      color: #333;
+      background: #f5f5f5;
+      width: 45%;
+    }
+    .summary-table .value-cell {
+      font-weight: 800;
+      color: #111;
+    }
+    /* Sign-off */
+    .signoff {
+      margin-top: 20px;
+      font-size: 13px;
+    }
+    .signoff .yours {
+      font-weight: 600;
+      margin-bottom: 30px;
+    }
+    .signoff .sig-line {
+      width: 200px;
+      border-bottom: 2px solid #333;
+      margin-bottom: 4px;
+    }
+    .signoff .name {
+      font-weight: 800;
+      font-size: 14px;
+    }
+    .signoff .title {
+      font-weight: 600;
+      color: #444;
+      font-size: 12px;
+    }
+    .signoff .school {
+      font-weight: 700;
+      font-size: 12px;
+    }
+    /* Footer */
+    .footer {
+      margin-top: 16px;
+      padding-top: 8px;
+      border-top: 1px solid #ddd;
+      display: flex;
+      justify-content: space-between;
+      font-size: 10px;
+      color: #888;
+    }
+    .footer .approved {
+      color: #047857;
+      font-weight: 700;
+    }
+    .footer .ref {
+      font-family: monospace;
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="watermark">
+      <img src="${logoSrc}" alt="" />
+    </div>
+    <div class="content">
+      <!-- Header -->
+      <div class="header">
+        <div class="logo-circle">
+          <img src="${logoSrc}" alt="School Logo" />
+        </div>
+        <div class="school-info">
+          <h1>AI INTEGRATED<br>ACADEMY ARGUNGU</h1>
+          <div class="motto-banner">Motto: <em>Learning Today Leading Tomorrow</em></div>
+        </div>
+      </div>
+
+      <!-- Contact -->
+      <div class="contact-row">
+        <div><span class="icon">📍</span> <span>Behind Buben Ta'Ololo's Residence, Tudun Wada, Argungu, Kebbi State</span></div>
+        <div><span class="icon">📞</span> <span>08069676697, 07034784861</span></div>
+        <div><span class="icon">✉️</span> <span>alijabaintegratedacademyarg@gmail.com</span></div>
+      </div>
+
+      <!-- Divider -->
+      <div class="divider">
+        <div class="line1"></div>
+        <div class="line2"></div>
+      </div>
+
+      <!-- Info Row -->
+      <div class="info-row">
+        <div class="meta-info">
+          <div><span class="label">Student Name: </span><span class="value">${studentName}</span></div>
+          <div><span class="label">Admission Number: </span><span class="value">${admissionNumber}</span></div>
+          <div><span class="label">Class: </span><span class="value">${student.intendedClass}</span></div>
+        </div>
+        <div class="right-col">
+          <div class="date-line">Date: <span class="value">${formattedDate}</span></div>
+          <div class="passport-box">
+            ${photoSrc ? `<img src="${photoSrc}" alt="Passport" />` : '<div class="passport-placeholder">Passport<br>Photograph</div>'}
+          </div>
+        </div>
+      </div>
+
+      <!-- Subject -->
+      <div class="subject">SUBJECT: ADMISSION LETTER</div>
+
+      <!-- Body -->
+      <div class="letter-body">
+        <p class="greeting">Dear Parent/Guardian,</p>
+        <p>We are pleased to inform you that your child has been offered admission into <strong>AI Integrated Academy Argungu</strong> for the <strong>${academicSession}</strong> Academic Session.</p>
+        <p>The admission is offered based on the assessment and admission requirements of the school. We are delighted to welcome your child into our learning community and look forward to supporting his/her academic, moral, and personal development.</p>
+        <p>Please complete the registration process and settle the applicable school fees and other required charges on or before the stated deadline. Admission is subject to compliance with the school's rules, regulations, and code of conduct.</p>
+        <p>We kindly request that the parent/guardian report to the school for final registration and submission of the required documents.</p>
+        <p>We congratulate you and your child on this opportunity and look forward to a successful and rewarding academic journey together.</p>
+      </div>
+
+      <!-- Summary Table -->
+      <table class="summary-table">
+        <tr><td class="label-cell">Student Name</td><td class="value-cell">${studentName.toUpperCase()}</td></tr>
+        <tr><td class="label-cell">Class / Level</td><td class="value-cell">${student.intendedClass}</td></tr>
+        <tr><td class="label-cell">Academic Session</td><td class="value-cell">${academicSession}</td></tr>
+        <tr><td class="label-cell">Resumption Date</td><td class="value-cell">${resumptionDate}</td></tr>
+      </table>
+
+      <!-- Sign-off -->
+      <div class="signoff">
+        <p class="yours">Yours faithfully,</p>
+        <div class="sig-line"></div>
+        <p class="name">Prof. Murtala Ahmed Rufa'i</p>
+        <p class="title">Executive Director</p>
+        <p class="school">AI Integrated Academy Argungu</p>
+      </div>
+
+      <!-- Footer -->
+      <div class="footer">
+        <div class="approved">✓ OFFICIALLY APPROVED & ISSUED BY SCHOOL ADMINISTRATION</div>
+        <div class="ref">REF: ${admissionNumber}</div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>`;
+
+    const printWindow = window.open('', '_blank', 'width=800,height=1000');
+    if (printWindow) {
+      printWindow.document.write(printHTML);
+      printWindow.document.close();
+      // Wait for images to load before printing
+      printWindow.onload = () => {
+        setTimeout(() => {
+          printWindow.print();
+        }, 500);
+      };
+      // Fallback if onload doesn't fire
+      setTimeout(() => {
+        printWindow.print();
+      }, 2000);
+    }
+  };
 
   return (
-    <>
-      {/* Print-only styles to ensure clean single-page A4 PDF */}
-      <style jsx global>{`
-        @media print {
-          @page {
-            size: A4 portrait;
-            margin: 15mm 12mm;
-          }
-          html, body {
-            margin: 0 !important;
-            padding: 0 !important;
-            -webkit-print-color-adjust: exact !important;
-            print-color-adjust: exact !important;
-          }
-          /* Hide everything on the page */
-          body > * {
-            display: none !important;
-          }
-          /* Show only the modal root and its contents */
-          body > #__next,
-          body > div[data-nextjs-scroll-focus-boundary] {
-            display: block !important;
-          }
-          #__next > * {
-            display: none !important;
-          }
-          #__next main,
-          #__next > div {
-            display: block !important;
-          }
-          /* The actual print target */
-          #admission-letter-print-root {
-            display: block !important;
-            position: static !important;
-            width: 100% !important;
-            height: auto !important;
-            overflow: visible !important;
-            background: white !important;
-          }
-          #admission-letter-print-root * {
-            visibility: visible !important;
-          }
-          .no-print {
-            display: none !important;
-          }
-          #admission-letter-sheet {
-            box-shadow: none !important;
-            border: none !important;
-            border-radius: 0 !important;
-            padding: 0 !important;
-            margin: 0 !important;
-            max-width: 100% !important;
-            width: 100% !important;
-            min-height: auto !important;
-            page-break-after: avoid;
-            page-break-inside: avoid;
-          }
-        }
-      `}</style>
-      <div id="admission-letter-print-root" className="fixed inset-0 z-50 flex items-center justify-center p-0 md:p-4 bg-slate-900/80 backdrop-blur-sm overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-0 md:p-4 bg-slate-900/80 backdrop-blur-sm overflow-hidden">
       
       {/* Modal Container */}
       <div className="bg-white md:rounded-3xl max-w-4xl w-full h-full md:h-auto md:max-h-[95vh] shadow-2xl overflow-hidden flex flex-col animate-slide-down">
         
-        {/* Top Control Bar (Hidden on Print) */}
-        <div className="no-print p-4 md:p-5 bg-slate-900 text-white flex flex-col sm:flex-row sm:items-center justify-between gap-4 shrink-0 border-b border-slate-800">
+        {/* Top Control Bar */}
+        <div className="p-4 md:p-5 bg-slate-900 text-white flex flex-col sm:flex-row sm:items-center justify-between gap-4 shrink-0 border-b border-slate-800">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400 shrink-0">
@@ -126,7 +448,7 @@ export default function AdmissionLetterModal({ student, isOpen, onClose }: Admis
               </div>
               <div>
                 <h2 className="text-sm md:text-base font-black tracking-tight leading-tight">Official A4 Admission Letter</h2>
-                <p className="text-[11px] text-slate-400 font-semibold">Student: {student.firstName} {student.lastName} ({student.formNumber})</p>
+                <p className="text-[11px] text-slate-400 font-semibold">Student: {student.firstName} {student.lastName} ({admissionNumber})</p>
               </div>
             </div>
 
@@ -162,32 +484,28 @@ export default function AdmissionLetterModal({ student, isOpen, onClose }: Admis
           </div>
         </div>
 
-        {/* Printable Document Body Area */}
-        <div id="printable-admission-letter" className="p-4 sm:p-8 md:p-12 overflow-y-auto flex-1 bg-slate-100">
+        {/* Preview Document Body */}
+        <div className="p-4 sm:p-8 md:p-12 overflow-y-auto flex-1 bg-slate-100">
           
-          {/* A4 Paper Sheet Container */}
-          <div id="admission-letter-sheet" className="bg-white p-6 sm:p-10 md:p-12 rounded-2xl border border-slate-200 shadow-md max-w-3xl mx-auto relative overflow-hidden">
+          {/* A4 Paper Preview */}
+          <div className="bg-white p-6 sm:p-10 md:p-12 rounded-2xl border border-slate-200 shadow-md max-w-3xl mx-auto relative overflow-hidden">
             
-            {/* Watermark background logo */}
+            {/* Watermark */}
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-[0.08] select-none z-0">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={logoSrc} alt="" className="w-[500px] h-[500px] object-contain" />
             </div>
 
-            {/* Main Letter Content (Above Watermark) */}
+            {/* Main Letter Content */}
             <div className="relative z-10 space-y-6 text-slate-900 font-serif">
               
-              {/* 1. Header Section — Matching Letterhead Design */}
+              {/* 1. Header */}
               <div className="space-y-3">
-                {/* Logo + School Name + Motto */}
                 <div className="flex items-center gap-5 sm:gap-7">
-                  {/* Circular Logo Badge */}
                   <div className="w-[150px] h-[150px] sm:w-[170px] sm:h-[170px] rounded-full overflow-hidden bg-white shrink-0 flex items-center justify-center">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={logoSrc} alt="School Logo" className="w-full h-full object-contain rounded-full" />
                   </div>
-                  
-                  {/* School Name + Motto */}
                   <div className="font-sans">
                     <h1 className="text-[28px] sm:text-[38px] md:text-[42px] font-black text-[#1B3A6B] tracking-tight uppercase leading-[1.1]">
                       AI INTEGRATED<br />ACADEMY ARGUNGU
@@ -198,7 +516,6 @@ export default function AdmissionLetterModal({ student, isOpen, onClose }: Admis
                   </div>
                 </div>
 
-                {/* Contact Details — Each on its own row with icons */}
                 <div className="pl-1 text-[12px] sm:text-[13px] text-[#333] font-sans space-y-1.5 leading-snug">
                   <div className="flex items-center gap-2.5">
                     <MapPin className="w-4 h-4 text-[#1B3A6B] shrink-0" strokeWidth={2.5} />
@@ -214,17 +531,14 @@ export default function AdmissionLetterModal({ student, isOpen, onClose }: Admis
                   </div>
                 </div>
 
-                {/* Double Divider — Navy Blue top, Orange bottom */}
                 <div className="pt-1">
                   <div className="h-[4px] bg-[#1B3A6B] w-full rounded-sm" />
                   <div className="h-[4px] bg-[#D4851F] w-full mt-[3px] rounded-sm" />
                 </div>
               </div>
 
-              {/* 2. Top Info Row: Date, Student Meta & Passport Photograph */}
+              {/* 2. Info Row */}
               <div className="font-sans flex flex-col sm:flex-row justify-between items-start gap-4 pt-2">
-                
-                {/* Left Meta Info */}
                 <div className="space-y-1.5 text-xs sm:text-sm font-semibold text-slate-800">
                   <div className="flex items-center gap-2">
                     <span className="font-bold text-slate-600">Student Name:</span>
@@ -235,7 +549,7 @@ export default function AdmissionLetterModal({ student, isOpen, onClose }: Admis
                   <div className="flex items-center gap-2">
                     <span className="font-bold text-slate-600">Admission Number:</span>
                     <span className="font-black text-slate-900 font-mono border-b border-slate-400 pb-0.5 px-1 min-w-[180px] inline-block">
-                      {student.admissionNumber || student.formNumber}
+                      {admissionNumber}
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
@@ -246,7 +560,6 @@ export default function AdmissionLetterModal({ student, isOpen, onClose }: Admis
                   </div>
                 </div>
 
-                {/* Right Column: Date & Passport Photograph */}
                 <div className="flex flex-col items-end gap-3 w-full sm:w-auto">
                   <div className="text-xs sm:text-sm font-bold text-slate-800">
                     <span>Date: </span>
@@ -254,8 +567,6 @@ export default function AdmissionLetterModal({ student, isOpen, onClose }: Admis
                       {formattedDate}
                     </span>
                   </div>
-
-                  {/* Passport Photo Box (User Prompt Requirement) */}
                   <div className="w-28 h-32 border-2 border-slate-700 p-1 bg-white shadow-xs rounded-sm flex flex-col items-center justify-center shrink-0 relative">
                     {student.photo ? (
                       /* eslint-disable-next-line @next/next/no-img-element */
@@ -270,47 +581,42 @@ export default function AdmissionLetterModal({ student, isOpen, onClose }: Admis
                 </div>
               </div>
 
-              {/* 3. Letter Subject Line */}
+              {/* 3. Subject */}
               <div className="text-center pt-2 pb-1 font-sans">
                 <h2 className="text-base sm:text-lg font-black text-slate-900 underline uppercase tracking-wide">
                   SUBJECT: ADMISSION LETTER
                 </h2>
               </div>
 
-              {/* 4. Letter Body Paragraphs */}
+              {/* 4. Body */}
               <div className="space-y-4 text-xs sm:text-sm leading-relaxed text-slate-800 font-normal text-justify">
                 <p className="font-bold font-sans">Dear Parent/Guardian,</p>
-
                 <p>
                   We are pleased to inform you that your child has been offered admission into{' '}
                   <strong className="font-bold font-sans">AI Integrated Academy Argungu</strong> for the{' '}
                   <span className="font-bold border-b border-slate-400 px-1">{academicSession}</span> Academic Session.
                 </p>
-
                 <p>
                   The admission is offered based on the assessment and admission requirements of the school. We are
                   delighted to welcome your child into our learning community and look forward to supporting his/her
                   academic, moral, and personal development.
                 </p>
-
                 <p>
                   Please complete the registration process and settle the applicable school fees and other required charges on
                   or before the stated deadline. Admission is subject to compliance with the school&apos;s rules, regulations, and
                   code of conduct.
                 </p>
-
                 <p>
                   We kindly request that the parent/guardian report to the school for final registration and submission of the
                   required documents.
                 </p>
-
                 <p>
                   We congratulate you and your child on this opportunity and look forward to a successful and rewarding
                   academic journey together.
                 </p>
               </div>
 
-              {/* 5. Summary Table */}
+              {/* 5. Table */}
               <div className="pt-2 font-sans">
                 <table className="w-full border-collapse border border-slate-400 text-xs sm:text-sm">
                   <tbody>
@@ -334,10 +640,9 @@ export default function AdmissionLetterModal({ student, isOpen, onClose }: Admis
                 </table>
               </div>
 
-              {/* 6. Sign-off Block */}
+              {/* 6. Sign-off */}
               <div className="pt-6 font-sans space-y-4">
                 <p className="text-xs sm:text-sm font-semibold text-slate-800">Yours faithfully,</p>
-                
                 <div className="pt-4">
                   <div className="w-56 border-b-2 border-slate-800 mb-1" />
                   <p className="font-extrabold text-sm text-slate-900">Prof. Murtala Ahmed Rufa&apos;i</p>
@@ -346,14 +651,14 @@ export default function AdmissionLetterModal({ student, isOpen, onClose }: Admis
                 </div>
               </div>
 
-              {/* Official Seal / Paid Stamp */}
+              {/* Footer */}
               <div className="pt-4 flex justify-between items-center border-t border-slate-200 font-sans text-[10px] text-slate-400">
                 <div className="flex items-center gap-1.5 text-emerald-700 font-bold">
                   <CheckCircle2 className="w-4 h-4 text-emerald-600" />
                   <span>OFFICIALLY APPROVED & ISSUED BY SCHOOL ADMINISTRATION</span>
                 </div>
                 <div className="font-mono">
-                  REF: {student.admissionNumber || student.formNumber}
+                  REF: {admissionNumber}
                 </div>
               </div>
 
@@ -362,6 +667,5 @@ export default function AdmissionLetterModal({ student, isOpen, onClose }: Admis
         </div>
       </div>
     </div>
-    </>
   );
 }
