@@ -53,13 +53,72 @@ export default function AdmissionLetterModal({ student, isOpen, onClose }: Admis
   const resumptionDate = student.resumptionDate || '15th September, 2026';
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-0 md:p-4 bg-slate-900/80 backdrop-blur-sm overflow-hidden print:p-0 print:bg-white print:static print:inset-auto">
+    <>
+      {/* Print-only styles to ensure clean single-page A4 PDF */}
+      <style jsx global>{`
+        @media print {
+          @page {
+            size: A4 portrait;
+            margin: 15mm 12mm;
+          }
+          html, body {
+            margin: 0 !important;
+            padding: 0 !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
+          /* Hide everything on the page */
+          body > * {
+            display: none !important;
+          }
+          /* Show only the modal root and its contents */
+          body > #__next,
+          body > div[data-nextjs-scroll-focus-boundary] {
+            display: block !important;
+          }
+          #__next > * {
+            display: none !important;
+          }
+          #__next main,
+          #__next > div {
+            display: block !important;
+          }
+          /* The actual print target */
+          #admission-letter-print-root {
+            display: block !important;
+            position: static !important;
+            width: 100% !important;
+            height: auto !important;
+            overflow: visible !important;
+            background: white !important;
+          }
+          #admission-letter-print-root * {
+            visibility: visible !important;
+          }
+          .no-print {
+            display: none !important;
+          }
+          #admission-letter-sheet {
+            box-shadow: none !important;
+            border: none !important;
+            border-radius: 0 !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            max-width: 100% !important;
+            width: 100% !important;
+            min-height: auto !important;
+            page-break-after: avoid;
+            page-break-inside: avoid;
+          }
+        }
+      `}</style>
+      <div id="admission-letter-print-root" className="fixed inset-0 z-50 flex items-center justify-center p-0 md:p-4 bg-slate-900/80 backdrop-blur-sm overflow-hidden">
       
       {/* Modal Container */}
-      <div className="bg-white md:rounded-3xl max-w-4xl w-full h-full md:h-auto md:max-h-[95vh] shadow-2xl overflow-hidden flex flex-col animate-slide-down print:max-w-none print:w-full print:h-auto print:max-h-none print:shadow-none print:rounded-none">
+      <div className="bg-white md:rounded-3xl max-w-4xl w-full h-full md:h-auto md:max-h-[95vh] shadow-2xl overflow-hidden flex flex-col animate-slide-down">
         
         {/* Top Control Bar (Hidden on Print) */}
-        <div className="p-4 md:p-5 bg-slate-900 text-white flex flex-col sm:flex-row sm:items-center justify-between gap-4 shrink-0 print:hidden border-b border-slate-800">
+        <div className="no-print p-4 md:p-5 bg-slate-900 text-white flex flex-col sm:flex-row sm:items-center justify-between gap-4 shrink-0 border-b border-slate-800">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400 shrink-0">
@@ -104,10 +163,10 @@ export default function AdmissionLetterModal({ student, isOpen, onClose }: Admis
         </div>
 
         {/* Printable Document Body Area */}
-        <div id="printable-admission-letter" className="p-4 sm:p-8 md:p-12 overflow-y-auto flex-1 bg-slate-100 print:bg-white print:p-0 print:overflow-visible">
+        <div id="printable-admission-letter" className="p-4 sm:p-8 md:p-12 overflow-y-auto flex-1 bg-slate-100">
           
           {/* A4 Paper Sheet Container */}
-          <div className="bg-white p-6 sm:p-10 md:p-12 rounded-2xl border border-slate-200 shadow-md max-w-3xl mx-auto relative overflow-hidden print:border-0 print:shadow-none print:p-0 print:max-w-none print:w-full min-h-[297mm]">
+          <div id="admission-letter-sheet" className="bg-white p-6 sm:p-10 md:p-12 rounded-2xl border border-slate-200 shadow-md max-w-3xl mx-auto relative overflow-hidden">
             
             {/* Watermark background logo */}
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-[0.08] select-none z-0">
@@ -303,5 +362,6 @@ export default function AdmissionLetterModal({ student, isOpen, onClose }: Admis
         </div>
       </div>
     </div>
+    </>
   );
 }
