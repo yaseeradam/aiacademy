@@ -10,6 +10,7 @@ import {
   getStudentById,
   addOrUpdateStudent,
   addOrUpdateParent,
+  getAllStudents,
   deleteStudent,
   normalizePhone,
   addAuditLog,
