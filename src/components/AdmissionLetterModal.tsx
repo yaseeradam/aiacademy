@@ -156,9 +156,14 @@ export function printBulkAdmissionLetters(students: Student[], logoSrc: string =
     .page {
       width: 100%;
       max-width: 210mm;
+      min-height: 297mm;
       margin: 0 auto;
-      padding: 8mm 12mm;
+      padding: 12mm 15mm;
       position: relative;
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
       page-break-after: always;
       break-after: page;
       page-break-inside: avoid;
@@ -178,24 +183,29 @@ export function printBulkAdmissionLetters(students: Student[], logoSrc: string =
       z-index: 0;
     }
     .watermark img {
-      width: 380px;
-      height: 380px;
+      width: 440px;
+      height: 440px;
       object-fit: contain;
     }
     .content {
       position: relative;
       z-index: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      flex: 1;
+      height: 100%;
     }
     .header {
       display: flex;
       align-items: center;
-      gap: 20px;
-      margin-bottom: 8px;
+      gap: 22px;
+      margin-bottom: 10px;
       width: 100%;
     }
     .logo-circle {
-      width: 130px;
-      height: 130px;
+      width: 145px;
+      height: 145px;
       border-radius: 50%;
       overflow: hidden;
       flex-shrink: 0;
@@ -209,66 +219,66 @@ export function printBulkAdmissionLetters(students: Student[], logoSrc: string =
       flex: 1;
     }
     .school-info h1 {
-      font-size: 34px;
+      font-size: 37px;
       font-weight: 900;
       color: #1B3A6B;
       text-transform: uppercase;
-      line-height: 1.1;
+      line-height: 1.12;
       letter-spacing: -0.5px;
     }
     .motto-banner {
       display: inline-block;
       background: #D4851F;
       color: white;
-      padding: 4px 18px;
-      font-size: 13px;
+      padding: 5px 20px;
+      font-size: 14px;
       font-weight: 700;
       font-style: italic;
       border-radius: 3px;
-      margin-top: 6px;
+      margin-top: 8px;
     }
     .contact-row {
-      margin-top: 6px;
-      font-size: 12px;
+      margin-top: 8px;
+      font-size: 13px;
       color: #333;
     }
     .contact-row div {
       display: flex;
       align-items: center;
-      gap: 8px;
-      margin-bottom: 3px;
+      gap: 9px;
+      margin-bottom: 4px;
     }
     .contact-row svg {
       flex-shrink: 0;
-      width: 14px;
-      height: 14px;
+      width: 15px;
+      height: 15px;
     }
     .divider {
-      margin-top: 6px;
-      margin-bottom: 10px;
+      margin-top: 8px;
+      margin-bottom: 12px;
     }
     .divider .line1 {
-      height: 3.5px;
+      height: 4px;
       background: #1B3A6B;
       border-radius: 1px;
     }
     .divider .line2 {
-      height: 3.5px;
+      height: 4px;
       background: #D4851F;
       border-radius: 1px;
-      margin-top: 2.5px;
+      margin-top: 3px;
     }
     .info-row {
       display: flex;
       justify-content: space-between;
       align-items: flex-start;
-      margin-bottom: 8px;
+      margin-bottom: 10px;
     }
     .meta-info {
-      font-size: 12.5px;
+      font-size: 13px;
     }
     .meta-info div {
-      margin-bottom: 4px;
+      margin-bottom: 5px;
     }
     .meta-info .label {
       color: #555;
@@ -278,7 +288,7 @@ export function printBulkAdmissionLetters(students: Student[], logoSrc: string =
       font-weight: 800;
       color: #111;
       border-bottom: 1px solid #999;
-      padding-bottom: 1px;
+      padding-bottom: 2px;
       padding-left: 4px;
       padding-right: 4px;
       text-transform: uppercase;
@@ -287,22 +297,22 @@ export function printBulkAdmissionLetters(students: Student[], logoSrc: string =
       text-align: right;
     }
     .date-line {
-      font-size: 12.5px;
+      font-size: 13px;
       font-weight: 700;
       color: #333;
-      margin-bottom: 6px;
+      margin-bottom: 8px;
     }
     .date-line .value {
       border-bottom: 1px solid #999;
-      padding-bottom: 1px;
+      padding-bottom: 2px;
       padding-left: 6px;
       font-weight: 600;
     }
     .passport-box {
-      width: 90px;
-      height: 105px;
+      width: 96px;
+      height: 112px;
       border: 2px solid #333;
-      padding: 2px;
+      padding: 3px;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -314,7 +324,7 @@ export function printBulkAdmissionLetters(students: Student[], logoSrc: string =
       object-fit: cover;
     }
     .passport-placeholder {
-      font-size: 9.5px;
+      font-size: 10px;
       color: #999;
       text-align: center;
       font-weight: 700;
@@ -322,25 +332,25 @@ export function printBulkAdmissionLetters(students: Student[], logoSrc: string =
     }
     .subject {
       text-align: center;
-      font-size: 15px;
+      font-size: 16px;
       font-weight: 800;
       text-decoration: underline;
       text-transform: uppercase;
       letter-spacing: 0.5px;
-      margin: 6px 0 10px;
+      margin: 10px 0 14px;
     }
     .letter-body {
-      font-size: 12.5px;
-      line-height: 1.55;
+      font-size: 13px;
+      line-height: 1.65;
       text-align: justify;
       color: #222;
     }
     .letter-body p {
-      margin-bottom: 7px;
+      margin-bottom: 9px;
     }
     .letter-body .greeting {
       font-weight: 700;
-      margin-bottom: 7px;
+      margin-bottom: 9px;
     }
     .letter-body strong {
       font-weight: 700;
@@ -348,11 +358,11 @@ export function printBulkAdmissionLetters(students: Student[], logoSrc: string =
     .summary-table {
       width: 100%;
       border-collapse: collapse;
-      font-size: 12px;
-      margin: 8px 0;
+      font-size: 12.5px;
+      margin: 12px 0;
     }
     .summary-table td {
-      padding: 5px 8px;
+      padding: 7px 10px;
       border: 1px solid #888;
     }
     .summary-table .label-cell {
@@ -366,30 +376,30 @@ export function printBulkAdmissionLetters(students: Student[], logoSrc: string =
       color: #111;
     }
     .signoff {
-      margin-top: 12px;
-      font-size: 12.5px;
+      margin-top: 20px;
+      font-size: 13px;
     }
     .signoff .yours {
       font-weight: 600;
-      margin-bottom: 18px;
+      margin-bottom: 28px;
     }
     .signoff .sig-line {
-      width: 180px;
+      width: 190px;
       border-bottom: 2px solid #333;
-      margin-bottom: 3px;
+      margin-bottom: 4px;
     }
     .signoff .name {
       font-weight: 800;
-      font-size: 13.5px;
+      font-size: 14px;
     }
     .signoff .title {
       font-weight: 600;
       color: #444;
-      font-size: 11.5px;
+      font-size: 12px;
     }
     .signoff .school {
       font-weight: 700;
-      font-size: 11.5px;
+      font-size: 12px;
     }
     .footer {
       margin-top: 16px;
@@ -501,9 +511,14 @@ export default function AdmissionLetterModal({ student, isOpen, onClose }: Admis
     .page {
       width: 100%;
       max-width: 210mm;
+      min-height: 297mm;
       margin: 0 auto;
-      padding: 8mm 12mm;
+      padding: 12mm 15mm;
       position: relative;
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
       page-break-inside: avoid;
       break-inside: avoid;
     }
@@ -518,25 +533,30 @@ export default function AdmissionLetterModal({ student, isOpen, onClose }: Admis
       z-index: 0;
     }
     .watermark img {
-      width: 380px;
-      height: 380px;
+      width: 440px;
+      height: 440px;
       object-fit: contain;
     }
     .content {
       position: relative;
       z-index: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      flex: 1;
+      height: 100%;
     }
     /* Header */
     .header {
       display: flex;
       align-items: center;
-      gap: 20px;
-      margin-bottom: 8px;
+      gap: 22px;
+      margin-bottom: 10px;
       width: 100%;
     }
     .logo-circle {
-      width: 130px;
-      height: 130px;
+      width: 145px;
+      height: 145px;
       border-radius: 50%;
       overflow: hidden;
       flex-shrink: 0;
@@ -550,67 +570,67 @@ export default function AdmissionLetterModal({ student, isOpen, onClose }: Admis
       flex: 1;
     }
     .school-info h1 {
-      font-size: 34px;
+      font-size: 37px;
       font-weight: 900;
       color: #1B3A6B;
       text-transform: uppercase;
-      line-height: 1.1;
+      line-height: 1.12;
       letter-spacing: -0.5px;
     }
     .motto-banner {
       display: inline-block;
       background: #D4851F;
       color: white;
-      padding: 4px 18px;
-      font-size: 13px;
+      padding: 5px 20px;
+      font-size: 14px;
       font-weight: 700;
       font-style: italic;
       border-radius: 3px;
-      margin-top: 6px;
+      margin-top: 8px;
     }
     /* Contact */
     .contact-row {
-      margin-top: 6px;
-      font-size: 12px;
+      margin-top: 8px;
+      font-size: 13px;
       color: #333;
     }
     .contact-row div {
       display: flex;
       align-items: center;
-      gap: 8px;
-      margin-bottom: 3px;
+      gap: 9px;
+      margin-bottom: 4px;
     }
     .contact-row svg {
       flex-shrink: 0;
-      width: 14px;
-      height: 14px;
+      width: 15px;
+      height: 15px;
     }
     .divider {
-      margin-top: 6px;
-      margin-bottom: 10px;
+      margin-top: 8px;
+      margin-bottom: 12px;
     }
     .divider .line1 {
-      height: 3.5px;
+      height: 4px;
       background: #1B3A6B;
       border-radius: 1px;
     }
     .divider .line2 {
-      height: 3.5px;
+      height: 4px;
       background: #D4851F;
       border-radius: 1px;
-      margin-top: 2.5px;
+      margin-top: 3px;
     }
     .info-row {
       display: flex;
       justify-content: space-between;
       align-items: flex-start;
-      margin-bottom: 8px;
+      margin-bottom: 10px;
     }
     .meta-info {
-      font-size: 12.5px;
+      font-size: 13px;
     }
     .meta-info div {
-      margin-bottom: 4px;
+      margin-bottom: 5px;
     }
     .meta-info .label {
       color: #555;
@@ -620,7 +640,7 @@ export default function AdmissionLetterModal({ student, isOpen, onClose }: Admis
       font-weight: 800;
       color: #111;
       border-bottom: 1px solid #999;
-      padding-bottom: 1px;
+      padding-bottom: 2px;
       padding-left: 4px;
       padding-right: 4px;
       text-transform: uppercase;
@@ -629,22 +649,22 @@ export default function AdmissionLetterModal({ student, isOpen, onClose }: Admis
       text-align: right;
     }
     .date-line {
-      font-size: 12.5px;
+      font-size: 13px;
       font-weight: 700;
       color: #333;
-      margin-bottom: 6px;
+      margin-bottom: 8px;
     }
     .date-line .value {
       border-bottom: 1px solid #999;
-      padding-bottom: 1px;
+      padding-bottom: 2px;
       padding-left: 6px;
       font-weight: 600;
     }
     .passport-box {
-      width: 90px;
-      height: 105px;
+      width: 96px;
+      height: 112px;
       border: 2px solid #333;
-      padding: 2px;
+      padding: 3px;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -656,7 +676,7 @@ export default function AdmissionLetterModal({ student, isOpen, onClose }: Admis
       object-fit: cover;
     }
     .passport-placeholder {
-      font-size: 9.5px;
+      font-size: 10px;
       color: #999;
       text-align: center;
       font-weight: 700;
@@ -664,25 +684,25 @@ export default function AdmissionLetterModal({ student, isOpen, onClose }: Admis
     }
     .subject {
       text-align: center;
-      font-size: 15px;
+      font-size: 16px;
       font-weight: 800;
       text-decoration: underline;
       text-transform: uppercase;
       letter-spacing: 0.5px;
-      margin: 6px 0 10px;
+      margin: 10px 0 14px;
     }
     .letter-body {
-      font-size: 12.5px;
-      line-height: 1.55;
+      font-size: 13px;
+      line-height: 1.65;
       text-align: justify;
       color: #222;
     }
     .letter-body p {
-      margin-bottom: 7px;
+      margin-bottom: 9px;
     }
     .letter-body .greeting {
       font-weight: 700;
-      margin-bottom: 7px;
+      margin-bottom: 9px;
     }
     .letter-body strong {
       font-weight: 700;
@@ -690,11 +710,11 @@ export default function AdmissionLetterModal({ student, isOpen, onClose }: Admis
     .summary-table {
       width: 100%;
       border-collapse: collapse;
-      font-size: 12px;
-      margin: 8px 0;
+      font-size: 12.5px;
+      margin: 12px 0;
     }
     .summary-table td {
-      padding: 5px 8px;
+      padding: 7px 10px;
       border: 1px solid #888;
     }
     .summary-table .label-cell {
@@ -708,30 +728,30 @@ export default function AdmissionLetterModal({ student, isOpen, onClose }: Admis
       color: #111;
     }
     .signoff {
-      margin-top: 12px;
-      font-size: 12.5px;
+      margin-top: 20px;
+      font-size: 13px;
     }
     .signoff .yours {
       font-weight: 600;
-      margin-bottom: 18px;
+      margin-bottom: 28px;
     }
     .signoff .sig-line {
-      width: 180px;
+      width: 190px;
       border-bottom: 2px solid #333;
-      margin-bottom: 3px;
+      margin-bottom: 4px;
     }
     .signoff .name {
       font-weight: 800;
-      font-size: 13.5px;
+      font-size: 14px;
     }
     .signoff .title {
       font-weight: 600;
       color: #444;
-      font-size: 11.5px;
+      font-size: 12px;
     }
     .signoff .school {
       font-weight: 700;
-      font-size: 11.5px;
+      font-size: 12px;
     }
     /* Divider */
     .divider {
