@@ -134,7 +134,7 @@ const INITIAL_STUDENTS: Student[] = [
   {
     id: 'stud-10', parentId: 'parent-10', formNumber: 'FORM-2026-010',
     firstName: 'Faruk', lastName: 'Umar Madawaki', gender: 'Male',
-    intendedClass: 'Primary 2', verificationStatus: 'pending',
+    intendedClass: 'Primary 1', verificationStatus: 'pending',
     dateOfBirth: '2018-06-19', fatherName: 'Umar Faruk Madawaki',
     motherName: 'Salamatu Idris',
     residentialAddress: 'No.30 Albarka road T/wada, Argungu',
@@ -273,6 +273,12 @@ async function ensureSeeded() {
   if (parentsCount === 0) {
     await db.collection<Parent>(PARENTS_COL).insertMany(INITIAL_PARENTS);
     await db.collection<Student>(STUDENTS_COL).insertMany(INITIAL_STUDENTS);
+  } else {
+    // Automatically migrate any existing 'Primary 2' students in MongoDB to 'Primary 1'
+    await db.collection<Student>(STUDENTS_COL).updateMany(
+      { intendedClass: 'Primary 2' },
+      { $set: { intendedClass: 'Primary 1' } }
+    );
   }
 }
 
@@ -306,7 +312,9 @@ export async function getStudentsByParentId(parentId: string): Promise<Student[]
   const docs = await db.collection<Student>(STUDENTS_COL).find({ parentId }).toArray();
   return docs.map(({ _id, ...rest }) => {
     void _id;
-    return rest as Student;
+    const s = rest as Student;
+    if (s.intendedClass === 'Primary 2') s.intendedClass = 'Primary 1';
+    return s;
   });
 }
 
@@ -317,7 +325,9 @@ export async function getStudentById(studentId: string): Promise<Student | undef
   if (!doc) return undefined;
   const { _id, ...rest } = doc;
   void _id;
-  return rest as Student;
+  const s = rest as Student;
+  if (s.intendedClass === 'Primary 2') s.intendedClass = 'Primary 1';
+  return s;
 }
 
 export async function getStudentByFormNumber(formNumber: string): Promise<Student | undefined> {
