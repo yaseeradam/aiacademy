@@ -11,6 +11,18 @@ interface AdmissionLetterModalProps {
   onClose: () => void;
 }
 
+export function getStudentAdmissionNumber(student: Student): string {
+  if (student.admissionNumber && student.admissionNumber.startsWith('AIAA/')) {
+    return student.admissionNumber;
+  }
+  const isNursery = (student.intendedClass || '').toLowerCase().includes('nursery');
+  const sectionPrefix = isNursery ? 'N' : 'P';
+  const currentYear = new Date().getFullYear();
+  const digits = (student.formNumber || student.id || '').replace(/\D/g, '');
+  const num = digits ? String(parseInt(digits.slice(-3), 10) || 1).padStart(3, '0') : '001';
+  return `AIAA/${sectionPrefix}/${currentYear}/${num}`;
+}
+
 export default function AdmissionLetterModal({ student, isOpen, onClose }: AdmissionLetterModalProps) {
   const [logoSrc, setLogoSrc] = useState<string>(() => {
     if (typeof window !== 'undefined') {
@@ -47,12 +59,12 @@ export default function AdmissionLetterModal({ student, isOpen, onClose }: Admis
 
   const academicSession = student.academicSession || '2026/2027';
   const resumptionDate = student.resumptionDate || '15th September, 2026';
-  const admissionNumber = student.admissionNumber || student.formNumber;
+  const admissionNumber = getStudentAdmissionNumber(student);
   const studentName = `${student.firstName} ${student.lastName}`;
   const photoSrc = student.photo || '';
 
   const handlePrint = () => {
-    // Build standalone HTML for a clean print window
+    // Build standalone HTML with inline vector SVGs (matching Lucide icons exactly)
     const printHTML = `
 <!DOCTYPE html>
 <html>
@@ -143,7 +155,7 @@ export default function AdmissionLetterModal({ student, isOpen, onClose }: Admis
     /* Contact */
     .contact-row {
       margin-top: 8px;
-      font-size: 12px;
+      font-size: 12.5px;
       color: #333;
     }
     .contact-row div {
@@ -152,10 +164,7 @@ export default function AdmissionLetterModal({ student, isOpen, onClose }: Admis
       gap: 8px;
       margin-bottom: 4px;
     }
-    .contact-row .icon {
-      color: #1B3A6B;
-      font-size: 13px;
-      font-weight: bold;
+    .contact-row svg {
       flex-shrink: 0;
     }
     /* Divider */
@@ -319,12 +328,16 @@ export default function AdmissionLetterModal({ student, isOpen, onClose }: Admis
       border-top: 1px solid #ddd;
       display: flex;
       justify-content: space-between;
+      align-items: center;
       font-size: 10px;
       color: #888;
     }
     .footer .approved {
       color: #047857;
       font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 4px;
     }
     .footer .ref {
       font-family: monospace;
@@ -348,11 +361,20 @@ export default function AdmissionLetterModal({ student, isOpen, onClose }: Admis
         </div>
       </div>
 
-      <!-- Contact -->
+      <!-- Contact with Vector SVG Icons -->
       <div class="contact-row">
-        <div><span class="icon">📍</span> <span>Behind Buben Ta'Ololo's Residence, Tudun Wada, Argungu, Kebbi State</span></div>
-        <div><span class="icon">📞</span> <span>08069676697, 07034784861</span></div>
-        <div><span class="icon">✉️</span> <span>alijabaintegratedacademyarg@gmail.com</span></div>
+        <div>
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1B3A6B" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+          <span>Behind Buben Ta'Ololo's Residence, Tudun Wada, Argungu, Kebbi State</span>
+        </div>
+        <div>
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1B3A6B" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+          <span>08069676697, 07034784861</span>
+        </div>
+        <div>
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1B3A6B" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+          <span>alijabaintegratedacademyarg@gmail.com</span>
+        </div>
       </div>
 
       <!-- Divider -->
@@ -408,7 +430,10 @@ export default function AdmissionLetterModal({ student, isOpen, onClose }: Admis
 
       <!-- Footer -->
       <div class="footer">
-        <div class="approved">✓ OFFICIALLY APPROVED & ISSUED BY SCHOOL ADMINISTRATION</div>
+        <div class="approved">
+          <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#047857" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>
+          <span>OFFICIALLY APPROVED & ISSUED BY SCHOOL ADMINISTRATION</span>
+        </div>
         <div class="ref">REF: ${admissionNumber}</div>
       </div>
     </div>
@@ -420,16 +445,14 @@ export default function AdmissionLetterModal({ student, isOpen, onClose }: Admis
     if (printWindow) {
       printWindow.document.write(printHTML);
       printWindow.document.close();
-      // Wait for images to load before printing
       printWindow.onload = () => {
         setTimeout(() => {
           printWindow.print();
-        }, 500);
+        }, 400);
       };
-      // Fallback if onload doesn't fire
       setTimeout(() => {
         printWindow.print();
-      }, 2000);
+      }, 1500);
     }
   };
 
