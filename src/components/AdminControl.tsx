@@ -10,10 +10,10 @@ import {
   Users, Clock, AlertOctagon, HelpCircle, 
   ShieldCheck, ChevronRight, X, Menu,
   Grid, Settings, Plus, LogOut, Trash2, Save, BookOpen,
-  Loader2, Scan, History, MessageSquare, Camera, FileText, CheckCircle2, CreditCard
+  Loader2, Scan, History, MessageSquare, Camera, FileText, CheckCircle2, CreditCard, Printer
 } from 'lucide-react';
 import { logoutAction, adminUpdateStudentAction, adminDeleteStudentAction, adminCreateStudentAction, adminVerifyAction, adminTogglePaymentStatusAction, getAuditLogsAction, scanAdmissionFormOCRAction, getSchoolSettingsAction, updateSchoolSettingsAction } from '@/app/actions';
-import AdmissionLetterModal from './AdmissionLetterModal';
+import AdmissionLetterModal, { printBulkAdmissionLetters } from './AdmissionLetterModal';
 
 interface AdminControlProps {
   students: Student[];
@@ -1774,6 +1774,22 @@ export default function AdminControl({ students }: AdminControlProps) {
                 <span className="px-3.5 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 font-bold text-xs">
                   {students.filter(s => s.paymentStatus === 'paid').length} Approved / Paid Letters
                 </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const paidStudents = students.filter(s => s.paymentStatus === 'paid');
+                    const targetStudents = paidStudents.length > 0 ? paidStudents : filteredStudents;
+                    if (targetStudents.length === 0) {
+                      alert("No student records available to print.");
+                      return;
+                    }
+                    printBulkAdmissionLetters(targetStudents, schoolSettings.logo || '/logo.jpg');
+                  }}
+                  className="flex items-center gap-2 py-2 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition-all cursor-pointer shadow-sm active:scale-98"
+                >
+                  <Printer className="w-4 h-4 text-emerald-200" />
+                  <span>Print All Admission Letters (Bulk A4)</span>
+                </button>
                 <button
                   type="button"
                   onClick={handleExportPhotos}
