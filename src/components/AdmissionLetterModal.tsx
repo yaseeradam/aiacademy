@@ -157,10 +157,12 @@ export function printBulkAdmissionLetters(students: Student[], logoSrc: string =
       width: 100%;
       max-width: 210mm;
       margin: 0 auto;
-      padding: 12mm 15mm;
+      padding: 8mm 12mm;
       position: relative;
       page-break-after: always;
       break-after: page;
+      page-break-inside: avoid;
+      break-inside: avoid;
     }
     .page:last-child {
       page-break-after: avoid;
@@ -176,8 +178,8 @@ export function printBulkAdmissionLetters(students: Student[], logoSrc: string =
       z-index: 0;
     }
     .watermark img {
-      width: 400px;
-      height: 400px;
+      width: 380px;
+      height: 380px;
       object-fit: contain;
     }
     .content {
@@ -188,7 +190,7 @@ export function printBulkAdmissionLetters(students: Student[], logoSrc: string =
       display: flex;
       align-items: center;
       gap: 20px;
-      margin-bottom: 10px;
+      margin-bottom: 8px;
       width: 100%;
     }
     .logo-circle {
@@ -207,7 +209,7 @@ export function printBulkAdmissionLetters(students: Student[], logoSrc: string =
       flex: 1;
     }
     .school-info h1 {
-      font-size: 32px;
+      font-size: 34px;
       font-weight: 900;
       color: #1B3A6B;
       text-transform: uppercase;
@@ -219,22 +221,22 @@ export function printBulkAdmissionLetters(students: Student[], logoSrc: string =
       background: #D4851F;
       color: white;
       padding: 4px 18px;
-      font-size: 13.5px;
+      font-size: 13px;
       font-weight: 700;
       font-style: italic;
       border-radius: 3px;
-      margin-top: 8px;
+      margin-top: 6px;
     }
     .contact-row {
-      margin-top: 8px;
-      font-size: 12.5px;
+      margin-top: 6px;
+      font-size: 12px;
       color: #333;
     }
     .contact-row div {
       display: flex;
       align-items: center;
       gap: 8px;
-      margin-bottom: 4px;
+      margin-bottom: 3px;
     }
     .contact-row svg {
       flex-shrink: 0;
@@ -242,31 +244,31 @@ export function printBulkAdmissionLetters(students: Student[], logoSrc: string =
       height: 14px;
     }
     .divider {
-      margin-top: 10px;
-      margin-bottom: 14px;
+      margin-top: 6px;
+      margin-bottom: 10px;
     }
     .divider .line1 {
-      height: 4px;
+      height: 3.5px;
       background: #1B3A6B;
       border-radius: 1px;
     }
     .divider .line2 {
-      height: 4px;
+      height: 3.5px;
       background: #D4851F;
       border-radius: 1px;
-      margin-top: 3px;
+      margin-top: 2.5px;
     }
     .info-row {
       display: flex;
       justify-content: space-between;
       align-items: flex-start;
-      margin-bottom: 10px;
+      margin-bottom: 8px;
     }
     .meta-info {
-      font-size: 13px;
+      font-size: 12.5px;
     }
     .meta-info div {
-      margin-bottom: 6px;
+      margin-bottom: 4px;
     }
     .meta-info .label {
       color: #555;
@@ -276,7 +278,7 @@ export function printBulkAdmissionLetters(students: Student[], logoSrc: string =
       font-weight: 800;
       color: #111;
       border-bottom: 1px solid #999;
-      padding-bottom: 2px;
+      padding-bottom: 1px;
       padding-left: 4px;
       padding-right: 4px;
       text-transform: uppercase;
@@ -285,22 +287,22 @@ export function printBulkAdmissionLetters(students: Student[], logoSrc: string =
       text-align: right;
     }
     .date-line {
-      font-size: 13px;
+      font-size: 12.5px;
       font-weight: 700;
       color: #333;
-      margin-bottom: 10px;
+      margin-bottom: 6px;
     }
     .date-line .value {
       border-bottom: 1px solid #999;
-      padding-bottom: 2px;
+      padding-bottom: 1px;
       padding-left: 6px;
       font-weight: 600;
     }
     .passport-box {
-      width: 100px;
-      height: 115px;
+      width: 90px;
+      height: 105px;
       border: 2px solid #333;
-      padding: 3px;
+      padding: 2px;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -312,7 +314,7 @@ export function printBulkAdmissionLetters(students: Student[], logoSrc: string =
       object-fit: cover;
     }
     .passport-placeholder {
-      font-size: 10px;
+      font-size: 9.5px;
       color: #999;
       text-align: center;
       font-weight: 700;
@@ -320,25 +322,25 @@ export function printBulkAdmissionLetters(students: Student[], logoSrc: string =
     }
     .subject {
       text-align: center;
-      font-size: 16px;
+      font-size: 15px;
       font-weight: 800;
       text-decoration: underline;
       text-transform: uppercase;
-      letter-spacing: 1px;
-      margin: 8px 0 12px;
+      letter-spacing: 0.5px;
+      margin: 6px 0 10px;
     }
     .letter-body {
-      font-size: 13px;
-      line-height: 1.7;
+      font-size: 12.5px;
+      line-height: 1.55;
       text-align: justify;
       color: #222;
     }
     .letter-body p {
-      margin-bottom: 10px;
+      margin-bottom: 7px;
     }
     .letter-body .greeting {
       font-weight: 700;
-      margin-bottom: 10px;
+      margin-bottom: 7px;
     }
     .letter-body strong {
       font-weight: 700;
@@ -346,11 +348,11 @@ export function printBulkAdmissionLetters(students: Student[], logoSrc: string =
     .summary-table {
       width: 100%;
       border-collapse: collapse;
-      font-size: 13px;
-      margin: 12px 0;
+      font-size: 12px;
+      margin: 8px 0;
     }
     .summary-table td {
-      padding: 8px 10px;
+      padding: 5px 8px;
       border: 1px solid #888;
     }
     .summary-table .label-cell {
@@ -364,30 +366,30 @@ export function printBulkAdmissionLetters(students: Student[], logoSrc: string =
       color: #111;
     }
     .signoff {
-      margin-top: 20px;
-      font-size: 13px;
+      margin-top: 12px;
+      font-size: 12.5px;
     }
     .signoff .yours {
       font-weight: 600;
-      margin-bottom: 30px;
+      margin-bottom: 18px;
     }
     .signoff .sig-line {
-      width: 200px;
+      width: 180px;
       border-bottom: 2px solid #333;
-      margin-bottom: 4px;
+      margin-bottom: 3px;
     }
     .signoff .name {
       font-weight: 800;
-      font-size: 14px;
+      font-size: 13.5px;
     }
     .signoff .title {
       font-weight: 600;
       color: #444;
-      font-size: 12px;
+      font-size: 11.5px;
     }
     .signoff .school {
       font-weight: 700;
-      font-size: 12px;
+      font-size: 11.5px;
     }
     .footer {
       margin-top: 16px;
@@ -500,8 +502,10 @@ export default function AdmissionLetterModal({ student, isOpen, onClose }: Admis
       width: 100%;
       max-width: 210mm;
       margin: 0 auto;
-      padding: 12mm 15mm;
+      padding: 8mm 12mm;
       position: relative;
+      page-break-inside: avoid;
+      break-inside: avoid;
     }
     /* Watermark */
     .watermark {
@@ -514,8 +518,8 @@ export default function AdmissionLetterModal({ student, isOpen, onClose }: Admis
       z-index: 0;
     }
     .watermark img {
-      width: 400px;
-      height: 400px;
+      width: 380px;
+      height: 380px;
       object-fit: contain;
     }
     .content {
@@ -527,7 +531,7 @@ export default function AdmissionLetterModal({ student, isOpen, onClose }: Admis
       display: flex;
       align-items: center;
       gap: 20px;
-      margin-bottom: 10px;
+      margin-bottom: 8px;
       width: 100%;
     }
     .logo-circle {
@@ -546,7 +550,7 @@ export default function AdmissionLetterModal({ student, isOpen, onClose }: Admis
       flex: 1;
     }
     .school-info h1 {
-      font-size: 32px;
+      font-size: 34px;
       font-weight: 900;
       color: #1B3A6B;
       text-transform: uppercase;
@@ -558,27 +562,176 @@ export default function AdmissionLetterModal({ student, isOpen, onClose }: Admis
       background: #D4851F;
       color: white;
       padding: 4px 18px;
-      font-size: 13.5px;
+      font-size: 13px;
       font-weight: 700;
       font-style: italic;
       border-radius: 3px;
-      margin-top: 8px;
+      margin-top: 6px;
     }
+    /* Contact */
     .contact-row {
-      margin-top: 8px;
-      font-size: 12.5px;
+      margin-top: 6px;
+      font-size: 12px;
       color: #333;
     }
     .contact-row div {
       display: flex;
       align-items: center;
       gap: 8px;
-      margin-bottom: 4px;
+      margin-bottom: 3px;
     }
     .contact-row svg {
       flex-shrink: 0;
       width: 14px;
       height: 14px;
+    }
+    .divider {
+      margin-top: 6px;
+      margin-bottom: 10px;
+    }
+    .divider .line1 {
+      height: 3.5px;
+      background: #1B3A6B;
+      border-radius: 1px;
+    }
+    .divider .line2 {
+      height: 3.5px;
+      background: #D4851F;
+      border-radius: 1px;
+      margin-top: 2.5px;
+    }
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 8px;
+    }
+    .meta-info {
+      font-size: 12.5px;
+    }
+    .meta-info div {
+      margin-bottom: 4px;
+    }
+    .meta-info .label {
+      color: #555;
+      font-weight: 600;
+    }
+    .meta-info .value {
+      font-weight: 800;
+      color: #111;
+      border-bottom: 1px solid #999;
+      padding-bottom: 1px;
+      padding-left: 4px;
+      padding-right: 4px;
+      text-transform: uppercase;
+    }
+    .right-col {
+      text-align: right;
+    }
+    .date-line {
+      font-size: 12.5px;
+      font-weight: 700;
+      color: #333;
+      margin-bottom: 6px;
+    }
+    .date-line .value {
+      border-bottom: 1px solid #999;
+      padding-bottom: 1px;
+      padding-left: 6px;
+      font-weight: 600;
+    }
+    .passport-box {
+      width: 90px;
+      height: 105px;
+      border: 2px solid #333;
+      padding: 2px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-left: auto;
+    }
+    .passport-box img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .passport-placeholder {
+      font-size: 9.5px;
+      color: #999;
+      text-align: center;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+    .subject {
+      text-align: center;
+      font-size: 15px;
+      font-weight: 800;
+      text-decoration: underline;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin: 6px 0 10px;
+    }
+    .letter-body {
+      font-size: 12.5px;
+      line-height: 1.55;
+      text-align: justify;
+      color: #222;
+    }
+    .letter-body p {
+      margin-bottom: 7px;
+    }
+    .letter-body .greeting {
+      font-weight: 700;
+      margin-bottom: 7px;
+    }
+    .letter-body strong {
+      font-weight: 700;
+    }
+    .summary-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+      margin: 8px 0;
+    }
+    .summary-table td {
+      padding: 5px 8px;
+      border: 1px solid #888;
+    }
+    .summary-table .label-cell {
+      font-weight: 700;
+      color: #333;
+      background: #f5f5f5;
+      width: 45%;
+    }
+    .summary-table .value-cell {
+      font-weight: 800;
+      color: #111;
+    }
+    .signoff {
+      margin-top: 12px;
+      font-size: 12.5px;
+    }
+    .signoff .yours {
+      font-weight: 600;
+      margin-bottom: 18px;
+    }
+    .signoff .sig-line {
+      width: 180px;
+      border-bottom: 2px solid #333;
+      margin-bottom: 3px;
+    }
+    .signoff .name {
+      font-weight: 800;
+      font-size: 13.5px;
+    }
+    .signoff .title {
+      font-weight: 600;
+      color: #444;
+      font-size: 11.5px;
+    }
+    .signoff .school {
+      font-weight: 700;
+      font-size: 11.5px;
     }
     /* Divider */
     .divider {
