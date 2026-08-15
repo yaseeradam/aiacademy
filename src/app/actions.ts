@@ -150,8 +150,8 @@ export async function adminTogglePaymentStatusAction(studentId: string, paymentS
   if (paymentStatus === 'paid' && !admissionNumber) {
     const allStudents = await getAllStudents();
     // Determine section prefix based on class
-    const isNursery = student.intendedClass.toLowerCase().includes('nursery');
-    const sectionPrefix = isNursery ? 'N' : 'P';
+    const isNursery = (student.intendedClass || '').toLowerCase().includes('nursery');
+    const sectionPrefix = isNursery ? 'N' : 'B';
     // Count existing admission numbers in the same section
     const sectionPattern = `AIAA/${sectionPrefix}/`;
     const sectionCount = allStudents.filter(s => s.admissionNumber && s.admissionNumber.startsWith(sectionPattern) && s.id !== studentId).length;

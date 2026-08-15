@@ -16,7 +16,7 @@ export function getStudentAdmissionNumber(student: Student): string {
     return student.admissionNumber;
   }
   const isNursery = (student.intendedClass || '').toLowerCase().includes('nursery');
-  const sectionPrefix = isNursery ? 'N' : 'P';
+  const sectionPrefix = isNursery ? 'N' : 'B';
   const currentYear = new Date().getFullYear();
   const digits = (student.formNumber || student.id || '').replace(/\D/g, '');
   const num = digits ? String(parseInt(digits.slice(-3), 10) || 1).padStart(3, '0') : '001';

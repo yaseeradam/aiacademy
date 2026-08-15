@@ -37,8 +37,8 @@ const INITIAL_STUDENTS: Student[] = [
   {
     id: 'stud-1', parentId: 'parent-1', formNumber: 'N-3000',
     firstName: 'Muhd Imam', lastName: 'Bashir', gender: 'Male',
-    intendedClass: 'Primary 1', verificationStatus: 'verified',
-    paymentStatus: 'paid', admissionNumber: 'AIAA/P/2026/001', academicSession: '2026/2027', resumptionDate: '15th September, 2026',
+    intendedClass: 'Basic 1', verificationStatus: 'verified',
+    paymentStatus: 'paid', admissionNumber: 'AIAA/B/2026/001', academicSession: '2026/2027', resumptionDate: '15th September, 2026',
     dateOfBirth: '2017-01-10', fatherName: "Muh'd Bashir",
     motherName: 'Hauwa,u Abubakar kigo',
     residentialAddress: 'Near dutsen Mariya f|Tank, Argungu',
@@ -49,7 +49,7 @@ const INITIAL_STUDENTS: Student[] = [
   {
     id: 'stud-2', parentId: 'parent-2', formNumber: 'FORM-2026-002',
     firstName: 'Asma,u', lastName: 'Aliyu Musa', gender: 'Female',
-    intendedClass: 'Primary 1', verificationStatus: 'pending',
+    intendedClass: 'Basic 1', verificationStatus: 'pending',
     dateOfBirth: '2019-05-16', fatherName: 'Aliyu Musa',
     motherName: 'Aisha Aliyu',
     residentialAddress: 'low-cost Behind Area court, Argungu',
@@ -123,7 +123,7 @@ const INITIAL_STUDENTS: Student[] = [
   {
     id: 'stud-9', parentId: 'parent-9', formNumber: 'FORM-2026-009',
     firstName: 'Maimuna', lastName: 'Sama,ila', gender: 'Female',
-    intendedClass: 'Primary 1', verificationStatus: 'pending',
+    intendedClass: 'Basic 1', verificationStatus: 'pending',
     dateOfBirth: '2019-05-04', fatherName: 'Sama,ila Lamne Bubuche',
     motherName: 'Saliha Sani kokani',
     residentialAddress: 'Shiyar Buben ta alolo, Argungu',
@@ -134,7 +134,7 @@ const INITIAL_STUDENTS: Student[] = [
   {
     id: 'stud-10', parentId: 'parent-10', formNumber: 'FORM-2026-010',
     firstName: 'Faruk', lastName: 'Umar Madawaki', gender: 'Male',
-    intendedClass: 'Primary 1', verificationStatus: 'pending',
+    intendedClass: 'Basic 1', verificationStatus: 'pending',
     dateOfBirth: '2018-06-19', fatherName: 'Umar Faruk Madawaki',
     motherName: 'Salamatu Idris',
     residentialAddress: 'No.30 Albarka road T/wada, Argungu',
@@ -156,7 +156,7 @@ const INITIAL_STUDENTS: Student[] = [
   {
     id: 'stud-12', parentId: 'parent-12', formNumber: 'FORM-2026-012',
     firstName: 'Bashar', lastName: 'Yusuf Yakubu', gender: 'Male',
-    intendedClass: 'Primary 1', verificationStatus: 'pending',
+    intendedClass: 'Basic 1', verificationStatus: 'pending',
     dateOfBirth: '', fatherName: 'Yusuf Yakubu',
     motherName: 'Fauziya Sulaiman Kalanda',
     residentialAddress: 'House no.4 behind ta ololo Area, Argungu',
@@ -274,10 +274,10 @@ async function ensureSeeded() {
     await db.collection<Parent>(PARENTS_COL).insertMany(INITIAL_PARENTS);
     await db.collection<Student>(STUDENTS_COL).insertMany(INITIAL_STUDENTS);
   } else {
-    // Automatically migrate any existing 'Primary 2' students in MongoDB to 'Primary 1'
+    // Automatically migrate any existing 'Primary' students in MongoDB to 'Basic 1'
     await db.collection<Student>(STUDENTS_COL).updateMany(
-      { intendedClass: 'Primary 2' },
-      { $set: { intendedClass: 'Primary 1' } }
+      { intendedClass: { $regex: /Primary/i } },
+      { $set: { intendedClass: 'Basic 1' } }
     );
   }
 }
@@ -313,7 +313,7 @@ export async function getStudentsByParentId(parentId: string): Promise<Student[]
   return docs.map(({ _id, ...rest }) => {
     void _id;
     const s = rest as Student;
-    if (s.intendedClass === 'Primary 2') s.intendedClass = 'Primary 1';
+    if (/Primary/i.test(s.intendedClass)) s.intendedClass = 'Basic 1';
     return s;
   });
 }
@@ -326,7 +326,7 @@ export async function getStudentById(studentId: string): Promise<Student | undef
   const { _id, ...rest } = doc;
   void _id;
   const s = rest as Student;
-  if (s.intendedClass === 'Primary 2') s.intendedClass = 'Primary 1';
+  if (/Primary/i.test(s.intendedClass)) s.intendedClass = 'Basic 1';
   return s;
 }
 
@@ -339,7 +339,9 @@ export async function getStudentByFormNumber(formNumber: string): Promise<Studen
   if (!doc) return undefined;
   const { _id, ...rest } = doc;
   void _id;
-  return rest as Student;
+  const s = rest as Student;
+  if (/Primary/i.test(s.intendedClass)) s.intendedClass = 'Basic 1';
+  return s;
 }
 
 export async function findDuplicateStudent(studentData: Partial<Student>): Promise<Student | undefined> {
@@ -353,7 +355,12 @@ export async function findDuplicateStudent(studentData: Partial<Student>): Promi
   const phone = studentData.phone1 ? normalizePhone(studentData.phone1) : '';
   const dob = studentData.dateOfBirth?.trim().toLowerCase();
 
-  return all.map(({ _id, ...rest }) => { void _id; return rest as Student; }).find(s => {
+  return all.map(({ _id, ...rest }) => {
+    void _id;
+    const s = rest as Student;
+    if (/Primary/i.test(s.intendedClass)) s.intendedClass = 'Basic 1';
+    return s;
+  }).find(s => {
     if (studentData.id && s.id === studentData.id) return false;
 
     // Check 1: Form serial number match
@@ -394,7 +401,9 @@ export async function getAllStudents(): Promise<Student[]> {
   const docs = await db.collection<Student>(STUDENTS_COL).find({}).toArray();
   return docs.map(({ _id, ...rest }) => {
     void _id;
-    return rest as Student;
+    const s = rest as Student;
+    if (/Primary/i.test(s.intendedClass)) s.intendedClass = 'Basic 1';
+    return s;
   });
 }
 
