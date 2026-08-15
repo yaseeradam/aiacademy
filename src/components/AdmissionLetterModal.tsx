@@ -125,14 +125,7 @@ export function printBulkAdmissionLetters(students: Student[], logoSrc: string =
           <p class="school">AI Integrated Academy Argungu</p>
         </div>
 
-        <!-- Footer -->
-        <div class="footer">
-          <div class="approved">
-            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#047857" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>
-            <span>OFFICIALLY APPROVED & ISSUED BY SCHOOL ADMINISTRATION</span>
-          </div>
-          <div class="ref">REF: ${admissionNumber}</div>
-        </div>
+
       </div>
     </div>`;
   }).join('\n');
@@ -848,14 +841,7 @@ export default function AdmissionLetterModal({ student, isOpen, onClose }: Admis
         <p class="school">AI Integrated Academy Argungu</p>
       </div>
 
-      <!-- Footer -->
-      <div class="footer">
-        <div class="approved">
-          <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#047857" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>
-          <span>OFFICIALLY APPROVED & ISSUED BY SCHOOL ADMINISTRATION</span>
-        </div>
-        <div class="ref">REF: ${admissionNumber}</div>
-      </div>
+
     </div>
   </div>
 </body>
@@ -1094,16 +1080,7 @@ export default function AdmissionLetterModal({ student, isOpen, onClose }: Admis
                 </div>
               </div>
 
-              {/* Footer */}
-              <div className="pt-4 flex justify-between items-center border-t border-slate-200 font-sans text-[10px] text-slate-400">
-                <div className="flex items-center gap-1.5 text-emerald-700 font-bold">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                  <span>OFFICIALLY APPROVED & ISSUED BY SCHOOL ADMINISTRATION</span>
-                </div>
-                <div className="font-mono">
-                  REF: {admissionNumber}
-                </div>
-              </div>
+
 
             </div>
           </div>
