@@ -165,7 +165,7 @@ export async function adminTogglePaymentStatusAction(studentId: string, paymentS
     admissionNumber: paymentStatus === 'paid' ? admissionNumber : student.admissionNumber,
     admissionDate: student.admissionDate || todayStr,
     academicSession: student.academicSession || `${currentYear}/${currentYear + 1}`,
-    resumptionDate: student.resumptionDate || '15th September, 2026',
+    resumptionDate: student.resumptionDate || '14th September, 2026',
   };
 
   await addOrUpdateStudent(updatedStudent);

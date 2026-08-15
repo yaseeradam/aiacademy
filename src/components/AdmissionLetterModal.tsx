@@ -36,7 +36,7 @@ export function printBulkAdmissionLetters(students: Student[], logoSrc: string =
       year: 'numeric',
     });
     const academicSession = student.academicSession || '2026/2027';
-    const resumptionDate = student.resumptionDate || '15th September, 2026';
+    const resumptionDate = student.resumptionDate || '14th September, 2026';
     const admissionNumber = getStudentAdmissionNumber(student);
     const studentName = `${student.firstName} ${student.lastName}`;
     const photoSrc = student.photo || '';
@@ -468,7 +468,7 @@ export default function AdmissionLetterModal({ student, isOpen, onClose }: Admis
   });
 
   const academicSession = student.academicSession || '2026/2027';
-  const resumptionDate = student.resumptionDate || '15th September, 2026';
+  const resumptionDate = student.resumptionDate || '14th September, 2026';
   const admissionNumber = getStudentAdmissionNumber(student);
   const studentName = `${student.firstName} ${student.lastName}`;
   const photoSrc = student.photo || '';

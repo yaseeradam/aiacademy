@@ -38,7 +38,7 @@ const INITIAL_STUDENTS: Student[] = [
     id: 'stud-1', parentId: 'parent-1', formNumber: 'N-3000',
     firstName: 'Muhd Imam', lastName: 'Bashir', gender: 'Male',
     intendedClass: 'Basic 1', verificationStatus: 'verified',
-    paymentStatus: 'paid', admissionNumber: 'AIAA/B/2026/001', academicSession: '2026/2027', resumptionDate: '15th September, 2026',
+    paymentStatus: 'paid', admissionNumber: 'AIAA/B/2026/001', academicSession: '2026/2027', resumptionDate: '14th September, 2026',
     dateOfBirth: '2017-01-10', fatherName: "Muh'd Bashir",
     motherName: 'Hauwa,u Abubakar kigo',
     residentialAddress: 'Near dutsen Mariya f|Tank, Argungu',
