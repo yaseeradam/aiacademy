@@ -187,13 +187,13 @@ export function printBulkAdmissionLetters(students: Student[], logoSrc: string =
     .header {
       display: flex;
       align-items: center;
-      gap: 24px;
-      margin-bottom: 12px;
+      gap: 20px;
+      margin-bottom: 10px;
       width: 100%;
     }
     .logo-circle {
-      width: 155px;
-      height: 155px;
+      width: 130px;
+      height: 130px;
       border-radius: 50%;
       overflow: hidden;
       flex-shrink: 0;
@@ -207,7 +207,7 @@ export function printBulkAdmissionLetters(students: Student[], logoSrc: string =
       flex: 1;
     }
     .school-info h1 {
-      font-size: 38px;
+      font-size: 32px;
       font-weight: 900;
       color: #1B3A6B;
       text-transform: uppercase;
@@ -218,28 +218,28 @@ export function printBulkAdmissionLetters(students: Student[], logoSrc: string =
       display: inline-block;
       background: #D4851F;
       color: white;
-      padding: 6px 22px;
-      font-size: 14.5px;
+      padding: 4px 18px;
+      font-size: 13.5px;
       font-weight: 700;
       font-style: italic;
       border-radius: 3px;
-      margin-top: 10px;
+      margin-top: 8px;
     }
     .contact-row {
-      margin-top: 10px;
-      font-size: 13.5px;
+      margin-top: 8px;
+      font-size: 12.5px;
       color: #333;
     }
     .contact-row div {
       display: flex;
       align-items: center;
-      gap: 10px;
-      margin-bottom: 5px;
+      gap: 8px;
+      margin-bottom: 4px;
     }
     .contact-row svg {
       flex-shrink: 0;
-      width: 16px;
-      height: 16px;
+      width: 14px;
+      height: 14px;
     }
     .divider {
       margin-top: 10px;
@@ -526,13 +526,13 @@ export default function AdmissionLetterModal({ student, isOpen, onClose }: Admis
     .header {
       display: flex;
       align-items: center;
-      gap: 24px;
-      margin-bottom: 12px;
+      gap: 20px;
+      margin-bottom: 10px;
       width: 100%;
     }
     .logo-circle {
-      width: 155px;
-      height: 155px;
+      width: 130px;
+      height: 130px;
       border-radius: 50%;
       overflow: hidden;
       flex-shrink: 0;
@@ -546,7 +546,7 @@ export default function AdmissionLetterModal({ student, isOpen, onClose }: Admis
       flex: 1;
     }
     .school-info h1 {
-      font-size: 38px;
+      font-size: 32px;
       font-weight: 900;
       color: #1B3A6B;
       text-transform: uppercase;
@@ -557,28 +557,28 @@ export default function AdmissionLetterModal({ student, isOpen, onClose }: Admis
       display: inline-block;
       background: #D4851F;
       color: white;
-      padding: 6px 22px;
-      font-size: 14.5px;
+      padding: 4px 18px;
+      font-size: 13.5px;
       font-weight: 700;
       font-style: italic;
       border-radius: 3px;
-      margin-top: 10px;
+      margin-top: 8px;
     }
     .contact-row {
-      margin-top: 10px;
-      font-size: 13.5px;
+      margin-top: 8px;
+      font-size: 12.5px;
       color: #333;
     }
     .contact-row div {
       display: flex;
       align-items: center;
-      gap: 10px;
-      margin-bottom: 5px;
+      gap: 8px;
+      margin-bottom: 4px;
     }
     .contact-row svg {
       flex-shrink: 0;
-      width: 16px;
-      height: 16px;
+      width: 14px;
+      height: 14px;
     }
     /* Divider */
     .divider {
