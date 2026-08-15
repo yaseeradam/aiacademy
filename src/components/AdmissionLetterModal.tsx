@@ -142,11 +142,11 @@ export function printBulkAdmissionLetters(students: Student[], logoSrc: string =
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Bulk Admission Letters (${students.length} Students)</title>
+  <title></title>
   <style>
     @page {
       size: A4 portrait;
-      margin: 12mm 15mm;
+      margin: 0;
     }
     * {
       margin: 0;
@@ -164,8 +164,8 @@ export function printBulkAdmissionLetters(students: Student[], logoSrc: string =
       width: 100%;
       max-width: 210mm;
       margin: 0 auto;
+      padding: 12mm 15mm;
       position: relative;
-      padding: 0;
       page-break-after: always;
       break-after: page;
     }
@@ -479,11 +479,11 @@ export default function AdmissionLetterModal({ student, isOpen, onClose }: Admis
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Admission Letter - ${studentName}</title>
+  <title></title>
   <style>
     @page {
       size: A4 portrait;
-      margin: 12mm 15mm;
+      margin: 0;
     }
     * {
       margin: 0;
@@ -501,8 +501,8 @@ export default function AdmissionLetterModal({ student, isOpen, onClose }: Admis
       width: 100%;
       max-width: 210mm;
       margin: 0 auto;
+      padding: 12mm 15mm;
       position: relative;
-      padding: 0;
     }
     /* Watermark */
     .watermark {
