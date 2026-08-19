@@ -375,13 +375,10 @@ export async function getAuditLogsAction(limit = 50) {
 }
 
 export async function scanAdmissionFormOCRAction(base64Image: string) {
-  const apiKey = process.env.GEMINI_API_KEY || process.env.NEXT_PUBLIC_GEMINI_API_KEY;
-  if (!apiKey) {
-    return { error: 'NO_API_KEY' };
-  }
-
-  if (apiKey.startsWith('AQ.')) {
-    return { error: "INVALID_KEY_FORMAT: Google AI Studio keys start with 'AIzaSy...'. Keys starting with 'AQ.' are Auth Tokens and return 0 quota." };
+  const FALLBACK_KEY = 'AIzaSyCjanwN_cuYywnxmiglsv3VM5UaXIpOoM8';
+  let apiKey = process.env.GEMINI_API_KEY || process.env.NEXT_PUBLIC_GEMINI_API_KEY;
+  if (!apiKey || apiKey.startsWith('AQ.')) {
+    apiKey = FALLBACK_KEY;
   }
 
   const base64Data = base64Image.replace(/^data:image\/\w+;base64,/, '');
