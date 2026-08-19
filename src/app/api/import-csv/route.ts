@@ -5,6 +5,31 @@ import { Student, Parent, VerificationStatus } from '@/types';
 // Helper to generate a unique ID
 const generateId = (prefix: string) => `${prefix}-${Math.random().toString(36).substring(2, 11)}`;
 
+// Helper to parse CSV lines handling quoted strings containing commas
+function parseCSVLine(line: string): string[] {
+  const result: string[] = [];
+  let current = '';
+  let inQuotes = false;
+  for (let i = 0; i < line.length; i++) {
+    const char = line[i];
+    if (char === '"') {
+      if (inQuotes && line[i + 1] === '"') {
+        current += '"';
+        i++;
+      } else {
+        inQuotes = !inQuotes;
+      }
+    } else if (char === ',' && !inQuotes) {
+      result.push(current.trim());
+      current = '';
+    } else {
+      current += char;
+    }
+  }
+  result.push(current.trim());
+  return result;
+}
+
 export async function POST(request: NextRequest) {
   try {
     let csvText = '';
@@ -41,7 +66,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Read header to map columns dynamically (case-insensitive, trimming spaces)
-    const header = lines[0].split(',').map(h => h.trim().toLowerCase());
+    const header = parseCSVLine(lines[0]).map(h => h.toLowerCase());
     
     let importCount = 0;
     let skippedDuplicateCount = 0;
@@ -51,8 +76,8 @@ export async function POST(request: NextRequest) {
       const line = lines[i].trim();
       if (!line) continue; // Skip empty rows
 
-      // Handle simple comma separation
-      const values = line.split(',').map(v => v.trim());
+      // Parse quoted CSV line values
+      const values = parseCSVLine(line);
       if (values.length < header.length) continue; // Skip malformed rows
 
       // Create a key-value record based on headers
@@ -65,7 +90,8 @@ export async function POST(request: NextRequest) {
       const formNumber = row['form number'] || row['formno'] || row['form_number'] || `FORM-${1000 + i}`;
       const firstName = row['first name'] || row['firstname'] || row['first_name'] || row['student name']?.split(' ')[0] || 'Unknown';
       const lastName = row['last name'] || row['lastname'] || row['last_name'] || row['student name']?.split(' ').slice(1).join(' ') || 'Student';
-      const intendedClass = row['class'] || row['intended class'] || row['intendedclass'] || 'Nursery 1';
+      let intendedClass = row['class'] || row['intended class'] || row['intendedclass'] || 'Nursery 1';
+      if (/Primary/i.test(intendedClass)) intendedClass = 'Basic 1';
       const gender = (row['gender'] || row['sex'] || 'Male').toLowerCase().startsWith('f') ? 'Female' : 'Male';
       const dateOfBirth = row['date of birth'] || row['dob'] || row['date_of_birth'] || '';
       const fatherName = row['father name'] || row['fathername'] || row['father_name'] || '';

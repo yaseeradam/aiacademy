@@ -152,10 +152,20 @@ export async function adminTogglePaymentStatusAction(studentId: string, paymentS
     // Determine section prefix based on class
     const isNursery = (student.intendedClass || '').toLowerCase().includes('nursery');
     const sectionPrefix = isNursery ? 'N' : 'B';
-    // Count existing admission numbers in the same section
+    // Find max numeric suffix among existing admission numbers in the same section
     const sectionPattern = `AIAA/${sectionPrefix}/`;
-    const sectionCount = allStudents.filter(s => s.admissionNumber && s.admissionNumber.startsWith(sectionPattern) && s.id !== studentId).length;
-    const nextNum = String(sectionCount + 1).padStart(3, '0');
+    let maxNum = 0;
+    allStudents.forEach(s => {
+      if (s.admissionNumber && s.admissionNumber.startsWith(sectionPattern) && s.id !== studentId) {
+        const parts = s.admissionNumber.split('/');
+        const lastPart = parts[parts.length - 1];
+        const num = parseInt(lastPart, 10);
+        if (!isNaN(num) && num > maxNum) {
+          maxNum = num;
+        }
+      }
+    });
+    const nextNum = String(maxNum + 1).padStart(3, '0');
     admissionNumber = `AIAA/${sectionPrefix}/${currentYear}/${nextNum}`;
   }
 
