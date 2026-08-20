@@ -383,14 +383,20 @@ export async function scanAdmissionFormOCRAction(base64Image: string) {
 
   const base64Data = base64Image.replace(/^data:image\/\w+;base64,/, '');
 
-  const models = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash'];
+  const endpoints = [
+    'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent',
+    'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent',
+    'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent',
+    'https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent',
+    'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent',
+  ];
 
   let lastError = 'No output from Gemini Vision AI.';
 
-  for (const model of models) {
+  for (const endpoint of endpoints) {
     try {
       const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+        `${endpoint}?key=${apiKey}`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -450,7 +456,7 @@ Return ONLY a valid JSON object matching this schema:
         lastError = data.error.message;
       }
     } catch (err: unknown) {
-      console.error(`Gemini Vision OCR Error (${model}):`, err);
+      console.error(`Gemini Vision OCR Error (${endpoint}):`, err);
     }
   }
 

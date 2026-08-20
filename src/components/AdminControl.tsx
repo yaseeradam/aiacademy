@@ -132,10 +132,6 @@ export default function AdminControl({ students }: AdminControlProps) {
         return;
       }
 
-      if (aiResult.error && aiResult.error !== 'NO_API_KEY') {
-        alert(`AI Vision OCR Notice:\n${aiResult.error}\n\nFalling back to Tesseract OCR...`);
-      }
-
       // Fallback: Clean Tesseract OCR
       setOcrProgress('Scanning form with Tesseract OCR...');
       const worker = await createWorker('eng');
