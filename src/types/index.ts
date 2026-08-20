@@ -55,4 +55,5 @@ export interface SchoolSettings {
   address: string;
   phones: string;
   logo: string;
+  geminiApiKey?: string;
 }

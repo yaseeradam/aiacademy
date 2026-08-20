@@ -103,7 +103,7 @@ export default function AdminControl({ students }: AdminControlProps) {
 
   const handleScanOCR = async (file: File) => {
     setIsScanningOCR(true);
-    setOcrProgress('Processing handwritten form image...');
+    setOcrProgress('Reading handwritten form with AI Vision...');
     try {
       const base64 = await compressImage(file);
       
@@ -111,73 +111,33 @@ export default function AdminControl({ students }: AdminControlProps) {
       const aiResult = await scanAdmissionFormOCRAction(base64);
       if (aiResult.success && aiResult.data) {
         const d = aiResult.data;
-        setNewStudent(prev => ({
-          ...prev,
-          firstName: d.firstName || prev.firstName,
-          lastName: d.lastName || prev.lastName,
-          dateOfBirth: d.dateOfBirth || prev.dateOfBirth,
+        setNewStudent({
+          firstName: d.firstName || '',
+          lastName: d.lastName || '',
+          dateOfBirth: d.dateOfBirth || '',
           gender: (d.gender === 'Female' ? 'Female' : 'Male') as 'Male' | 'Female',
-          fatherName: d.fatherName || prev.fatherName,
-          motherName: d.motherName || prev.motherName,
-          residentialAddress: d.residentialAddress || prev.residentialAddress,
-          phone1: d.phone1 || prev.phone1,
-          phone2: d.phone2 || prev.phone2,
-          guardianName: d.guardianName || prev.guardianName,
-          guardianAddress: d.guardianAddress || prev.guardianAddress,
-          nationality: d.nationality || prev.nationality,
-          religion: d.religion || prev.religion,
-          intendedClass: d.intendedClass || prev.intendedClass,
-        }));
+          intendedClass: d.intendedClass || 'Nursery 1',
+          fatherName: d.fatherName || '',
+          motherName: d.motherName || '',
+          residentialAddress: d.residentialAddress || '',
+          phone1: d.phone1 || '',
+          phone2: d.phone2 || '',
+          guardianName: d.guardianName || '',
+          guardianAddress: d.guardianAddress || '',
+          nationality: d.nationality || 'Nigerian',
+          religion: d.religion || 'Islam',
+          photo: '',
+        });
         setOcrProgress('Handwritten details extracted successfully with AI Vision!');
         return;
       }
 
-      // Fallback: Clean Tesseract OCR
-      setOcrProgress('Scanning form with Tesseract OCR...');
-      const worker = await createWorker('eng');
-      const ret = await worker.recognize(file);
-      await worker.terminate();
-
-      // Clean printed text & Arabic characters
-      let rawText = ret.data.text;
-      rawText = rawText.replace(/[\u0600-\u06FF]/g, ''); // Strip Arabic text
-      
-      // Extract phones
-      const phoneMatches = rawText.match(/(?:0\d{10})/g);
-      const phone1 = phoneMatches?.[0] || '';
-      const phone2 = phoneMatches?.[1] || '';
-
-      // Extract DoB (DD/MM/YYYY)
-      const dobMatch = rawText.match(/\b(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4})\b/);
-
-      // Clean lines and filter out template labels
-      const lines = rawText
-        .split('\n')
-        .map(l => l.replace(/^(?:\d+\.|\w+:|Phone\s*NoI|Phone\s*II|Name\s*of\s*Student|Father's\s*Name|Mother's\s*Name|Residential\s*Address|Nationality|Religion|Class\s*in\s*which|Sex|Male|Female|Date\s*of\s*Birth|Motto|Address|Email|Tel|APPLICATION|ADMISSION|NOTE|Sign|Director|Parent)/gi, '').trim())
-        .filter(l => l.length > 2 && !l.includes('ACADEMY') && !l.includes('Motto') && !l.includes('Argungu'));
-
-      const studentName = lines[0] || '';
-      const parts = studentName.split(/\s+/);
-      const firstName = parts[0] || '';
-      const lastName = parts.slice(1).join(' ') || '';
-
-      setNewStudent(prev => ({
-        ...prev,
-        firstName: firstName || prev.firstName,
-        lastName: lastName || prev.lastName,
-        dateOfBirth: dobMatch ? dobMatch[1] : prev.dateOfBirth,
-        phone1: phone1 || prev.phone1,
-        phone2: phone2 || prev.phone2,
-        fatherName: lines[1] || prev.fatherName,
-        motherName: lines[2] || prev.motherName,
-        residentialAddress: lines[3] || prev.residentialAddress,
-      }));
+      setOcrProgress('Could not parse handwritten text. Please ensure Gemini API Key is set in Settings or enter details manually.');
     } catch (err) {
       console.error('OCR Error:', err);
-      alert('Could not process form. Please enter details manually.');
+      setOcrProgress('Could not process form image. Please enter details manually.');
     } finally {
       setIsScanningOCR(false);
-      setOcrProgress('');
     }
   };
   
@@ -205,6 +165,7 @@ export default function AdminControl({ students }: AdminControlProps) {
     tel2: '07034784861',
     email: 'alijabahintegratedacademyarg@gmail.com',
     logo: '/logo.jpg',
+    geminiApiKey: '',
   });
   const [settingsSaved, setSettingsSaved] = useState(false);
 
@@ -219,6 +180,7 @@ export default function AdminControl({ students }: AdminControlProps) {
           tel1: dbSettings.phones ? dbSettings.phones.split(',')[0]?.trim() || prev.tel1 : prev.tel1,
           tel2: dbSettings.phones ? dbSettings.phones.split(',')[1]?.trim() || prev.tel2 : prev.tel2,
           logo: dbSettings.logo || prev.logo,
+          geminiApiKey: dbSettings.geminiApiKey || prev.geminiApiKey,
         }));
       }
     });
@@ -518,6 +480,7 @@ export default function AdminControl({ students }: AdminControlProps) {
       address: schoolSettings.address,
       phones: `${schoolSettings.tel1}, ${schoolSettings.tel2}`,
       logo: schoolSettings.logo,
+      geminiApiKey: schoolSettings.geminiApiKey,
     });
     setSettingsSaved(true);
     setTimeout(() => setSettingsSaved(false), 3000);
@@ -1362,6 +1325,25 @@ export default function AdminControl({ students }: AdminControlProps) {
                   className="w-full soft-input resize-none"
                   required
                 />
+              </div>
+
+              <div className="bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200/80 p-4.5 rounded-2xl space-y-2.5 shadow-xs">
+                <label className="block text-xs font-black text-slate-800 uppercase tracking-wider">
+                  🔑 Google Gemini Vision AI API Key (For Handwritten Form Scanning)
+                </label>
+                <input
+                  type="password"
+                  value={schoolSettings.geminiApiKey || ''}
+                  onChange={(e) => setSchoolSettings({...schoolSettings, geminiApiKey: e.target.value})}
+                  placeholder="AIzaSy..."
+                  className="w-full soft-input font-mono text-xs bg-white border border-emerald-300 focus:ring-2 focus:ring-emerald-500"
+                />
+                <p className="text-[11px] text-slate-600 leading-snug font-medium">
+                  To enable 100% accurate AI scanning of handwritten admission form images, paste your free Google AI Studio key starting with <code className="font-bold font-mono text-emerald-900 bg-emerald-100 px-1 py-0.5 rounded">AIzaSy...</code> from{' '}
+                  <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer" className="underline font-black text-emerald-900">
+                    aistudio.google.com ($0 Free Key)
+                  </a>.
+                </p>
               </div>
 
               {settingsSaved && (

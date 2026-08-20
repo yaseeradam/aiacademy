@@ -375,8 +375,9 @@ export async function getAuditLogsAction(limit = 50) {
 }
 
 export async function scanAdmissionFormOCRAction(base64Image: string) {
+  const settings = await getSchoolSettings();
   const FALLBACK_KEY = 'AIzaSyCjanwN_cuYywnxmiglsv3VM5UaXIpOoM8';
-  let apiKey = process.env.GEMINI_API_KEY || process.env.NEXT_PUBLIC_GEMINI_API_KEY;
+  let apiKey = settings.geminiApiKey || process.env.GEMINI_API_KEY || process.env.NEXT_PUBLIC_GEMINI_API_KEY;
   if (!apiKey || apiKey.startsWith('AQ.')) {
     apiKey = FALLBACK_KEY;
   }
