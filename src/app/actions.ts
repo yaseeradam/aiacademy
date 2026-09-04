@@ -377,42 +377,18 @@ export async function getAuditLogsAction(limit = 50) {
 export async function scanAdmissionFormOCRAction(base64Image: string) {
   const settings = await getSchoolSettings();
   const FALLBACK_KEY = 'AIzaSyCjanwN_cuYywnxmiglsv3VM5UaXIpOoM8';
-  let apiKey = settings.geminiApiKey || process.env.GEMINI_API_KEY || process.env.NEXT_PUBLIC_GEMINI_API_KEY;
-  if (!apiKey || apiKey.startsWith('AQ.')) {
-    apiKey = FALLBACK_KEY;
-  }
+  const primaryKey = settings.geminiApiKey || process.env.GEMINI_API_KEY || process.env.NEXT_PUBLIC_GEMINI_API_KEY;
 
   const base64Data = base64Image.replace(/^data:image\/\w+;base64,/, '');
 
+  // Updated to current Gemini models (2025-2026)
   const endpoints = [
-    'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent',
     'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent',
+    'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent',
     'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent',
-    'https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent',
-    'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent',
   ];
 
-  let lastError = 'No output from Gemini Vision AI.';
-
-  for (const endpoint of endpoints) {
-    try {
-      const response = await fetch(
-        `${endpoint}?key=${apiKey}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: [
-              {
-                parts: [
-                  {
-                    inlineData: {
-                      mimeType: 'image/jpeg',
-                      data: base64Data,
-                    },
-                  },
-                  {
-                    text: `You are an expert OCR engine specializing in handwritten school admission forms.
+  const prompt = `You are an expert OCR engine specializing in handwritten school admission forms.
 Examine this handwritten admission form image from AI Integrated Academy Argungu.
 Extract ONLY the handwritten blue/black ink answers written in the form fields.
 Ignore printed form labels (like "1. Name of Student:", "2. Date of Birth:", "Father's Name:") and Arabic subtitles.
@@ -433,31 +409,81 @@ Return ONLY a valid JSON object matching this schema:
   "nationality": "string (e.g. NIGERIA)",
   "religion": "string (e.g. ISLAM)",
   "intendedClass": "string (e.g. NURSERY)"
-}`,
-                  },
-                ],
-              },
-            ],
-          }),
-        }
-      );
+}`;
 
-      const data = await response.json();
-      const textOutput = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-      
-      if (textOutput) {
-        const jsonMatch = textOutput.match(/\{[\s\S]*\}/);
-        if (jsonMatch) {
-          const parsed = JSON.parse(jsonMatch[0]);
-          return { success: true, data: parsed };
+  // Build list of keys to try: primary first (if valid), then fallback
+  const keysToTry: string[] = [];
+  if (primaryKey && !primaryKey.startsWith('AQ.') && primaryKey !== FALLBACK_KEY) {
+    keysToTry.push(primaryKey);
+  }
+  keysToTry.push(FALLBACK_KEY);
+
+  let lastError = 'No output from Gemini Vision AI.';
+
+  for (const apiKey of keysToTry) {
+    for (const endpoint of endpoints) {
+      try {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 30000); // 30s timeout
+
+        const response = await fetch(
+          `${endpoint}?key=${apiKey}`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            signal: controller.signal,
+            body: JSON.stringify({
+              contents: [
+                {
+                  parts: [
+                    {
+                      inlineData: {
+                        mimeType: 'image/jpeg',
+                        data: base64Data,
+                      },
+                    },
+                    { text: prompt },
+                  ],
+                },
+              ],
+            }),
+          }
+        );
+
+        clearTimeout(timeout);
+
+        if (!response.ok) {
+          const errBody = await response.text();
+          console.error(`Gemini OCR [${response.status}] (${endpoint}):`, errBody.substring(0, 200));
+          lastError = `API error ${response.status}`;
+          continue;
+        }
+
+        const data = await response.json();
+        const textOutput = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+        
+        if (textOutput) {
+          const jsonMatch = textOutput.match(/\{[\s\S]*\}/);
+          if (jsonMatch) {
+            const parsed = JSON.parse(jsonMatch[0]);
+            return { success: true, data: parsed };
+          }
+        }
+
+        if (data?.candidates?.[0]?.finishReason === 'SAFETY') {
+          lastError = 'Image was blocked by safety filters. Please try a clearer photo.';
+        } else if (data?.error?.message) {
+          lastError = data.error.message;
+        }
+      } catch (err: unknown) {
+        const errMsg = err instanceof Error ? err.message : String(err);
+        console.error(`Gemini Vision OCR Error (${endpoint}):`, errMsg);
+        if (errMsg.includes('aborted')) {
+          lastError = 'Request timed out. Please check your internet connection and try again.';
+        } else {
+          lastError = errMsg;
         }
       }
-
-      if (data?.error?.message) {
-        lastError = data.error.message;
-      }
-    } catch (err: unknown) {
-      console.error(`Gemini Vision OCR Error (${endpoint}):`, err);
     }
   }
 

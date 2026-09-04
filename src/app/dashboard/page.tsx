@@ -94,7 +94,7 @@ export default async function DashboardPage() {
                 </div>
                 <div className="inline-flex items-center gap-2 p-2.5 px-4 rounded-xl bg-[#f8fafc] border border-slate-200 text-slate-700 text-xs font-bold shrink-0">
                   <Info className="w-3.5 h-3.5 text-[#137333]" />
-                  <span>Action required by Aug 15th</span>
+                  <span>Action required by Sep 14th</span>
                 </div>
               </div>
 
@@ -131,13 +131,18 @@ export default async function DashboardPage() {
 
           {/* Footer */}
           <footer className="bg-white border-t border-slate-200/80 py-6 mt-8">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center sm:flex sm:justify-between sm:items-center text-xs text-slate-400 font-semibold space-y-2 sm:space-y-0">
-              <div>
-                &copy; {new Date().getFullYear()} AI Integrated Academy Argungu. All rights reserved.
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-xs text-slate-400 font-semibold space-y-3">
+              <div className="sm:flex sm:justify-between sm:items-center space-y-2 sm:space-y-0">
+                <div>
+                  &copy; {new Date().getFullYear()} AI Integrated Academy Argungu. All rights reserved.
+                </div>
+                <div className="flex justify-center items-center gap-1.5 text-slate-400">
+                  <Award className="w-4 h-4 text-green-600" />
+                  <span>Learning Today, Leading Tomorrow</span>
+                </div>
               </div>
-              <div className="flex justify-center items-center gap-1.5 text-slate-400">
-                <Award className="w-4 h-4 text-green-600" />
-                <span>Learning Today, Leading Tomorrow</span>
+              <div className="pt-2 border-t border-slate-100 text-[11px] text-slate-400">
+                Made by <span className="font-bold text-slate-600">FrontalMinds</span> — If you&apos;d like to own a website, call <a href="tel:08104827838" className="font-bold text-[#137333] hover:underline">08104827838</a>
               </div>
             </div>
           </footer>

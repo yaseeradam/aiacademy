@@ -132,7 +132,8 @@ export default function AdminControl({ students }: AdminControlProps) {
         return;
       }
 
-      setOcrProgress('Could not parse handwritten text. Please ensure Gemini API Key is set in Settings or enter details manually.');
+      const errorDetail = aiResult.error || 'Unknown error';
+      setOcrProgress(`OCR failed: ${errorDetail}. Check Gemini API Key in Settings or enter details manually.`);
     } catch (err) {
       console.error('OCR Error:', err);
       setOcrProgress('Could not process form image. Please enter details manually.');

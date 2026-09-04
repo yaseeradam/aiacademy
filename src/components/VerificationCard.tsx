@@ -147,17 +147,42 @@ export default function VerificationCard({ student, isAdmin = false }: Verificat
   };
 
   const formatDate = (dateStr?: string) => {
-    if (!dateStr) return 'None Listed';
-    try {
-      const date = new Date(dateStr);
-      const day = date.getDate();
-      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-      const month = months[date.getMonth()];
-      const year = date.getFullYear();
-      return `${day} ${month} ${year}`;
-    } catch {
-      return dateStr;
+    if (!dateStr || !dateStr.trim()) return 'None Listed';
+    const trimmed = dateStr.trim();
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+    // Handle DD/MM/YYYY or DD-MM-YYYY
+    const dmyMatch = trimmed.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+    if (dmyMatch) {
+      const day = parseInt(dmyMatch[1], 10);
+      const month = parseInt(dmyMatch[2], 10);
+      const year = parseInt(dmyMatch[3], 10);
+      if (month >= 1 && month <= 12) {
+        return `${day} ${months[month - 1]} ${year}`;
+      }
     }
+
+    // Handle YYYY-MM-DD (ISO format)
+    const isoMatch = trimmed.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (isoMatch) {
+      const year = parseInt(isoMatch[1], 10);
+      const month = parseInt(isoMatch[2], 10);
+      const day = parseInt(isoMatch[3], 10);
+      if (month >= 1 && month <= 12) {
+        return `${day} ${months[month - 1]} ${year}`;
+      }
+    }
+
+    // Fallback: try native Date parsing
+    try {
+      const date = new Date(trimmed);
+      if (!isNaN(date.getTime())) {
+        return `${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear()}`;
+      }
+    } catch { /* ignore */ }
+
+    // If nothing works, return the raw string
+    return trimmed;
   };
 
   const AvatarIcon = () => {

@@ -255,6 +255,10 @@ const INITIAL_STUDENTS: Student[] = [
 // Helpers
 // ─────────────────────────────────────────────────────────────────────────────
 
+let seedPromise: Promise<void> | null = null;
+let cachedSettings: SchoolSettings | null = null;
+let cachedSettingsTime = 0;
+
 export function normalizePhone(phone: string | undefined | null): string {
   if (!phone) return '';
   const digits = phone.replace(/\D/g, '');
@@ -266,24 +270,45 @@ async function getDB() {
   return client.db(DB_NAME);
 }
 
-// Auto-seed on first run if the collections are empty
+// Single-run seed & index creation across app lifecycle
 async function ensureSeeded() {
-  const db = await getDB();
-  const parentsCount = await db.collection(PARENTS_COL).countDocuments();
-  if (parentsCount === 0) {
-    await db.collection<Parent>(PARENTS_COL).insertMany(INITIAL_PARENTS);
-    await db.collection<Student>(STUDENTS_COL).insertMany(INITIAL_STUDENTS);
-  } else {
-    // Automatically migrate any existing 'Primary' students in MongoDB to 'Basic 1'
-    await db.collection<Student>(STUDENTS_COL).updateMany(
-      { intendedClass: { $regex: /Primary/i } },
-      { $set: { intendedClass: 'Basic 1' } }
-    );
+  if (!seedPromise) {
+    seedPromise = (async () => {
+      const db = await getDB();
+      // Ensure database indexes exist for ultra-fast queries
+      try {
+        await Promise.all([
+          db.collection(PARENTS_COL).createIndex({ phoneNumber: 1 }),
+          db.collection(PARENTS_COL).createIndex({ id: 1 }, { unique: true }),
+          db.collection(STUDENTS_COL).createIndex({ parentId: 1 }),
+          db.collection(STUDENTS_COL).createIndex({ id: 1 }, { unique: true }),
+          db.collection(STUDENTS_COL).createIndex({ formNumber: 1 }),
+          db.collection(SETTINGS_COL).createIndex({ id: 1 }, { unique: true }),
+        ]);
+      } catch {
+        /* ignore index conflict if already exists */
+      }
+
+      const parentsCount = await db.collection(PARENTS_COL).countDocuments();
+      if (parentsCount === 0) {
+        await db.collection<Parent>(PARENTS_COL).insertMany(INITIAL_PARENTS);
+        await db.collection<Student>(STUDENTS_COL).insertMany(INITIAL_STUDENTS);
+      } else {
+        await db.collection<Student>(STUDENTS_COL).updateMany(
+          { intendedClass: { $regex: /Primary/i } },
+          { $set: { intendedClass: 'Basic 1' } }
+        );
+      }
+    })().catch(err => {
+      console.error('DB seed/index error:', err);
+      seedPromise = null;
+    });
   }
+  return seedPromise;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Public API — same signatures as the old file-based db.ts
+// Public API — high performance indexed implementation
 // ─────────────────────────────────────────────────────────────────────────────
 
 export async function getParentByPhone(phone: string): Promise<Parent | undefined> {
@@ -292,8 +317,19 @@ export async function getParentByPhone(phone: string): Promise<Parent | undefine
   const normalizedSearch = normalizePhone(phone);
   if (!normalizedSearch) return undefined;
 
-  const all = await db.collection<Parent>(PARENTS_COL).find({}).toArray();
-  return all.find(p => normalizePhone(p.phoneNumber) === normalizedSearch);
+  const doc = await db.collection<Parent>(PARENTS_COL).findOne({
+    $or: [
+      { phoneNumber: phone },
+      { phoneNumber: { $regex: `${normalizedSearch}$` } }
+    ]
+  });
+
+  if (doc) {
+    const { _id, ...rest } = doc;
+    void _id;
+    return rest as Parent;
+  }
+  return undefined;
 }
 
 export async function getParentById(parentId: string): Promise<Parent | undefined> {
@@ -347,39 +383,47 @@ export async function getStudentByFormNumber(formNumber: string): Promise<Studen
 export async function findDuplicateStudent(studentData: Partial<Student>): Promise<Student | undefined> {
   await ensureSeeded();
   const db = await getDB();
-  const all = await db.collection<Student>(STUDENTS_COL).find({}).toArray();
 
-  const formNum = studentData.formNumber?.trim().toLowerCase();
-  const first = studentData.firstName?.trim().toLowerCase();
-  const last = studentData.lastName?.trim().toLowerCase();
+  const formNum = studentData.formNumber?.trim();
+  const first = studentData.firstName?.trim();
+  const last = studentData.lastName?.trim();
   const phone = studentData.phone1 ? normalizePhone(studentData.phone1) : '';
-  const dob = studentData.dateOfBirth?.trim().toLowerCase();
+  const dob = studentData.dateOfBirth?.trim();
 
-  return all.map(({ _id, ...rest }) => {
-    void _id;
-    const s = rest as Student;
-    if (/Primary/i.test(s.intendedClass)) s.intendedClass = 'Basic 1';
-    return s;
-  }).find(s => {
-    if (studentData.id && s.id === studentData.id) return false;
+  const conditions: object[] = [];
 
-    // Check 1: Form serial number match
-    if (formNum && s.formNumber.trim().toLowerCase() === formNum) {
-      return true;
-    }
+  if (formNum) {
+    conditions.push({ formNumber: { $regex: new RegExp(`^${formNum}$`, 'i') } });
+  }
+  if (first && last && phone) {
+    conditions.push({
+      firstName: { $regex: new RegExp(`^${first}$`, 'i') },
+      lastName: { $regex: new RegExp(`^${last}$`, 'i') },
+      phone1: { $regex: `${phone}$` }
+    });
+  }
+  if (first && last && dob) {
+    conditions.push({
+      firstName: { $regex: new RegExp(`^${first}$`, 'i') },
+      lastName: { $regex: new RegExp(`^${last}$`, 'i') },
+      dateOfBirth: { $regex: new RegExp(`^${dob}$`, 'i') }
+    });
+  }
 
-    // Check 2: Full Name + Phone match
-    if (first && last && phone && s.firstName.trim().toLowerCase() === first && s.lastName.trim().toLowerCase() === last && normalizePhone(s.phone1 || '') === phone) {
-      return true;
-    }
+  if (conditions.length === 0) return undefined;
 
-    // Check 3: Full Name + DoB match
-    if (first && last && dob && s.firstName.trim().toLowerCase() === first && s.lastName.trim().toLowerCase() === last && s.dateOfBirth?.trim().toLowerCase() === dob) {
-      return true;
-    }
+  const filter: Record<string, unknown> = { $or: conditions };
+  if (studentData.id) {
+    filter.id = { $ne: studentData.id };
+  }
 
-    return false;
-  });
+  const doc = await db.collection<Student>(STUDENTS_COL).findOne(filter);
+  if (!doc) return undefined;
+  const { _id, ...rest } = doc;
+  void _id;
+  const s = rest as Student;
+  if (/Primary/i.test(s.intendedClass)) s.intendedClass = 'Basic 1';
+  return s;
 }
 
 export async function updateStudentStatus(
@@ -470,24 +514,35 @@ export async function getAuditLogs(limit = 50): Promise<AuditLog[]> {
 }
 
 export async function getSchoolSettings(): Promise<SchoolSettings> {
+  const now = Date.now();
+  if (cachedSettings && now - cachedSettingsTime < 60000) {
+    return cachedSettings;
+  }
   await ensureSeeded();
   const db = await getDB();
   const doc = await db.collection<{ id: string } & SchoolSettings>(SETTINGS_COL).findOne({ id: 'school_settings' });
   if (doc) {
     const { _id, id, ...rest } = doc;
     void _id; void id;
-    return rest as SchoolSettings;
+    cachedSettings = rest as SchoolSettings;
+    cachedSettingsTime = now;
+    return cachedSettings;
   }
-  return {
+  const fallback: SchoolSettings = {
     schoolName: 'AI INTEGRATED ACADEMY ARGUNGU',
     motto: 'Learning Today, Leading Tomorrow',
     address: "Behind Buben Ta'Ololo's Residence, Tudun Wada, Argungu",
     phones: '08069676697, 07034784861',
     logo: '/logo.jpg'
   };
+  cachedSettings = fallback;
+  cachedSettingsTime = now;
+  return fallback;
 }
 
 export async function updateSchoolSettings(settings: SchoolSettings): Promise<void> {
+  cachedSettings = null;
+  cachedSettingsTime = 0;
   const db = await getDB();
   await db.collection<{ id: string } & SchoolSettings>(SETTINGS_COL).updateOne(
     { id: 'school_settings' },
