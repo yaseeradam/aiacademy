@@ -22,7 +22,7 @@ interface AdminControlProps {
 export default function AdminControl({ students }: AdminControlProps) {
   const router = useRouter();
 
-  const compressImage = (file: File, maxDim = 1800, quality = 0.85): Promise<string> => {
+  const compressImage = (file: File, maxDim = 1000, quality = 0.70): Promise<string> => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.readAsDataURL(file);
@@ -82,6 +82,15 @@ export default function AdminControl({ students }: AdminControlProps) {
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
   const [isLoadingAudit, setIsLoadingAudit] = useState(false);
 
+  // Feedback Modal State (Loading, Success, Error)
+  const [feedbackModal, setFeedbackModal] = useState<{
+    isOpen: boolean;
+    type: 'loading' | 'success' | 'error';
+    title: string;
+    message: string;
+    details?: Record<string, string>;
+  } | null>(null);
+
   // OCR Form Scanning state
   const [isScanningOCR, setIsScanningOCR] = useState(false);
   const [ocrProgress, setOcrProgress] = useState('');
@@ -104,13 +113,20 @@ export default function AdminControl({ students }: AdminControlProps) {
   const handleScanOCR = async (file: File) => {
     setIsScanningOCR(true);
     setOcrProgress('Reading handwritten form with AI Vision...');
+    setFeedbackModal({
+      isOpen: true,
+      type: 'loading',
+      title: 'Scanning Physical Form...',
+      message: 'Compressing image & extracting handwritten text with AI Vision...',
+    });
+
     try {
-      const base64 = await compressImage(file);
+      const base64 = await compressImage(file, 1000, 0.70);
       
-      // Attempt Gemini Vision AI first
       const aiResult = await scanAdmissionFormOCRAction(base64);
       if (aiResult.success && aiResult.data) {
         const d = aiResult.data;
+        const extractedName = `${d.firstName || ''} ${d.lastName || ''}`.trim() || 'Student';
         setNewStudent({
           firstName: d.firstName || '',
           lastName: d.lastName || '',
@@ -129,14 +145,42 @@ export default function AdminControl({ students }: AdminControlProps) {
           photo: '',
         });
         setOcrProgress('Handwritten details extracted successfully with AI Vision!');
+        
+        setFeedbackModal({
+          isOpen: true,
+          type: 'success',
+          title: 'Handwritten Form Extracted!',
+          message: `AI Vision successfully recognized handwritten details for "${extractedName}". The form fields below have been pre-filled for your review.`,
+          details: {
+            'Student Name': extractedName,
+            'Class': d.intendedClass || 'Nursery 1',
+            'Date of Birth': d.dateOfBirth || 'Not specified',
+            'Gender': d.gender || 'Male',
+            'Father / Mother': d.fatherName || d.motherName || 'Not specified',
+            'Phone': d.phone1 || 'Not specified',
+          }
+        });
         return;
       }
 
-      const errorDetail = aiResult.error || 'Unknown error';
-      setOcrProgress(`OCR failed: ${errorDetail}. Check Gemini API Key in Settings or enter details manually.`);
+      const errorDetail = aiResult.error || 'Could not recognize handwritten text.';
+      setOcrProgress(`OCR failed: ${errorDetail}`);
+      setFeedbackModal({
+        isOpen: true,
+        type: 'error',
+        title: 'OCR Scanning Failed',
+        message: `${errorDetail}\n\nPlease ensure the photo is well-lit and clear, or check your Gemini API key in Settings. You can also type the student details manually.`,
+      });
     } catch (err) {
       console.error('OCR Error:', err);
+      const errMsg = err instanceof Error ? err.message : 'Could not process form image.';
       setOcrProgress('Could not process form image. Please enter details manually.');
+      setFeedbackModal({
+        isOpen: true,
+        type: 'error',
+        title: 'OCR Processing Error',
+        message: `${errMsg}\n\nPlease try uploading a clearer image or fill in the student fields manually.`,
+      });
     } finally {
       setIsScanningOCR(false);
     }
@@ -353,6 +397,12 @@ export default function AdminControl({ students }: AdminControlProps) {
     e.preventDefault();
     setIsCreatingStudent(true);
     setCreateSuccess(false);
+    setFeedbackModal({
+      isOpen: true,
+      type: 'loading',
+      title: 'Registering Student...',
+      message: 'Creating official enrollment profile and generating serial number...',
+    });
     
     try {
       const formNumber = `FORM-2026-M${Date.now().toString().slice(-4)}`;
@@ -364,6 +414,7 @@ export default function AdminControl({ students }: AdminControlProps) {
       
       if (result.success) {
         setCreateSuccess(true);
+        const createdName = `${newStudent.firstName} ${newStudent.lastName}`;
         setNewStudent({
           firstName: '',
           lastName: '',
@@ -382,11 +433,34 @@ export default function AdminControl({ students }: AdminControlProps) {
           photo: '',
         });
         router.refresh();
+        setFeedbackModal({
+          isOpen: true,
+          type: 'success',
+          title: 'Student Registered Successfully!',
+          message: `Profile for "${createdName}" has been saved into the student database with Form Serial No: ${formNumber}.`,
+          details: {
+            'Form Number': formNumber,
+            'Student Name': createdName,
+            'Class': newStudent.intendedClass,
+            'Status': 'Review Pending',
+          }
+        });
       } else {
-        console.error(result.error);
+        setFeedbackModal({
+          isOpen: true,
+          type: 'error',
+          title: 'Registration Failed',
+          message: result.error || 'Failed to create student record. Please try again.',
+        });
       }
-    } catch (err) {
-      console.error(err);
+    } catch (err: unknown) {
+      console.error('Create student error:', err);
+      setFeedbackModal({
+        isOpen: true,
+        type: 'error',
+        title: 'Registration Error',
+        message: err instanceof Error ? err.message : 'An unexpected error occurred while creating student.',
+      });
     } finally {
       setIsCreatingStudent(false);
     }
@@ -2301,8 +2375,79 @@ export default function AdminControl({ students }: AdminControlProps) {
           </div>
         </div>
       )}
-      {/* Loading Overlay Modal */}
-      {(isImporting || isSavingStudent || isDeletingStudent || isCreatingStudent || isVerifying) && (
+      {/* Global Feedback Modal (Loading / Success / Error) */}
+      {feedbackModal?.isOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 animate-fade-in">
+          <div className="bg-white rounded-3xl p-6 md:p-8 max-w-md w-full shadow-2xl border border-slate-100 animate-slide-up flex flex-col items-center text-center space-y-4 relative">
+            {feedbackModal.type !== 'loading' && (
+              <button
+                type="button"
+                onClick={() => setFeedbackModal(null)}
+                className="absolute right-4 top-4 p-1.5 hover:bg-slate-100 rounded-full text-slate-400 cursor-pointer transition-all"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            )}
+
+            {/* Icon Banner */}
+            <div className={`w-16 h-16 rounded-2xl flex items-center justify-center border shadow-xs ${
+              feedbackModal.type === 'loading'
+                ? 'bg-slate-50 border-slate-100 text-[#0f7343]'
+                : feedbackModal.type === 'success'
+                ? 'bg-emerald-50 border-emerald-200 text-emerald-600'
+                : 'bg-rose-50 border-rose-200 text-rose-600'
+            }`}>
+              {feedbackModal.type === 'loading' && <Loader2 className="w-8 h-8 animate-spin text-[#0f7343]" />}
+              {feedbackModal.type === 'success' && <CheckCircle2 className="w-8 h-8 text-emerald-600" />}
+              {feedbackModal.type === 'error' && <AlertOctagon className="w-8 h-8 text-rose-600" />}
+            </div>
+
+            {/* Title & Description */}
+            <div>
+              <h3 className="text-xl font-black text-slate-900 tracking-tight leading-snug">
+                {feedbackModal.title}
+              </h3>
+              <p className="text-xs text-slate-500 font-semibold mt-1.5 leading-relaxed whitespace-pre-line">
+                {feedbackModal.message}
+              </p>
+            </div>
+
+            {/* Extracted Details Table (if any) */}
+            {feedbackModal.details && (
+              <div className="w-full bg-slate-50 rounded-2xl p-3.5 border border-slate-200/80 text-left text-xs space-y-2">
+                {Object.entries(feedbackModal.details).map(([key, val]) => (
+                  <div key={key} className="flex justify-between items-center border-b border-slate-200/40 pb-1.5 last:border-0 last:pb-0">
+                    <span className="font-semibold text-slate-400">{key}:</span>
+                    <span className="font-extrabold text-slate-800 truncate max-w-[200px]">{val}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Action Buttons */}
+            {feedbackModal.type !== 'loading' && (
+              <div className="w-full pt-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setFeedbackModal(null);
+                  }}
+                  className={`w-full py-3.5 px-6 rounded-xl font-extrabold text-sm shadow-md transition-all active:scale-[0.98] cursor-pointer ${
+                    feedbackModal.type === 'success'
+                      ? 'bg-[#0f7343] hover:bg-[#0b5c34] text-white'
+                      : 'bg-slate-900 hover:bg-slate-800 text-white'
+                  }`}
+                >
+                  {feedbackModal.type === 'success' ? 'Review & Save Form ✓' : 'Dismiss / Try Again'}
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* General Progress Overlay */}
+      {(isImporting || isSavingStudent || isDeletingStudent || isVerifying) && !feedbackModal?.isOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/40 backdrop-blur-xs">
           <div className="bg-white rounded-3xl p-8 max-w-sm w-full mx-4 shadow-2xl flex flex-col items-center text-center space-y-4 animate-slide-down">
             <div className="w-16 h-16 rounded-2xl bg-slate-50 flex items-center justify-center border border-slate-100">
@@ -2313,7 +2458,6 @@ export default function AdminControl({ students }: AdminControlProps) {
                 {isImporting && 'Importing CSV Records...'}
                 {isSavingStudent && 'Saving Student Details...'}
                 {isDeletingStudent && 'Deleting Student Record...'}
-                {isCreatingStudent && 'Creating Student Record...'}
                 {isVerifying && 'Verifying Student Details...'}
               </h3>
               <p className="text-xs text-slate-500 font-semibold mt-1">Please wait while we process your request...</p>
