@@ -13,7 +13,7 @@ import {
   Loader2, Scan, History, MessageSquare, Camera, FileText, CheckCircle2, CreditCard, Printer,
   GraduationCap, Folder, FolderOpen, Edit3
 } from 'lucide-react';
-import { logoutAction, adminUpdateStudentAction, adminDeleteStudentAction, adminDeleteMultipleStudentsAction, unassignStudentFromSubclassAction, unassignMultipleStudentsFromSubclassAction, restoreMissingSeedStudentsAction, clearAllDatabaseDataAction, adminCreateStudentAction, adminVerifyAction, adminTogglePaymentStatusAction, getAuditLogsAction, scanAdmissionFormOCRAction, getSchoolSettingsAction, updateSchoolSettingsAction, findDuplicateStudentsAction, DuplicateGroup } from '@/app/actions';
+import { logoutAction, adminUpdateStudentAction, adminDeleteStudentAction, adminDeleteMultipleStudentsAction, unassignStudentFromSubclassAction, unassignMultipleStudentsFromSubclassAction, assignMultipleStudentsToSubclassAction, restoreMissingSeedStudentsAction, clearAllDatabaseDataAction, adminCreateStudentAction, adminVerifyAction, adminTogglePaymentStatusAction, getAuditLogsAction, scanAdmissionFormOCRAction, getSchoolSettingsAction, updateSchoolSettingsAction, findDuplicateStudentsAction, DuplicateGroup } from '@/app/actions';
 import AdmissionLetterModal, { printBulkAdmissionLetters, getStudentClassArm, getStudentAdmissionNumber } from './AdmissionLetterModal';
 
 interface AdminControlProps {
@@ -276,6 +276,86 @@ export default function AdminControl({ students }: AdminControlProps) {
   });
 
   const [confirmDeleteDuplicateStudent, setConfirmDeleteDuplicateStudent] = useState<Student | null>(null);
+
+  const [assignToArmModal, setAssignToArmModal] = useState<{
+    isOpen: boolean;
+    armName: string;
+    searchQuery: string;
+    selectedStudentIds: string[];
+    isAssigning: boolean;
+  }>({
+    isOpen: false,
+    armName: '',
+    searchQuery: '',
+    selectedStudentIds: [],
+    isAssigning: false,
+  });
+
+  const handleOpenAssignArmModal = (armName: string) => {
+    setAssignToArmModal({
+      isOpen: true,
+      armName,
+      searchQuery: '',
+      selectedStudentIds: [],
+      isAssigning: false,
+    });
+  };
+
+  const handleBulkAssignToArm = async () => {
+    if (assignToArmModal.selectedStudentIds.length === 0) return;
+
+    const count = assignToArmModal.selectedStudentIds.length;
+    const armName = assignToArmModal.armName;
+    setAssignToArmModal(prev => ({ ...prev, isAssigning: true }));
+
+    setFeedbackModal({
+      isOpen: true,
+      type: 'loading',
+      title: `Assigning ${count} Student(s)...`,
+      message: `Assigning student profiles to ${armName}...`,
+    });
+
+    try {
+      const res = await assignMultipleStudentsToSubclassAction(
+        assignToArmModal.selectedStudentIds,
+        armName
+      );
+
+      if (res.success) {
+        setAssignToArmModal({
+          isOpen: false,
+          armName: '',
+          searchQuery: '',
+          selectedStudentIds: [],
+          isAssigning: false,
+        });
+        router.refresh();
+        setFeedbackModal({
+          isOpen: true,
+          type: 'success',
+          title: 'Students Assigned to Subclass Arm!',
+          message: `Successfully assigned ${res.count} student(s) to ${armName}. Subclass capacity updated automatically.`,
+        });
+      } else {
+        setAssignToArmModal(prev => ({ ...prev, isAssigning: false }));
+        setFeedbackModal({
+          isOpen: true,
+          type: 'error',
+          title: 'Assignment Failed',
+          message: res.error || 'Failed to assign students to subclass.',
+        });
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'An error occurred.';
+      setAssignToArmModal(prev => ({ ...prev, isAssigning: false }));
+      setFeedbackModal({
+        isOpen: true,
+        type: 'error',
+        title: 'Error',
+        message: msg,
+      });
+    }
+  };
 
   const handleScanDuplicates = async () => {
     setDuplicateModal({ isOpen: true, isLoading: true, groups: [] });
@@ -2210,17 +2290,14 @@ export default function AdminControl({ students }: AdminControlProps) {
                             </button>
 
                             <button
-                              onClick={() => {
-                                setNewStudent(prev => ({ ...prev, intendedClass: subgroupName }));
-                                setActiveTab('new-verification');
-                              }}
+                              onClick={() => handleOpenAssignArmModal(subgroupName)}
                               disabled={isFull}
                               className={`py-2.5 px-3 rounded-xl font-extrabold text-xs transition-all flex items-center justify-center gap-1 cursor-pointer ${
                                 isFull 
                                   ? 'bg-slate-200 text-slate-400 cursor-not-allowed' 
                                   : 'bg-[#0f7343] hover:bg-[#0b5c34] text-white shadow-2xs'
                               }`}
-                              title={isFull ? 'Subclass arm is full (35/35)' : 'Add student to this arm'}
+                              title={isFull ? 'Subclass arm is full (35/35)' : 'Select existing students to add to this arm'}
                             >
                               <Plus className="w-4 h-4" />
                               <span>{isFull ? 'Full' : 'Add'}</span>
@@ -2322,16 +2399,12 @@ export default function AdminControl({ students }: AdminControlProps) {
                         <div className="flex items-center gap-2.5 flex-wrap">
                           <button
                             type="button"
-                            onClick={() => {
-                              setNewStudent(prev => ({ ...prev, intendedClass: selectedSubgroupRoster }));
-                              setSelectedSubgroupRoster(null);
-                              setActiveTab('new-verification');
-                            }}
+                            onClick={() => handleOpenAssignArmModal(selectedSubgroupRoster)}
                             disabled={isFull}
                             className="px-4 py-2.5 bg-[#0f7343] hover:bg-[#0b5c34] text-white rounded-xl font-bold text-xs flex items-center gap-1.5 shadow-md transition-all cursor-pointer disabled:opacity-40"
                           >
                             <Plus className="w-4 h-4" />
-                            <span>Add Student to Arm</span>
+                            <span>Add Students to Arm</span>
                           </button>
 
                           <button
@@ -4339,6 +4412,241 @@ export default function AdminControl({ students }: AdminControlProps) {
                 <Trash2 className="w-4 h-4" />
                 <span>Confirm Delete</span>
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal to Assign Existing Students to Subclass Arm */}
+      {assignToArmModal.isOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/80 backdrop-blur-md p-3 sm:p-6 overflow-y-auto animate-fade-in">
+          <div className="bg-white w-full max-w-4xl rounded-3xl shadow-2xl overflow-hidden border border-slate-200 animate-slide-up my-4 flex flex-col max-h-[90vh]">
+            
+            {/* Modal Header */}
+            <div className="p-6 bg-slate-900 text-white flex items-center justify-between gap-4 shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center justify-center font-black shrink-0">
+                  <Plus className="w-6 h-6" />
+                </div>
+                <div>
+                  <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">
+                    Add Students to {assignToArmModal.armName}
+                  </h2>
+                  <p className="text-xs text-slate-400 font-semibold mt-0.5">
+                    Select existing students from the directory to assign them to this subclass arm.
+                  </p>
+                </div>
+              </div>
+
+              <button
+                onClick={() => setAssignToArmModal({ isOpen: false, armName: '', searchQuery: '', selectedStudentIds: [], isAssigning: false })}
+                className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-all cursor-pointer"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            {/* Modal Toolbar: Search Bar & Capacity Info */}
+            <div className="p-4 bg-slate-100 border-b border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4 shrink-0">
+              <div className="relative w-full sm:w-96">
+                <Search className="w-4 h-4 absolute left-3.5 top-3 text-slate-400" />
+                <input
+                  type="text"
+                  value={assignToArmModal.searchQuery}
+                  onChange={(e) => setAssignToArmModal(prev => ({ ...prev, searchQuery: e.target.value }))}
+                  placeholder="Search by student name, form no, phone..."
+                  className="w-full pl-10 pr-4 py-2 bg-white border border-slate-300 rounded-xl text-xs font-semibold focus:outline-none focus:border-[#0f7343] transition-all"
+                />
+              </div>
+
+              {(() => {
+                const currentEnrolled = students.filter(s => getStudentClassArm(s.intendedClass, s.id, students) === assignToArmModal.armName).length;
+                const openSpots = Math.max(0, 35 - currentEnrolled);
+                return (
+                  <div className="flex items-center gap-3 text-xs font-bold text-slate-700">
+                    <span className="bg-white border border-slate-300 px-3 py-1.5 rounded-xl">
+                      Enrolled: <strong className="text-slate-900">{currentEnrolled}</strong> / 35
+                    </span>
+                    <span className={`px-3 py-1.5 rounded-xl border ${openSpots > 0 ? 'bg-emerald-50 text-emerald-800 border-emerald-200 font-black' : 'bg-rose-50 text-rose-800 border-rose-200 font-black'}`}>
+                      {openSpots} Spots Open
+                    </span>
+                  </div>
+                );
+              })()}
+            </div>
+
+            {/* Modal Body: Student Multi-Select List */}
+            <div className="p-6 overflow-y-auto flex-1 bg-slate-50 space-y-4">
+              {(() => {
+                const q = assignToArmModal.searchQuery.trim().toLowerCase();
+                let baseClass = assignToArmModal.armName.replace(/\s+(Gold|Silver|Green)(\s+\d+)?/gi, '').trim();
+
+                const candidates = students.filter(s => {
+                  const currentArm = getStudentClassArm(s.intendedClass, s.id, students);
+                  if (currentArm === assignToArmModal.armName) return false;
+
+                  if (!q) return true;
+
+                  const name = `${s.firstName} ${s.lastName}`.toLowerCase();
+                  const formNo = (s.formNumber || '').toLowerCase();
+                  const admNo = (s.admissionNumber || '').toLowerCase();
+                  const phone = (s.phone1 || '').toLowerCase();
+                  const parentName = (s.fatherName || s.motherName || s.guardianName || '').toLowerCase();
+
+                  return name.includes(q) || formNo.includes(q) || admNo.includes(q) || phone.includes(q) || parentName.includes(q);
+                }).sort((a, b) => {
+                  const aArm = getStudentClassArm(a.intendedClass, a.id, students);
+                  const bArm = getStudentClassArm(b.intendedClass, b.id, students);
+
+                  const aIsUnassigned = aArm.includes('Unassigned') || a.intendedClass === baseClass;
+                  const bIsUnassigned = bArm.includes('Unassigned') || b.intendedClass === baseClass;
+
+                  if (aIsUnassigned && !bIsUnassigned) return -1;
+                  if (!aIsUnassigned && bIsUnassigned) return 1;
+
+                  return `${a.firstName} ${a.lastName}`.localeCompare(`${b.firstName} ${b.lastName}`);
+                });
+
+                const allSelected = candidates.length > 0 && candidates.every(c => assignToArmModal.selectedStudentIds.includes(c.id));
+
+                const toggleSelectAll = () => {
+                  if (allSelected) {
+                    setAssignToArmModal(prev => ({ ...prev, selectedStudentIds: [] }));
+                  } else {
+                    const allIds = candidates.map(c => c.id);
+                    setAssignToArmModal(prev => ({ ...prev, selectedStudentIds: allIds }));
+                  }
+                };
+
+                const toggleSelectStudent = (id: string) => {
+                  setAssignToArmModal(prev => {
+                    const exists = prev.selectedStudentIds.includes(id);
+                    return {
+                      ...prev,
+                      selectedStudentIds: exists 
+                        ? prev.selectedStudentIds.filter(i => i !== id)
+                        : [...prev.selectedStudentIds, id]
+                    };
+                  });
+                };
+
+                if (candidates.length === 0) {
+                  return (
+                    <div className="py-16 text-center bg-white rounded-3xl border border-slate-200 space-y-3">
+                      <div className="w-14 h-14 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center mx-auto">
+                        <Search className="w-7 h-7" />
+                      </div>
+                      <h4 className="text-base font-black text-slate-800">No matching students found</h4>
+                      <p className="text-xs text-slate-500 font-semibold max-w-sm mx-auto">
+                        {assignToArmModal.searchQuery ? `No students matched "${assignToArmModal.searchQuery}".` : 'All existing students are already assigned or no other students exist in the directory.'}
+                      </p>
+                    </div>
+                  );
+                }
+
+                return (
+                  <div className="space-y-3">
+                    {/* Select All Bar */}
+                    <div className="flex items-center justify-between p-3 bg-white rounded-2xl border border-slate-200 shadow-2xs">
+                      <label className="flex items-center gap-3 cursor-pointer select-none">
+                        <input
+                          type="checkbox"
+                          checked={allSelected}
+                          onChange={toggleSelectAll}
+                          className="w-4 h-4 rounded text-[#0f7343] focus:ring-[#0f7343] cursor-pointer"
+                        />
+                        <span className="text-xs font-black text-slate-800">
+                          Select All Matching ({candidates.length} students)
+                        </span>
+                      </label>
+
+                      <span className="text-xs font-bold text-[#0f7343] bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200">
+                        {assignToArmModal.selectedStudentIds.length} Selected
+                      </span>
+                    </div>
+
+                    {/* Student Rows List */}
+                    <div className="space-y-2">
+                      {candidates.map((student) => {
+                        const isSelected = assignToArmModal.selectedStudentIds.includes(student.id);
+                        const currentArm = getStudentClassArm(student.intendedClass, student.id, students);
+
+                        return (
+                          <div
+                            key={student.id}
+                            onClick={() => toggleSelectStudent(student.id)}
+                            className={`p-3.5 rounded-2xl border flex items-center justify-between gap-4 transition-all cursor-pointer select-none ${
+                              isSelected 
+                                ? 'bg-emerald-50/80 border-[#0f7343] ring-2 ring-[#0f7343]/20 shadow-2xs' 
+                                : 'bg-white border-slate-200 hover:border-slate-300 hover:bg-slate-50/80'
+                            }`}
+                          >
+                            <div className="flex items-center gap-3 min-w-0">
+                              <input
+                                type="checkbox"
+                                checked={isSelected}
+                                onChange={() => toggleSelectStudent(student.id)}
+                                onClick={(e) => e.stopPropagation()}
+                                className="w-4 h-4 rounded text-[#0f7343] focus:ring-[#0f7343] cursor-pointer shrink-0"
+                              />
+
+                              <StudentAvatar student={student} size="sm" />
+
+                              <div className="truncate">
+                                <h5 className="font-black text-slate-900 text-xs truncate">
+                                  {student.firstName} {student.lastName}
+                                </h5>
+                                <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                                  <span className="text-[10px] font-bold font-mono bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded">
+                                    Form: {student.formNumber}
+                                  </span>
+                                  <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${currentArm.includes('Unassigned') ? 'bg-amber-100 text-amber-800' : 'bg-slate-200 text-slate-700'}`}>
+                                    Current: {currentArm}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="text-right shrink-0 text-xs text-slate-500 font-semibold hidden sm:block">
+                              <p className="font-bold text-slate-800">{student.fatherName || student.guardianName || 'N/A'}</p>
+                              <p className="text-[10px]">{student.phone1 || 'No Phone'}</p>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })()}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-4 bg-slate-100 border-t border-slate-200 flex items-center justify-between gap-3 shrink-0">
+              <span className="text-xs font-bold text-slate-600">
+                {assignToArmModal.selectedStudentIds.length} student(s) selected
+              </span>
+
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => setAssignToArmModal({ isOpen: false, armName: '', searchQuery: '', selectedStudentIds: [], isAssigning: false })}
+                  className="px-4 py-2.5 bg-white hover:bg-slate-200 text-slate-700 border border-slate-300 rounded-xl font-bold text-xs transition-all cursor-pointer"
+                >
+                  Cancel
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleBulkAssignToArm}
+                  disabled={assignToArmModal.selectedStudentIds.length === 0 || assignToArmModal.isAssigning}
+                  className="px-5 py-2.5 bg-[#0f7343] hover:bg-[#0b5c34] text-white rounded-xl font-extrabold text-xs transition-all shadow-md flex items-center gap-1.5 cursor-pointer disabled:opacity-40"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>
+                    {assignToArmModal.isAssigning ? 'Assigning...' : `Assign ${assignToArmModal.selectedStudentIds.length} Student(s) to ${assignToArmModal.armName}`}
+                  </span>
+                </button>
+              </div>
             </div>
           </div>
         </div>

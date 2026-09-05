@@ -365,6 +365,37 @@ export async function unassignMultipleStudentsFromSubclassAction(studentIds: str
   }
 }
 
+export async function assignMultipleStudentsToSubclassAction(
+  studentIds: string[],
+  targetArm: string
+): Promise<{ success: boolean; count: number; error?: string }> {
+  try {
+    let count = 0;
+    for (const id of studentIds) {
+      const student = await getStudentById(id);
+      if (student) {
+        await addOrUpdateStudent({
+          ...student,
+          intendedClass: targetArm,
+        });
+        count++;
+        const studentName = `${student.firstName} ${student.lastName}`;
+        await addAuditLog({
+          action: 'UPDATE',
+          actor: 'School Administrator',
+          details: `Admin assigned student to subclass arm ${targetArm}`,
+          studentId: id,
+          studentName,
+        });
+      }
+    }
+    return { success: true, count };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : 'Failed to assign students to subclass.';
+    return { success: false, count: 0, error: msg };
+  }
+}
+
 export async function restoreMissingSeedStudentsAction(): Promise<{ success: boolean; restoredCount: number; error?: string }> {
   try {
     const count = await restoreMissingSeedStudents();
