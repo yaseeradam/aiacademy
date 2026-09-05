@@ -1407,8 +1407,8 @@ export default function AdminControl({ students }: AdminControlProps) {
               </div>
             </div>
 
-            {/* Subgroup Roster Sections */}
-            <div className="space-y-8">
+            {/* Subgroup Roster Grid Layout */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {classList
                 .filter(subgroupName => {
                   if (classTabFilter === 'all') return true;
@@ -1430,138 +1430,143 @@ export default function AdminControl({ students }: AdminControlProps) {
                   const isFull = count >= 30;
                   const pct = Math.min(100, Math.round((count / 30) * 100));
 
+                  const isGold = subgroupName.includes('Gold');
+                  const isSilver = subgroupName.includes('Silver');
+                  const isGreen = subgroupName.includes('Green');
+
                   return (
-                    <div key={subgroupName} className="soft-card bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-xs">
+                    <div key={subgroupName} className={`soft-card bg-white rounded-3xl border flex flex-col justify-between overflow-hidden shadow-xs transition-all hover:shadow-md ${
+                      isGold 
+                        ? 'border-amber-200 hover:border-amber-400' 
+                        : isSilver 
+                        ? 'border-slate-300 hover:border-slate-400' 
+                        : isGreen 
+                        ? 'border-emerald-200 hover:border-emerald-400' 
+                        : 'border-slate-200'
+                    }`}>
                       {/* Subgroup Banner Header */}
-                      <div className="p-6 border-b border-slate-100 bg-slate-50/80 flex items-center justify-between flex-wrap gap-4">
-                        <div className="flex items-center gap-3">
-                          <div className={`w-10 h-10 rounded-2xl text-white flex items-center justify-center font-black shadow-sm ${
-                            subgroupName.includes('Gold') 
-                              ? 'bg-amber-500' 
-                              : subgroupName.includes('Silver') 
-                              ? 'bg-slate-400' 
-                              : subgroupName.includes('Green') 
-                              ? 'bg-emerald-600' 
-                              : 'bg-[#0f7343]'
-                          }`}>
-                            <GraduationCap className="w-5 h-5" />
-                          </div>
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <h2 className="text-xl font-black text-slate-800 tracking-tight">{subgroupName}</h2>
-                              {isFull ? (
-                                <span className="bg-rose-100 text-rose-800 text-[10px] font-black px-2 py-0.5 rounded-full border border-rose-200">
-                                  🔴 FULL (30/30)
-                                </span>
-                              ) : (
-                                <span className="bg-emerald-100 text-emerald-800 text-[10px] font-black px-2 py-0.5 rounded-full border border-emerald-200">
-                                  🟢 AVAILABLE ({30 - count} spots left)
-                                </span>
-                              )}
+                      <div className={`p-5 border-b border-slate-100 ${
+                        isGold 
+                          ? 'bg-amber-50/50' 
+                          : isSilver 
+                          ? 'bg-slate-50' 
+                          : isGreen 
+                          ? 'bg-emerald-50/50' 
+                          : 'bg-slate-50'
+                      }`}>
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="flex items-center gap-3">
+                            <div className={`w-10 h-10 rounded-2xl text-white flex items-center justify-center font-black shadow-xs ${
+                              isGold ? 'bg-amber-500' : isSilver ? 'bg-slate-500' : isGreen ? 'bg-emerald-600' : 'bg-[#0f7343]'
+                            }`}>
+                              <GraduationCap className="w-5 h-5" />
                             </div>
-                            <div className="flex items-center gap-3 mt-1.5">
-                              <div className="w-32 bg-slate-200 h-2 rounded-full overflow-hidden">
-                                <div 
-                                  style={{ width: `${pct}%` }} 
-                                  className={`h-full transition-all ${isFull ? 'bg-rose-500' : 'bg-[#0f7343]'}`} 
-                                />
-                              </div>
-                              <span className="text-xs font-bold text-slate-500">
-                                {count} / 30 Students ({pct}%)
+                            <div>
+                              <h2 className="text-lg font-black text-slate-800 tracking-tight">{subgroupName}</h2>
+                              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
+                                Capacity: 30 Max
                               </span>
                             </div>
                           </div>
+
+                          {isFull ? (
+                            <span className="bg-rose-100 text-rose-800 text-[10px] font-black px-2.5 py-1 rounded-full border border-rose-200 shrink-0">
+                              🔴 FULL (30/30)
+                            </span>
+                          ) : (
+                            <span className="bg-emerald-100 text-emerald-800 text-[10px] font-black px-2.5 py-1 rounded-full border border-emerald-200 shrink-0">
+                              🟢 {30 - count} Left
+                            </span>
+                          )}
                         </div>
 
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs font-bold text-slate-600 bg-white px-3 py-1.5 rounded-xl border border-slate-200">
-                            Verified: <strong className="text-emerald-700">{classStudents.filter(s => s.verificationStatus === 'verified').length}</strong>
-                          </span>
-                          <span className="text-xs font-bold text-slate-600 bg-white px-3 py-1.5 rounded-xl border border-slate-200">
-                            Paid: <strong className="text-emerald-700">{classStudents.filter(s => s.paymentStatus === 'paid').length}</strong>
-                          </span>
+                        {/* Capacity Progress Bar */}
+                        <div className="mt-4 pt-3 border-t border-slate-200/50 space-y-1.5">
+                          <div className="flex justify-between items-center text-xs font-extrabold text-slate-700">
+                            <span>Roster Capacity</span>
+                            <span className={isFull ? 'text-rose-600 font-black' : 'text-emerald-700'}>{count} / 30 ({pct}%)</span>
+                          </div>
+                          <div className="w-full bg-slate-200/80 h-2.5 rounded-full overflow-hidden">
+                            <div 
+                              style={{ width: `${pct}%` }} 
+                              className={`h-full transition-all rounded-full ${isFull ? 'bg-rose-500' : isGold ? 'bg-amber-500' : isSilver ? 'bg-slate-600' : 'bg-emerald-600'}`} 
+                            />
+                          </div>
                         </div>
                       </div>
 
-                      {/* Capacity Exceeded Warning Banner */}
-                      {isFull && (
-                        <div className="p-3 bg-amber-50 border-b border-amber-200/80 text-amber-900 text-xs font-semibold flex items-center justify-between px-6">
-                          <div className="flex items-center gap-2">
-                            <AlertOctagon className="w-4 h-4 text-amber-600 shrink-0" />
-                            <span>This subgroup has reached maximum capacity (30/30 students). Please assign new applicants to another subgroup arm.</span>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Roster Student Cards */}
-                      {classStudents.length > 0 ? (
-                        <div className="divide-y divide-slate-100">
-                          {classStudents.map(student => {
+                      {/* Student List Grid Card Body */}
+                      <div className="p-4 flex-1 overflow-y-auto max-h-[380px] divide-y divide-slate-100">
+                        {classStudents.length > 0 ? (
+                          classStudents.map(student => {
                             const isPaid = student.paymentStatus === 'paid';
-                            const isVerified = student.verificationStatus === 'verified';
                             return (
-                              <div key={student.id} className="p-4 sm:p-5 hover:bg-slate-50/80 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4 group">
-                                <div className="flex items-center gap-4 min-w-0">
-                                  <StudentAvatar student={student} size="md" />
+                              <div key={student.id} className="py-3 first:pt-0 last:pb-0 flex items-center justify-between gap-3 group">
+                                <div className="flex items-center gap-3 min-w-0">
+                                  <StudentAvatar student={student} size="sm" />
                                   <div className="min-w-0">
-                                    <div className="flex items-center gap-2 flex-wrap">
-                                      <h4 className="font-extrabold text-slate-900 text-sm group-hover:text-[#0f7343] transition-colors">
-                                        {student.firstName} {student.lastName}
-                                      </h4>
-                                      <span className="font-mono text-[11px] font-bold bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md">
-                                        {student.formNumber}
-                                      </span>
-                                      <span className="text-xs font-bold text-slate-500">
-                                        ({student.gender})
-                                      </span>
-                                    </div>
-                                    <p className="text-xs font-semibold text-slate-500 mt-1">
-                                      Parent: <span className="text-slate-800 font-bold">{student.fatherName || student.guardianName || 'N/A'}</span> • Phone: <span className="font-mono font-bold text-slate-700">{student.phone1 || 'N/A'}</span>
+                                    <h4 className="font-extrabold text-slate-900 text-xs truncate group-hover:text-[#0f7343] transition-colors">
+                                      {student.firstName} {student.lastName}
+                                    </h4>
+                                    <p className="text-[10px] font-mono font-semibold text-slate-400">
+                                      {student.formNumber} • {student.gender[0]}
                                     </p>
                                   </div>
                                 </div>
 
-                                {/* Actions & Badges */}
-                                <div className="flex items-center gap-3 self-end sm:self-center shrink-0">
+                                <div className="flex items-center gap-1.5 shrink-0">
                                   <button
                                     onClick={() => handleTogglePaymentStatus(student.id, student.paymentStatus || 'pending')}
                                     disabled={isTogglingFee === student.id}
-                                    className={`px-3 py-1.5 rounded-xl text-xs font-extrabold flex items-center gap-1.5 transition-all cursor-pointer ${
+                                    className={`px-2 py-1 rounded-lg text-[10px] font-extrabold flex items-center gap-1 transition-all cursor-pointer ${
                                       isPaid 
                                         ? 'bg-emerald-100 text-emerald-800 border border-emerald-300 hover:bg-emerald-200' 
                                         : 'bg-slate-100 text-slate-600 border border-slate-200 hover:bg-slate-200'
                                     }`}
                                   >
-                                    <CreditCard className="w-3.5 h-3.5" />
-                                    <span>{isPaid ? 'Fees Paid ✓' : 'Fee Pending'}</span>
+                                    <CreditCard className="w-3 h-3" />
+                                    <span>{isPaid ? 'Paid' : 'Pending'}</span>
                                   </button>
-
-                                  <span className={`px-2.5 py-1 rounded-xl text-xs font-extrabold flex items-center gap-1.5 ${
-                                    isVerified 
-                                      ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' 
-                                      : 'bg-amber-50 text-amber-700 border border-amber-200'
-                                  }`}>
-                                    {isVerified ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> : <Clock className="w-3.5 h-3.5 text-amber-500" />}
-                                    <span>{isVerified ? 'Verified' : 'Pending'}</span>
-                                  </span>
 
                                   <button
                                     onClick={() => startEditStudent(student)}
-                                    className="px-3.5 py-1.5 bg-[#0f7343] hover:bg-[#0b5c34] text-white rounded-xl text-xs font-bold transition-all shadow-2xs cursor-pointer flex items-center gap-1.5"
+                                    className="p-1.5 bg-slate-100 hover:bg-[#0f7343] text-slate-600 hover:text-white rounded-lg transition-all cursor-pointer"
+                                    title="View / Edit Profile"
                                   >
                                     <Edit3 className="w-3.5 h-3.5" />
-                                    <span>View / Edit</span>
                                   </button>
                                 </div>
                               </div>
                             );
-                          })}
-                        </div>
-                      ) : (
-                        <div className="p-8 text-center text-xs text-slate-400 font-semibold italic">
-                          No students currently registered in {subgroupName}.
-                        </div>
-                      )}
+                          })
+                        ) : (
+                          <div className="p-8 text-center text-xs text-slate-400 font-semibold italic">
+                            No students currently registered in {subgroupName}.
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Subgroup Card Footer */}
+                      <div className="p-4 border-t border-slate-100 bg-slate-50/50 flex items-center justify-between text-xs">
+                        <span className="text-[11px] font-bold text-slate-500">
+                          Verified: <strong className="text-emerald-700">{classStudents.filter(s => s.verificationStatus === 'verified').length}</strong>
+                        </span>
+                        <button
+                          onClick={() => {
+                            setNewStudent(prev => ({ ...prev, intendedClass: subgroupName }));
+                            setActiveTab('new-verification');
+                          }}
+                          disabled={isFull}
+                          className={`px-3 py-1.5 rounded-xl font-extrabold text-[11px] transition-all flex items-center gap-1 cursor-pointer ${
+                            isFull 
+                              ? 'bg-slate-200 text-slate-400 cursor-not-allowed' 
+                              : 'bg-[#0f7343] hover:bg-[#0b5c34] text-white shadow-2xs'
+                          }`}
+                        >
+                          <Plus className="w-3.5 h-3.5" />
+                          <span>{isFull ? 'Full' : 'Add Student'}</span>
+                        </button>
+                      </div>
                     </div>
                   );
                 })}
