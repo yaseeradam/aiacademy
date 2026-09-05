@@ -2798,23 +2798,24 @@ export default function AdminControl({ students }: AdminControlProps) {
                   >
                     <optgroup label="⚡ Automatic Subgroup Placement">
                       {['Nursery 1', 'Basic 1', 'Basic 2'].map(mainCls => {
-                        const targetArm = ['Gold', 'Silver', 'Green', 'Blue'].find(arm => {
-                          const cnt = students.filter(s => s.intendedClass === `${mainCls} ${arm}`).length;
-                          return cnt < 30;
+                        const arms = ['Gold', 'Silver', 'Green', 'Gold 2', 'Silver 2', 'Green 2'];
+                        const targetArm = arms.find(arm => {
+                          const cnt = students.filter(s => getStudentClassArm(s.intendedClass, s.id, students) === `${mainCls} ${arm}`).length;
+                          return cnt < 35;
                         }) || 'Gold';
                         const assignedFull = `${mainCls} ${targetArm}`;
-                        const spotCnt = students.filter(s => s.intendedClass === assignedFull).length;
+                        const spotCnt = students.filter(s => getStudentClassArm(s.intendedClass, s.id, students) === assignedFull).length;
                         return (
                           <option key={`auto-${mainCls}`} value={assignedFull}>
-                            ⚡ Auto-Assign to {mainCls} (→ {targetArm} Arm: {30 - spotCnt} spots available)
+                            ⚡ Auto-Assign to {mainCls} (→ {targetArm} Arm: {35 - spotCnt} spots available)
                           </option>
                         );
                       })}
                     </optgroup>
                     <optgroup label="Direct Subgroup Selection">
                       {classList.map(cls => {
-                        const count = students.filter(s => s.intendedClass === cls).length;
-                        const isFull = count >= 30;
+                        const count = students.filter(s => getStudentClassArm(s.intendedClass, s.id, students) === cls).length;
+                        const isFull = count >= 35;
                         return (
                           <option 
                             key={cls} 
@@ -2822,7 +2823,7 @@ export default function AdminControl({ students }: AdminControlProps) {
                             disabled={isFull}
                             className={isFull ? 'text-rose-400 bg-slate-100 font-normal' : 'font-bold text-slate-800'}
                           >
-                            {cls} {isFull ? '🔴 FULL (30/30)' : `🟢 (${count}/30 enrolled)`}
+                            {cls} {isFull ? '🔴 FULL (35/35)' : `🟢 (${count}/35 enrolled)`}
                           </option>
                         );
                       })}
@@ -3397,21 +3398,42 @@ export default function AdminControl({ students }: AdminControlProps) {
                     className="w-full soft-input text-sm cursor-pointer font-bold"
                     required
                   >
-                    {classList.map(cls => {
-                      const count = students.filter(s => s.intendedClass === cls).length;
-                      const isCurrent = editingStudent.intendedClass === cls;
-                      const isFull = count >= 30 && !isCurrent;
-                      return (
-                        <option 
-                          key={cls} 
-                          value={cls} 
-                          disabled={isFull}
-                          className={isFull ? 'text-rose-400 bg-slate-100 font-normal' : 'font-bold text-slate-800'}
-                        >
-                          {cls} {isCurrent ? '(Current)' : isFull ? '🔴 FULL (30/30)' : `🟢 (${count}/30 enrolled)`}
-                        </option>
-                      );
-                    })}
+                    <optgroup label="⚡ Automatic Subgroup Placement">
+                      {['Nursery 1', 'Basic 1', 'Basic 2'].map(mainCls => {
+                        const otherStudents = students.filter(s => s.id !== editingStudent.id);
+                        const arms = ['Gold', 'Silver', 'Green', 'Gold 2', 'Silver 2', 'Green 2'];
+                        const targetArm = arms.find(arm => {
+                          const cnt = otherStudents.filter(s => getStudentClassArm(s.intendedClass, s.id, otherStudents) === `${mainCls} ${arm}`).length;
+                          return cnt < 35;
+                        }) || 'Gold';
+                        const assignedFull = `${mainCls} ${targetArm}`;
+                        const spotCnt = otherStudents.filter(s => getStudentClassArm(s.intendedClass, s.id, otherStudents) === assignedFull).length;
+                        return (
+                          <option key={`edit-auto-${mainCls}`} value={assignedFull}>
+                            ⚡ Auto-Assign to {mainCls} (→ {targetArm} Arm: {35 - spotCnt} spots available)
+                          </option>
+                        );
+                      })}
+                    </optgroup>
+                    <optgroup label="Direct Subgroup Selection">
+                      {classList.map(cls => {
+                        const otherStudents = students.filter(s => s.id !== editingStudent.id);
+                        const currentResolved = getStudentClassArm(editingStudent.intendedClass, editingStudent.id, students);
+                        const count = otherStudents.filter(s => getStudentClassArm(s.intendedClass, s.id, otherStudents) === cls).length;
+                        const isCurrent = currentResolved === cls;
+                        const isFull = count >= 35 && !isCurrent;
+                        return (
+                          <option 
+                            key={cls} 
+                            value={cls} 
+                            disabled={isFull}
+                            className={isFull ? 'text-rose-400 bg-slate-100 font-normal' : 'font-bold text-slate-800'}
+                          >
+                            {cls} {isCurrent ? '(Current Arm)' : isFull ? '🔴 FULL (35/35)' : `🟢 (${count}/35 enrolled)`}
+                          </option>
+                        );
+                      })}
+                    </optgroup>
                   </select>
                 </div>
                 <div>

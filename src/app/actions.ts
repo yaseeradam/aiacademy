@@ -199,6 +199,14 @@ export async function adminUpdateStudentAction(
     return { success: false, error: 'Student not found.' };
   }
 
+  // If class is being changed or updated, resolve auto subgroup for the new class (excluding this student from capacity count)
+  if (updatedFields.intendedClass && updatedFields.intendedClass !== student.intendedClass) {
+    const allStudents = await getAllStudents();
+    const otherStudents = allStudents.filter(s => s.id !== studentId);
+    const resolvedClass = await resolveAutoSubgroup(updatedFields.intendedClass, otherStudents);
+    updatedFields.intendedClass = resolvedClass;
+  }
+
   const updatedStudent: Student = {
     ...student,
     ...updatedFields,
