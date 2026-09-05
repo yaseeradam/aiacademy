@@ -11,6 +11,15 @@ interface AdmissionLetterModalProps {
   onClose: () => void;
 }
 
+export function getStudentClassArm(cls: string | undefined): string {
+  if (!cls) return 'Nursery 1 Gold';
+  const trimmed = cls.trim();
+  if (trimmed === 'Nursery 1' || trimmed === 'Nursery') return 'Nursery 1 Gold';
+  if (trimmed === 'Basic 1' || trimmed === 'Primary 1') return 'Basic 1 Gold';
+  if (trimmed === 'Basic 2' || trimmed === 'Primary 2') return 'Basic 2 Gold';
+  return trimmed;
+}
+
 export function getStudentAdmissionNumber(student: Student): string {
   if (student.admissionNumber && (student.admissionNumber.startsWith('AIAA-B') || student.admissionNumber.startsWith('AIAA/'))) {
     return student.admissionNumber;
@@ -36,6 +45,7 @@ export function printBulkAdmissionLetters(students: Student[], logoSrc: string =
     const academicSession = student.academicSession || '2026/2027';
     const resumptionDate = student.resumptionDate || '14th September, 2026';
     const admissionNumber = getStudentAdmissionNumber(student);
+    const studentClassArm = getStudentClassArm(student.intendedClass);
     const studentName = `${student.firstName} ${student.lastName}`;
     const photoSrc = student.photo || '';
 
@@ -83,7 +93,7 @@ export function printBulkAdmissionLetters(students: Student[], logoSrc: string =
           <div class="meta-info">
             <div><span class="label">Student Name: </span><span class="value">${studentName}</span></div>
             <div><span class="label">Admission Number: </span><span class="value">${admissionNumber}</span></div>
-            <div><span class="label">Class: </span><span class="value">${student.intendedClass}</span></div>
+            <div><span class="label">Class: </span><span class="value">${studentClassArm}</span></div>
           </div>
           <div class="right-col">
             <div class="date-line">Date: <span class="value">${formattedDate}</span></div>
@@ -109,7 +119,7 @@ export function printBulkAdmissionLetters(students: Student[], logoSrc: string =
         <!-- Summary Table -->
         <table class="summary-table">
           <tr><td class="label-cell">Student Name</td><td class="value-cell">${studentName.toUpperCase()}</td></tr>
-          <tr><td class="label-cell">Class / Level</td><td class="value-cell">${student.intendedClass}</td></tr>
+          <tr><td class="label-cell">Class / Level</td><td class="value-cell">${studentClassArm}</td></tr>
           <tr><td class="label-cell">Academic Session</td><td class="value-cell">${academicSession}</td></tr>
           <tr><td class="label-cell">Resumption Date</td><td class="value-cell">${resumptionDate}</td></tr>
         </table>
@@ -478,6 +488,7 @@ export default function AdmissionLetterModal({ student, isOpen, onClose }: Admis
   const academicSession = student.academicSession || '2026/2027';
   const resumptionDate = student.resumptionDate || '14th September, 2026';
   const admissionNumber = getStudentAdmissionNumber(student);
+  const studentClassArm = getStudentClassArm(student.intendedClass);
   const studentName = `${student.firstName} ${student.lastName}`;
   const photoSrc = student.photo || '';
 
@@ -972,7 +983,7 @@ export default function AdmissionLetterModal({ student, isOpen, onClose }: Admis
         <div class="meta-info">
           <div><span class="label">Student Name: </span><span class="value">${studentName}</span></div>
           <div><span class="label">Admission Number: </span><span class="value">${admissionNumber}</span></div>
-          <div><span class="label">Class: </span><span class="value">${student.intendedClass}</span></div>
+          <div><span class="label">Class: </span><span class="value">${studentClassArm}</span></div>
         </div>
         <div class="right-col">
           <div class="date-line">Date: <span class="value">${formattedDate}</span></div>
@@ -998,7 +1009,7 @@ export default function AdmissionLetterModal({ student, isOpen, onClose }: Admis
       <!-- Summary Table -->
       <table class="summary-table">
         <tr><td class="label-cell">Student Name</td><td class="value-cell">${studentName.toUpperCase()}</td></tr>
-        <tr><td class="label-cell">Class / Level</td><td class="value-cell">${student.intendedClass}</td></tr>
+        <tr><td class="label-cell">Class / Level</td><td class="value-cell">${studentClassArm}</td></tr>
         <tr><td class="label-cell">Academic Session</td><td class="value-cell">${academicSession}</td></tr>
         <tr><td class="label-cell">Resumption Date</td><td class="value-cell">${resumptionDate}</td></tr>
       </table>
@@ -1155,7 +1166,7 @@ export default function AdmissionLetterModal({ student, isOpen, onClose }: Admis
                   <div className="flex items-center gap-2">
                     <span className="font-bold text-slate-600">Class:</span>
                     <span className="font-black text-slate-900 border-b border-slate-400 pb-0.5 px-1 min-w-[150px] inline-block">
-                      {student.intendedClass}
+                      {studentClassArm}
                     </span>
                   </div>
                 </div>
@@ -1226,7 +1237,7 @@ export default function AdmissionLetterModal({ student, isOpen, onClose }: Admis
                     </tr>
                     <tr className="border border-slate-400">
                       <td className="p-2.5 font-bold text-slate-800 bg-slate-50 border-r border-slate-400">Class / Level</td>
-                      <td className="p-2.5 font-extrabold text-slate-900">{student.intendedClass}</td>
+                      <td className="p-2.5 font-extrabold text-slate-900">{studentClassArm}</td>
                     </tr>
                     <tr className="border border-slate-400">
                       <td className="p-2.5 font-bold text-slate-800 bg-slate-50 border-r border-slate-400">Academic Session</td>
