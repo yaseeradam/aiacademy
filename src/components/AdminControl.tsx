@@ -97,6 +97,7 @@ export default function AdminControl({ students }: AdminControlProps) {
   const [classPageSearch, setClassPageSearch] = useState<string>('');
   const [selectedSubgroupRoster, setSelectedSubgroupRoster] = useState<string | null>(null);
   const [rosterSearch, setRosterSearch] = useState<string>('');
+  const [subgroupSortOrder, setSubgroupSortOrder] = useState<'most_populated' | 'alphabetical' | 'capacity'>('most_populated');
 
   // Default Class Subgroups / Streams (30 students per class capacity)
   const defaultSubgroups = useMemo(() => [
@@ -121,14 +122,41 @@ export default function AdminControl({ students }: AdminControlProps) {
     return trimmed;
   };
 
-  // Class list and student mapping
+  // Main class categories sorted by enrollment count (most populated first)
+  const sortedMainClasses = useMemo(() => {
+    const classes = ['Nursery 1', 'Basic 1', 'Basic 2'];
+    return classes.sort((a, b) => {
+      const countA = students.filter(s => getStudentClassArm(s.intendedClass).startsWith(a)).length;
+      const countB = students.filter(s => getStudentClassArm(s.intendedClass).startsWith(b)).length;
+      return countB - countA;
+    });
+  }, [students]);
+
+  // Class list sorted based on selected priority order (most populated first by default)
   const classList = useMemo(() => {
     const set = new Set([
       ...defaultSubgroups,
       ...students.map(s => getStudentClassArm(s.intendedClass)).filter(Boolean)
     ]);
-    return Array.from(set);
-  }, [students, defaultSubgroups]);
+    const list = Array.from(set);
+
+    return list.sort((a, b) => {
+      const countA = students.filter(s => getStudentClassArm(s.intendedClass) === a).length;
+      const countB = students.filter(s => getStudentClassArm(s.intendedClass) === b).length;
+
+      if (subgroupSortOrder === 'most_populated') {
+        if (countB !== countA) return countB - countA; // Highest enrollment first!
+        return a.localeCompare(b);
+      } else if (subgroupSortOrder === 'capacity') {
+        const isFullA = countA >= 30 ? 1 : 0;
+        const isFullB = countB >= 30 ? 1 : 0;
+        if (isFullB !== isFullA) return isFullB - isFullA;
+        return countB - countA;
+      } else {
+        return a.localeCompare(b);
+      }
+    });
+  }, [students, defaultSubgroups, subgroupSortOrder]);
 
   const classStudentMap = useMemo(() => {
     const map: Record<string, Student[]> = {};
@@ -1344,7 +1372,7 @@ export default function AdminControl({ students }: AdminControlProps) {
 
             {/* Comprehensive Top Class Stat Cards */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {['Nursery 1', 'Basic 1', 'Basic 2'].map((mainClass) => {
+              {sortedMainClasses.map((mainClass) => {
                 const classStudents = students.filter(s => getStudentClassArm(s.intendedClass).startsWith(mainClass));
                 const goldCount = students.filter(s => getStudentClassArm(s.intendedClass) === `${mainClass} Gold`).length;
                 const silverCount = students.filter(s => getStudentClassArm(s.intendedClass) === `${mainClass} Silver`).length;
@@ -1486,8 +1514,8 @@ export default function AdminControl({ students }: AdminControlProps) {
             </div>
 
             {/* Filter Tabs & Search Bar */}
-            <div className="soft-card p-4 bg-white rounded-2xl border border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-2xs">
-              <div className="flex flex-wrap gap-2 w-full sm:w-auto">
+            <div className="soft-card p-4 bg-white rounded-2xl border border-slate-200 flex flex-col md:flex-row items-center justify-between gap-4 shadow-2xs">
+              <div className="flex flex-wrap gap-2 w-full md:w-auto">
                 <button
                   onClick={() => setClassTabFilter('all')}
                   className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
@@ -1513,15 +1541,30 @@ export default function AdminControl({ students }: AdminControlProps) {
                 ))}
               </div>
 
-              <div className="relative w-full sm:w-72">
-                <Search className="w-4 h-4 absolute left-3.5 top-3 text-slate-400" />
-                <input
-                  type="text"
-                  value={classPageSearch}
-                  onChange={(e) => setClassPageSearch(e.target.value)}
-                  placeholder="Search student, form no, or phone..."
-                  className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:border-[#0f7343] focus:bg-white transition-all"
-                />
+              <div className="flex items-center gap-3 w-full md:w-auto">
+                <div className="flex items-center gap-2 text-xs font-extrabold text-slate-500 shrink-0">
+                  <span>Priority:</span>
+                  <select
+                    value={subgroupSortOrder}
+                    onChange={(e) => setSubgroupSortOrder(e.target.value as 'most_populated' | 'alphabetical' | 'capacity')}
+                    className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 focus:outline-none focus:border-[#0f7343] cursor-pointer"
+                  >
+                    <option value="most_populated">🔥 Highest Students First</option>
+                    <option value="capacity">🔴 Full Capacity First</option>
+                    <option value="alphabetical">🔤 Name (A-Z)</option>
+                  </select>
+                </div>
+
+                <div className="relative flex-1 md:w-64">
+                  <Search className="w-4 h-4 absolute left-3.5 top-3 text-slate-400" />
+                  <input
+                    type="text"
+                    value={classPageSearch}
+                    onChange={(e) => setClassPageSearch(e.target.value)}
+                    placeholder="Search student, form no..."
+                    className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:border-[#0f7343] focus:bg-white transition-all"
+                  />
+                </div>
               </div>
             </div>
 
