@@ -2546,14 +2546,12 @@ export default function AdminControl({ students }: AdminControlProps) {
                                 <button
                                   type="button"
                                   onClick={() => {
-                                    setNewStudent(prev => ({ ...prev, intendedClass: selectedSubgroupRoster }));
-                                    setSelectedSubgroupRoster(null);
-                                    setActiveTab('new-verification');
+                                    handleOpenAssignArmModal(selectedSubgroupRoster);
                                   }}
                                   className="px-5 py-2.5 bg-[#0f7343] hover:bg-[#0b5c34] text-white font-bold text-xs rounded-xl shadow-md transition-all cursor-pointer inline-flex items-center gap-2"
                                 >
                                   <Plus className="w-4 h-4" />
-                                  <span>Add First Student to {selectedSubgroupRoster}</span>
+                                  <span>Assign Existing Students to {selectedSubgroupRoster}</span>
                                 </button>
                               )}
                             </div>
