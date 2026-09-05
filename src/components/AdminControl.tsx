@@ -2111,20 +2111,37 @@ export default function AdminControl({ students }: AdminControlProps) {
                     className="w-full soft-input cursor-pointer font-bold"
                     required
                   >
-                    {classList.map(cls => {
-                      const count = students.filter(s => s.intendedClass === cls).length;
-                      const isFull = count >= 30;
-                      return (
-                        <option 
-                          key={cls} 
-                          value={cls} 
-                          disabled={isFull}
-                          className={isFull ? 'text-rose-400 bg-slate-100 font-normal' : 'font-bold text-slate-800'}
-                        >
-                          {cls} {isFull ? '🔴 FULL (30/30)' : `🟢 (${count}/30 enrolled)`}
-                        </option>
-                      );
-                    })}
+                    <optgroup label="⚡ Automatic Subgroup Placement">
+                      {['Nursery 1', 'Basic 1', 'Basic 2'].map(mainCls => {
+                        const targetArm = ['Gold', 'Silver', 'Green', 'Blue'].find(arm => {
+                          const cnt = students.filter(s => s.intendedClass === `${mainCls} ${arm}`).length;
+                          return cnt < 30;
+                        }) || 'Gold';
+                        const assignedFull = `${mainCls} ${targetArm}`;
+                        const spotCnt = students.filter(s => s.intendedClass === assignedFull).length;
+                        return (
+                          <option key={`auto-${mainCls}`} value={assignedFull}>
+                            ⚡ Auto-Assign to {mainCls} (→ {targetArm} Arm: {30 - spotCnt} spots available)
+                          </option>
+                        );
+                      })}
+                    </optgroup>
+                    <optgroup label="Direct Subgroup Selection">
+                      {classList.map(cls => {
+                        const count = students.filter(s => s.intendedClass === cls).length;
+                        const isFull = count >= 30;
+                        return (
+                          <option 
+                            key={cls} 
+                            value={cls} 
+                            disabled={isFull}
+                            className={isFull ? 'text-rose-400 bg-slate-100 font-normal' : 'font-bold text-slate-800'}
+                          >
+                            {cls} {isFull ? '🔴 FULL (30/30)' : `🟢 (${count}/30 enrolled)`}
+                          </option>
+                        );
+                      })}
+                    </optgroup>
                   </select>
                 </div>
               </div>

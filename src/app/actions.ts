@@ -291,6 +291,31 @@ export async function checkDuplicateStudentAction(studentData: Partial<Student>)
   return { duplicate: false };
 }
 
+export async function resolveAutoSubgroup(requestedClass: string, allStudents: Student[]): Promise<string> {
+  let targetBase = 'Nursery 1';
+  if (/Basic 2|Primary 2/i.test(requestedClass)) targetBase = 'Basic 2';
+  else if (/Basic 1|Primary 1/i.test(requestedClass)) targetBase = 'Basic 1';
+  else if (/Nursery/i.test(requestedClass)) targetBase = 'Nursery 1';
+
+  // If exact subgroup specified and it has space (< 30), keep it
+  const exactCount = allStudents.filter(s => s.intendedClass === requestedClass).length;
+  if (exactCount < 30 && (requestedClass.includes('Gold') || requestedClass.includes('Silver') || requestedClass.includes('Green'))) {
+    return requestedClass;
+  }
+
+  // Find first available arm with < 30 students
+  const arms = ['Gold', 'Silver', 'Green', 'Blue', 'Bronze', 'Diamond'];
+  for (const arm of arms) {
+    const candidate = `${targetBase} ${arm}`;
+    const count = allStudents.filter(s => s.intendedClass === candidate).length;
+    if (count < 30) {
+      return candidate;
+    }
+  }
+
+  return `${targetBase} Gold`;
+}
+
 export async function adminCreateStudentAction(studentData: Omit<Student, 'id' | 'parentId'> & { parentId?: string }): Promise<{ success: boolean; id?: string; error?: string; existingStudent?: Student }> {
   // Check for duplicates before creation
   const duplicate = await findDuplicateStudent(studentData);
@@ -302,17 +327,12 @@ export async function adminCreateStudentAction(studentData: Omit<Student, 'id' |
     };
   }
 
-  // Check class capacity limit (max 30 per class arm)
-  if (studentData.intendedClass) {
-    const allStudents = await getAllStudents();
-    const enrolledInClass = allStudents.filter(s => s.intendedClass === studentData.intendedClass);
-    if (enrolledInClass.length >= 30) {
-      return {
-        success: false,
-        error: `Class "${studentData.intendedClass}" has reached its maximum capacity of 30 students. Please select another available class arm.`,
-      };
-    }
-  }
+  const allStudents = await getAllStudents();
+
+  // Automatically resolve class subgroup to next available arm with space (< 30)
+  const requestedClass = studentData.intendedClass || 'Nursery 1 Gold';
+  const resolvedClass = await resolveAutoSubgroup(requestedClass, allStudents);
+  studentData.intendedClass = resolvedClass;
 
   const newId = `stud-${Date.now()}`;
   const newStudent: Student = {

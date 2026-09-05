@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAllStudents, getAllParents, addOrUpdateStudent, addOrUpdateParent, normalizePhone } from '@/lib/db';
 import { Student, Parent, VerificationStatus } from '@/types';
+import { resolveAutoSubgroup } from '@/app/actions';
 
 // Helper to generate a unique ID
 const generateId = (prefix: string) => `${prefix}-${Math.random().toString(36).substring(2, 11)}`;
@@ -90,8 +91,8 @@ export async function POST(request: NextRequest) {
       const formNumber = row['form number'] || row['formno'] || row['form_number'] || `FORM-${1000 + i}`;
       const firstName = row['first name'] || row['firstname'] || row['first_name'] || row['student name']?.split(' ')[0] || 'Unknown';
       const lastName = row['last name'] || row['lastname'] || row['last_name'] || row['student name']?.split(' ').slice(1).join(' ') || 'Student';
-      let intendedClass = row['class'] || row['intended class'] || row['intendedclass'] || 'Nursery 1';
-      if (/Primary/i.test(intendedClass)) intendedClass = 'Basic 1';
+      let rawClass = row['class'] || row['intended class'] || row['intendedclass'] || 'Nursery 1';
+      const intendedClass = await resolveAutoSubgroup(rawClass, students);
       const gender = (row['gender'] || row['sex'] || 'Male').toLowerCase().startsWith('f') ? 'Female' : 'Male';
       const dateOfBirth = row['date of birth'] || row['dob'] || row['date_of_birth'] || '';
       const fatherName = row['father name'] || row['fathername'] || row['father_name'] || '';
