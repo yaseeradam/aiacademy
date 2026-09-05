@@ -281,21 +281,24 @@ export default function AdminControl({ students }: AdminControlProps) {
     isOpen: boolean;
     armName: string;
     searchQuery: string;
+    classFilter: string;
     selectedStudentIds: string[];
     isAssigning: boolean;
   }>({
     isOpen: false,
-    armName: '',
+    armName: 'Nursery 1 Gold',
     searchQuery: '',
+    classFilter: 'all',
     selectedStudentIds: [],
     isAssigning: false,
   });
 
-  const handleOpenAssignArmModal = (armName: string) => {
+  const handleOpenAssignArmModal = (armName?: string) => {
     setAssignToArmModal({
       isOpen: true,
-      armName,
+      armName: armName || 'Nursery 1 Gold',
       searchQuery: '',
+      classFilter: 'all',
       selectedStudentIds: [],
       isAssigning: false,
     });
@@ -326,6 +329,7 @@ export default function AdminControl({ students }: AdminControlProps) {
           isOpen: false,
           armName: '',
           searchQuery: '',
+          classFilter: 'all',
           selectedStudentIds: [],
           isAssigning: false,
         });
@@ -1922,11 +1926,12 @@ export default function AdminControl({ students }: AdminControlProps) {
                     </button>
 
                     <button
-                      onClick={() => setActiveTab('new-verification')}
+                      type="button"
+                      onClick={() => handleOpenAssignArmModal('Nursery 1 Gold')}
                       className="flex items-center gap-2 px-4 py-2.5 bg-[#0f7343] hover:bg-[#0b5c34] text-white font-bold text-xs rounded-xl shadow-sm transition-all cursor-pointer"
                     >
                       <Plus className="w-4 h-4" />
-                      <span>Add Student to Class</span>
+                      <span>Add / Assign Students to Arm</span>
                     </button>
                   </div>
                 </div>
@@ -4421,50 +4426,87 @@ export default function AdminControl({ students }: AdminControlProps) {
       {/* Modal to Assign Existing Students to Subclass Arm */}
       {assignToArmModal.isOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/80 backdrop-blur-md p-3 sm:p-6 overflow-y-auto animate-fade-in">
-          <div className="bg-white w-full max-w-4xl rounded-3xl shadow-2xl overflow-hidden border border-slate-200 animate-slide-up my-4 flex flex-col max-h-[90vh]">
+          <div className="bg-white w-full max-w-5xl rounded-3xl shadow-2xl overflow-hidden border border-slate-200 animate-slide-up my-4 flex flex-col max-h-[90vh]">
             
             {/* Modal Header */}
-            <div className="p-6 bg-slate-900 text-white flex items-center justify-between gap-4 shrink-0">
+            <div className="p-6 bg-slate-900 text-white flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shrink-0">
               <div className="flex items-center gap-3">
                 <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center justify-center font-black shrink-0">
                   <Plus className="w-6 h-6" />
                 </div>
                 <div>
-                  <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">
-                    Add Students to {assignToArmModal.armName}
-                  </h2>
-                  <p className="text-xs text-slate-400 font-semibold mt-0.5">
-                    Select existing students from the directory to assign them to this subclass arm.
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">
+                      Add / Assign Students to:
+                    </h2>
+                    <select
+                      value={assignToArmModal.armName}
+                      onChange={(e) => setAssignToArmModal(prev => ({ ...prev, armName: e.target.value, selectedStudentIds: [] }))}
+                      className="py-1 px-3 bg-emerald-950 text-emerald-400 border border-emerald-500/50 rounded-xl text-xs sm:text-sm font-black focus:outline-none cursor-pointer"
+                    >
+                      {classList.map(cls => (
+                        <option key={cls} value={cls} className="bg-slate-900 text-white font-bold">{cls}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <p className="text-xs text-slate-400 font-semibold mt-1">
+                    Select existing students from the directory to assign them to {assignToArmModal.armName}.
                   </p>
                 </div>
               </div>
 
               <button
-                onClick={() => setAssignToArmModal({ isOpen: false, armName: '', searchQuery: '', selectedStudentIds: [], isAssigning: false })}
+                onClick={() => setAssignToArmModal({ isOpen: false, armName: '', searchQuery: '', classFilter: 'all', selectedStudentIds: [], isAssigning: false })}
                 className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-all cursor-pointer"
               >
                 <X className="w-6 h-6" />
               </button>
             </div>
 
-            {/* Modal Toolbar: Search Bar & Capacity Info */}
-            <div className="p-4 bg-slate-100 border-b border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4 shrink-0">
-              <div className="relative w-full sm:w-96">
-                <Search className="w-4 h-4 absolute left-3.5 top-3 text-slate-400" />
-                <input
-                  type="text"
-                  value={assignToArmModal.searchQuery}
-                  onChange={(e) => setAssignToArmModal(prev => ({ ...prev, searchQuery: e.target.value }))}
-                  placeholder="Search by student name, form no, phone..."
-                  className="w-full pl-10 pr-4 py-2 bg-white border border-slate-300 rounded-xl text-xs font-semibold focus:outline-none focus:border-[#0f7343] transition-all"
-                />
+            {/* Modal Toolbar: Search Bar, Category Filters & Capacity Info */}
+            <div className="p-4 bg-slate-100 border-b border-slate-200 flex flex-col md:flex-row items-center justify-between gap-4 shrink-0">
+              <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto flex-1">
+                <div className="relative w-full sm:w-80">
+                  <Search className="w-4 h-4 absolute left-3.5 top-2.5 text-slate-400" />
+                  <input
+                    type="text"
+                    value={assignToArmModal.searchQuery}
+                    onChange={(e) => setAssignToArmModal(prev => ({ ...prev, searchQuery: e.target.value }))}
+                    placeholder="Search name, form no, phone, parent..."
+                    className="w-full pl-10 pr-4 py-2 bg-white border border-slate-300 rounded-xl text-xs font-semibold focus:outline-none focus:border-[#0f7343] transition-all"
+                  />
+                </div>
+
+                {/* Category Filter Pills */}
+                <div className="flex items-center gap-1.5 overflow-x-auto w-full sm:w-auto pb-1 sm:pb-0">
+                  {[
+                    { id: 'all', label: 'All Students' },
+                    { id: 'unassigned', label: 'Unassigned Only' },
+                    { id: 'Nursery 1', label: 'Nursery 1' },
+                    { id: 'Basic 1', label: 'Basic 1' },
+                    { id: 'Basic 2', label: 'Basic 2' },
+                  ].map(pill => (
+                    <button
+                      key={pill.id}
+                      type="button"
+                      onClick={() => setAssignToArmModal(prev => ({ ...prev, classFilter: pill.id }))}
+                      className={`px-3 py-1.5 rounded-xl text-[11px] font-extrabold transition-all cursor-pointer whitespace-nowrap ${
+                        assignToArmModal.classFilter === pill.id
+                          ? 'bg-[#0f7343] text-white shadow-xs'
+                          : 'bg-white text-slate-600 hover:bg-slate-200 border border-slate-300'
+                      }`}
+                    >
+                      {pill.label}
+                    </button>
+                  ))}
+                </div>
               </div>
 
               {(() => {
                 const currentEnrolled = students.filter(s => getStudentClassArm(s.intendedClass, s.id, students) === assignToArmModal.armName).length;
                 const openSpots = Math.max(0, 35 - currentEnrolled);
                 return (
-                  <div className="flex items-center gap-3 text-xs font-bold text-slate-700">
+                  <div className="flex items-center gap-3 text-xs font-bold text-slate-700 shrink-0">
                     <span className="bg-white border border-slate-300 px-3 py-1.5 rounded-xl">
                       Enrolled: <strong className="text-slate-900">{currentEnrolled}</strong> / 35
                     </span>
@@ -4480,11 +4522,21 @@ export default function AdminControl({ students }: AdminControlProps) {
             <div className="p-6 overflow-y-auto flex-1 bg-slate-50 space-y-4">
               {(() => {
                 const q = assignToArmModal.searchQuery.trim().toLowerCase();
+                const filter = assignToArmModal.classFilter || 'all';
                 let baseClass = assignToArmModal.armName.replace(/\s+(Gold|Silver|Green)(\s+\d+)?/gi, '').trim();
 
                 const candidates = students.filter(s => {
                   const currentArm = getStudentClassArm(s.intendedClass, s.id, students);
                   if (currentArm === assignToArmModal.armName) return false;
+
+                  if (filter === 'unassigned') {
+                    const isBare = s.intendedClass === 'Nursery 1' || s.intendedClass === 'Basic 1' || s.intendedClass === 'Basic 2';
+                    if (!currentArm.includes('Unassigned') && !isBare) {
+                      return false;
+                    }
+                  } else if (filter !== 'all') {
+                    if (!currentArm.startsWith(filter) && !s.intendedClass.startsWith(filter)) return false;
+                  }
 
                   if (!q) return true;
 
@@ -4539,7 +4591,7 @@ export default function AdminControl({ students }: AdminControlProps) {
                       </div>
                       <h4 className="text-base font-black text-slate-800">No matching students found</h4>
                       <p className="text-xs text-slate-500 font-semibold max-w-sm mx-auto">
-                        {assignToArmModal.searchQuery ? `No students matched "${assignToArmModal.searchQuery}".` : 'All existing students are already assigned or no other students exist in the directory.'}
+                        {assignToArmModal.searchQuery ? `No students matched "${assignToArmModal.searchQuery}".` : 'All existing students are already assigned or no other students match the filter.'}
                       </p>
                     </div>
                   );
@@ -4630,7 +4682,7 @@ export default function AdminControl({ students }: AdminControlProps) {
               <div className="flex items-center gap-3">
                 <button
                   type="button"
-                  onClick={() => setAssignToArmModal({ isOpen: false, armName: '', searchQuery: '', selectedStudentIds: [], isAssigning: false })}
+                  onClick={() => setAssignToArmModal({ isOpen: false, armName: '', searchQuery: '', classFilter: 'all', selectedStudentIds: [], isAssigning: false })}
                   className="px-4 py-2.5 bg-white hover:bg-slate-200 text-slate-700 border border-slate-300 rounded-xl font-bold text-xs transition-all cursor-pointer"
                 >
                   Cancel
