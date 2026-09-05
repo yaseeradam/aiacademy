@@ -237,18 +237,181 @@ const INITIAL_STUDENTS: Student[] = [
     residentialAddress: 'Bakin Kasuwa Argungu',
     phone1: '08068899384', guardianName: 'Salisu Sani',
     guardianAddress: 'Bakin kasuwa Gidan Sarkin Shanu',
-    nationality: 'Nigerian', religion: 'Islam',
+  {
+    id: 'stud-b1g-1', parentId: 'parent-2', formNumber: 'FORM-2026-002', admissionNumber: 'AIAA/B/2026/009',
+    firstName: 'Asma,u', lastName: 'Aliyu Musa', gender: 'Female', intendedClass: 'Basic 1 Gold',
+    verificationStatus: 'verified', paymentStatus: 'paid', dateOfBirth: '2019-05-16', fatherName: 'Aliyu Musa', phone1: '08063764842'
   },
   {
-    id: 'stud-20', parentId: 'parent-19', formNumber: 'FORM-2026-020',
-    firstName: 'Hauwa,u', lastName: 'Sani', gender: 'Female',
-    intendedClass: 'Nursery 1', verificationStatus: 'pending',
-    dateOfBirth: '2023-07-30', fatherName: 'Sani Abdullahi',
-    motherName: 'Sadiya Sama,ila Misbahu',
-    residentialAddress: 'Farin Tanki Area Near White House, Argungu',
-    phone1: '07038758969', guardianName: 'Farin Tanki Area Dawakin Sarkin kabi',
-    nationality: 'Nigerian', religion: 'Islam',
+    id: 'stud-b1g-2', parentId: 'parent-12', formNumber: 'FORM-2026-012', admissionNumber: 'AIAA/B/2026/014',
+    firstName: 'Bashar', lastName: 'Yusuf Yakubu', gender: 'Male', intendedClass: 'Basic 1 Gold',
+    verificationStatus: 'verified', paymentStatus: 'paid', dateOfBirth: '', fatherName: 'Yusuf Yakubu', phone1: '08030439366'
   },
+  {
+    id: 'stud-b1g-3', parentId: 'parent-9', formNumber: 'FORM-2026-009', admissionNumber: 'AIAA/B/2026/008',
+    firstName: 'Maimuna', lastName: 'Sama,ila', gender: 'Female', intendedClass: 'Basic 1 Gold',
+    verificationStatus: 'verified', paymentStatus: 'paid', dateOfBirth: '2019-05-04', fatherName: 'Sama,ila Lamne Bubuche', phone1: '08038047105'
+  },
+  {
+    id: 'stud-b1g-4', parentId: 'parent-10', formNumber: 'FORM-2026-010', admissionNumber: 'AIAA/B/2026/017',
+    firstName: 'Faruk', lastName: 'Umar Madawaki', gender: 'Male', intendedClass: 'Basic 1 Gold',
+    verificationStatus: 'pending', paymentStatus: 'paid', dateOfBirth: '2018-06-19', fatherName: 'Umar Faruk Madawaki', phone1: '07036101710'
+  },
+  {
+    id: 'stud-b1g-5', parentId: 'parent-b1g-5', formNumber: 'FORM-2026-M1982', admissionNumber: 'AIAA-B26-982',
+    firstName: 'Ibrahim', lastName: 'Ibrahim Illo', gender: 'Male', intendedClass: 'Basic 1 Gold',
+    verificationStatus: 'verified', paymentStatus: 'pending', dateOfBirth: '15/03/2021', fatherName: 'Ibrahim Illo', phone1: '07066694804'
+  },
+  {
+    id: 'stud-b1g-6', parentId: 'parent-b1g-6', formNumber: 'FORM-2026-M1490', admissionNumber: 'AIAA-B26-490',
+    firstName: 'Balkisu', lastName: 'Abubakar', gender: 'Female', intendedClass: 'Basic 1 Gold',
+    verificationStatus: 'pending', paymentStatus: 'pending', dateOfBirth: '06/02/2019', fatherName: 'Abubakar Muhammad', phone1: '09037635390'
+  },
+  {
+    id: 'stud-b1g-7', parentId: 'parent-b1g-7', formNumber: 'FORM-2026-M3755', admissionNumber: 'AIAA-B26-755',
+    firstName: 'Aisha', lastName: 'Lukman Isah', gender: 'Female', intendedClass: 'Basic 1 Gold',
+    verificationStatus: 'verified', paymentStatus: 'pending', dateOfBirth: '07/06/2020', fatherName: 'Late Lukman Isah', phone1: '07066025971'
+  },
+  {
+    id: 'stud-b1g-8', parentId: 'parent-b1g-8', formNumber: 'FORM-2026-M5312', admissionNumber: 'AIAA-B26-312',
+    firstName: 'Aisha', lastName: 'Bello Bayawa', gender: 'Female', intendedClass: 'Basic 1 Gold',
+    verificationStatus: 'pending', paymentStatus: 'pending', dateOfBirth: '27/4/2021', fatherName: 'Bello Bayawa', phone1: '08031384393'
+  },
+  {
+    id: 'stud-b1g-9', parentId: 'parent-b1g-9', formNumber: 'FORM-2026-M1720', admissionNumber: 'AIAA-B26-720',
+    firstName: 'Aisha', lastName: 'Yanusa Muhammad', gender: 'Female', intendedClass: 'Basic 1 Gold',
+    verificationStatus: 'pending', paymentStatus: 'pending', dateOfBirth: '07/08/2020', fatherName: 'Yanusa Muhammad', phone1: '08104515983'
+  },
+  {
+    id: 'stud-b1g-10', parentId: 'parent-b1g-10', formNumber: 'FORM-2026-M1209', admissionNumber: 'AIAA-B26-209',
+    firstName: 'Amatu-Mannan', lastName: 'Abubakar Torankawa', gender: 'Female', intendedClass: 'Basic 1 Gold',
+    verificationStatus: 'pending', paymentStatus: 'pending', dateOfBirth: '9/5/2019', fatherName: 'Abubakar Hashimu Torankawa', phone1: '08135666185'
+  },
+  {
+    id: 'stud-b1g-11', parentId: 'parent-b1g-11', formNumber: 'FORM-2026-M5124', admissionNumber: 'AIAA-B26-124',
+    firstName: 'Abdulmalik', lastName: 'Yakubu Adamu', gender: 'Male', intendedClass: 'Basic 1 Gold',
+    verificationStatus: 'pending', paymentStatus: 'pending', dateOfBirth: '', fatherName: 'Yakubu Adamu Gulma', phone1: '07067781699'
+  },
+  {
+    id: 'stud-b1g-12', parentId: 'parent-b1g-7', formNumber: 'FORM-2026-M4993', admissionNumber: 'AIAA-B26-993',
+    firstName: 'Aisha', lastName: 'Lukman ISah', gender: 'Female', intendedClass: 'Basic 1 Gold',
+    verificationStatus: 'verified', paymentStatus: 'pending', dateOfBirth: '7/6/2020', fatherName: 'Late Lukman Isah', phone1: '07066025971'
+  },
+  {
+    id: 'stud-b1g-13', parentId: 'parent-b1g-13', formNumber: 'FORM-2026-M1244', admissionNumber: 'AIAA-B26-244',
+    firstName: 'ABDUL MALIK', lastName: 'YAKUBU ADAMU', gender: 'Male', intendedClass: 'Basic 1 Gold',
+    verificationStatus: 'pending', paymentStatus: 'pending', dateOfBirth: '', fatherName: 'YAKUBU ADAMU GULMA', phone1: '07067791659'
+  },
+  {
+    id: 'stud-b1g-14', parentId: 'parent-b1g-14', formNumber: 'FORM-2026-M4674', admissionNumber: 'AIAA-B26-674',
+    firstName: 'UmmulKhairi', lastName: 'Anas', gender: 'Female', intendedClass: 'Basic 1 Gold',
+    verificationStatus: 'pending', paymentStatus: 'pending', dateOfBirth: '28/11/2021', fatherName: 'Anas Abubakar', phone1: '08667616041'
+  },
+  {
+    id: 'stud-b1g-15', parentId: 'parent-b1g-15', formNumber: 'FORM-2026-M3361', admissionNumber: 'AIAA/B/2026/018',
+    firstName: 'HAUWA\'U', lastName: 'AL-MUSTAPHA', gender: 'Female', intendedClass: 'Basic 1 Gold',
+    verificationStatus: 'verified', paymentStatus: 'paid', dateOfBirth: '', fatherName: 'AL MUSTAPHA YUSUF', phone1: '09138242328'
+  },
+  {
+    id: 'stud-b1g-16', parentId: 'parent-b1g-16', formNumber: 'FORM-2026-M0435', admissionNumber: 'AIAA-B26-435',
+    firstName: 'ABDUL-malik YAKURU', lastName: 'Abubakar', gender: 'Male', intendedClass: 'Basic 1 Gold',
+    verificationStatus: 'pending', paymentStatus: 'pending', dateOfBirth: '24-4-2019', fatherName: 'YAKURU Abubakar', phone1: '070631065476'
+  },
+  {
+    id: 'stud-b1g-17', parentId: 'parent-b1g-17', formNumber: 'FORM-2026-M1378', admissionNumber: 'AIAA/B/2026/011',
+    firstName: 'AAREEF', lastName: 'IBNI-ALIYU ABUBAKAR', gender: 'Male', intendedClass: 'Basic 1 Gold',
+    verificationStatus: 'pending', paymentStatus: 'paid', dateOfBirth: '16/05/2021', fatherName: 'ALIYU ABUBAKAR', phone1: '08022972027'
+  },
+  {
+    id: 'stud-b1g-18', parentId: 'parent-b1g-18', formNumber: 'FORM-2026-M3717', admissionNumber: 'AIAA-B26-717',
+    firstName: 'Hauwau', lastName: 'Hamisu', gender: 'Female', intendedClass: 'Basic 1 Gold',
+    verificationStatus: 'pending', paymentStatus: 'pending', dateOfBirth: '25/6/2018', fatherName: 'Hamisu Ango', phone1: '08030851726'
+  },
+  {
+    id: 'stud-b1g-19', parentId: 'parent-b1g-19', formNumber: 'FORM-2026-M2479', admissionNumber: 'AIAA/B/2026/015',
+    firstName: 'KHADIJA', lastName: 'ISAH HALI', gender: 'Female', intendedClass: 'Basic 1 Gold',
+    verificationStatus: 'pending', paymentStatus: 'paid', dateOfBirth: '15-04-2016', fatherName: 'ISAH HALI', phone1: '08161592575'
+  },
+  {
+    id: 'stud-b1g-20', parentId: 'parent-b1g-20', formNumber: 'FORM-2026-M5899', admissionNumber: 'AIAA-B26-899',
+    firstName: 'FATIMA', lastName: 'NAFIU ALIYU', gender: 'Female', intendedClass: 'Basic 1 Gold',
+    verificationStatus: 'verified', paymentStatus: 'pending', dateOfBirth: '8/18/2019', fatherName: 'NAFIU ALIYU ARGUNGU', phone1: '07035785968'
+  },
+  {
+    id: 'stud-b1g-21', parentId: 'parent-b1g-2', formNumber: 'FORM-2026-M4738', admissionNumber: 'AIAA-B26-002',
+    firstName: 'SULEMAN', lastName: 'YUSUF YAKUBU', gender: 'Male', intendedClass: 'Basic 1 Gold',
+    verificationStatus: 'verified', paymentStatus: 'paid', dateOfBirth: '5/9/2017', fatherName: 'ALHAJI YUSUF YAKUBU', phone1: '08030439366'
+  },
+  {
+    id: 'stud-b1g-22', parentId: 'parent-b1g-22', formNumber: 'FORM-2026-M5131', admissionNumber: 'AIAA/B/2026/004',
+    firstName: 'AMEENAH', lastName: 'IMRANA SAMA', gender: 'Female', intendedClass: 'Basic 1 Gold',
+    verificationStatus: 'verified', paymentStatus: 'paid', dateOfBirth: '05-03-22', fatherName: 'MUHAMMAD IMRANA SAMA', phone1: '08069191244'
+  },
+  {
+    id: 'stud-b1g-23', parentId: 'parent-b1g-23', formNumber: 'FORM-2026-M3277', admissionNumber: 'AIAA-B26-277',
+    firstName: 'ABBAS', lastName: 'YUSUF', gender: 'Male', intendedClass: 'Basic 1 Gold',
+    verificationStatus: 'verified', paymentStatus: 'pending', dateOfBirth: '16/8/2015', fatherName: 'YUSUF ADAMU GULMA', phone1: '08030980100'
+  },
+  {
+    id: 'stud-b1g-24', parentId: 'parent-b1g-24', formNumber: 'FORM-2026-M0454', admissionNumber: 'AIAA-B26-454',
+    firstName: 'Ibrahim shuaibu', lastName: 'Magaji', gender: 'Male', intendedClass: 'Basic 1 Gold',
+    verificationStatus: 'pending', paymentStatus: 'pending', dateOfBirth: '', fatherName: 'Shuaibu magaji', phone1: '08146942222'
+  },
+  {
+    id: 'stud-b1g-25', parentId: 'parent-b1g-25', formNumber: 'FORM-2026-M1648', admissionNumber: 'AIAA/B/2026/019',
+    firstName: 'AISHA', lastName: 'BASHIR AMBURSA', gender: 'Female', intendedClass: 'Basic 1 Gold',
+    verificationStatus: 'pending', paymentStatus: 'paid', dateOfBirth: '11/18/2017', fatherName: 'BASHIR WASIR AMBURSA', phone1: '07034598889'
+  },
+  {
+    id: 'stud-b1g-26', parentId: 'parent-b1g-26', formNumber: 'FORM-2026-M3090', admissionNumber: 'AIAA-B26-090',
+    firstName: 'Maimunatu', lastName: 'Murtala Idris', gender: 'Female', intendedClass: 'Basic 1 Gold',
+    verificationStatus: 'pending', paymentStatus: 'pending', dateOfBirth: '12/4/ 2027', fatherName: 'Murtala Idris', phone1: '0706833348'
+  },
+  {
+    id: 'stud-b1g-27', parentId: 'parent-b1g-27', formNumber: 'FORM-2026-M1768', admissionNumber: 'AIAA/B/2026/007',
+    firstName: 'Jamila', lastName: 'Aminu Dalhatu', gender: 'Female', intendedClass: 'Basic 1 Gold',
+    verificationStatus: 'verified', paymentStatus: 'paid', dateOfBirth: '13-12-2019', fatherName: 'Aminu Dalhatu', phone1: '09066630320'
+  },
+  {
+    id: 'stud-b1g-28', parentId: 'parent-b1g-28', formNumber: 'FORM-2026-M2658', admissionNumber: 'AIAA-B26-658',
+    firstName: 'Muhammad Bashar Mubarak', lastName: 'Yakubu Maiarewa', gender: 'Male', intendedClass: 'Basic 1 Gold',
+    verificationStatus: 'verified', paymentStatus: 'pending', dateOfBirth: '10/07/2019', fatherName: 'Mubarak', phone1: '07034802362'
+  },
+  {
+    id: 'stud-b1g-29', parentId: 'parent-b1g-29', formNumber: 'FORM-2026-M0370', admissionNumber: 'AIAA/B/2026/021',
+    firstName: 'Hassana', lastName: 'Ibrahim Mu\'azu', gender: 'Female', intendedClass: 'Basic 1 Gold',
+    verificationStatus: 'verified', paymentStatus: 'paid', dateOfBirth: '04/29/2020', fatherName: 'Ibrahim Mu\'azu', phone1: '08069669798'
+  },
+  {
+    id: 'stud-b1g-30', parentId: 'parent-b1g-29', formNumber: 'FORM-2026-M3792', admissionNumber: 'AIAA/B/2026/020',
+    firstName: 'Hussaini', lastName: 'Ibrahim Mu\'azu', gender: 'Male', intendedClass: 'Basic 1 Gold',
+    verificationStatus: 'verified', paymentStatus: 'paid', dateOfBirth: '2020/04/29', fatherName: 'Ibrahim Mu\'azu', phone1: '08069669798'
+  },
+  {
+    id: 'stud-b1g-31', parentId: 'parent-b1g-31', formNumber: 'FORM-2026-M5068', admissionNumber: 'AIAA-B26-068',
+    firstName: 'Sumayya', lastName: 'Abdullahi Umar', gender: 'Female', intendedClass: 'Basic 1 Gold',
+    verificationStatus: 'pending', paymentStatus: 'pending', dateOfBirth: '30/12/2020', fatherName: 'Abdullahi Umar', phone1: '08133396332'
+  },
+  {
+    id: 'stud-b1g-32', parentId: 'parent-b1g-32', formNumber: 'FORM-2026-M0074', admissionNumber: 'AIAA/B/2026/025',
+    firstName: 'Ummulkhairi A', lastName: 'Bashar', gender: 'Female', intendedClass: 'Basic 1 Gold',
+    verificationStatus: 'requires_correction', paymentStatus: 'paid', dateOfBirth: '2019/08/3', fatherName: 'Bashar Ibrahim Dan ladi', phone1: '07035123518'
+  },
+  {
+    id: 'stud-b1g-33', parentId: 'parent-b1g-33', formNumber: 'FORM-2026-M3827', admissionNumber: 'AIAA-B26-827',
+    firstName: 'Sa, id', lastName: 'Nura Musa', gender: 'Male', intendedClass: 'Basic 1 Gold',
+    verificationStatus: 'pending', paymentStatus: 'pending', dateOfBirth: '3/5/2018', fatherName: 'Nura Musa', phone1: '07069117936'
+  },
+  {
+    id: 'stud-b1g-34', parentId: 'parent-b1g-34', formNumber: 'FORM-2026-M3986', admissionNumber: 'AIAA-B26-986',
+    firstName: 'Zubairu Ansar', lastName: 'Nasir Muhammad', gender: 'Male', intendedClass: 'Basic 1 Gold',
+    verificationStatus: 'pending', paymentStatus: 'pending', dateOfBirth: '09/15/2018', fatherName: 'Nasir Muhammad', phone1: '08100066802'
+  },
+  {
+    id: 'stud-b1g-35', parentId: 'parent-b1g-35', formNumber: 'FORM-2026-M5115', admissionNumber: 'AIAA-B26-115',
+    firstName: 'Al-Amin', lastName: 'Aliyu sani', gender: 'Male', intendedClass: 'Basic 1 Gold',
+    verificationStatus: 'pending', paymentStatus: 'pending', dateOfBirth: '07/12/2021', fatherName: 'Aliyu sani', phone1: '08133331886'
+  }
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -316,9 +479,14 @@ export async function restoreMissingSeedStudents(): Promise<number> {
     await db.collection<Parent>(PARENTS_COL).updateOne({ id: p.id }, { $setOnInsert: p }, { upsert: true });
   }
   for (const s of INITIAL_STUDENTS) {
-    const res = await db.collection<Student>(STUDENTS_COL).updateOne({ id: s.id }, { $setOnInsert: s }, { upsert: true });
-    if (res.upsertedCount > 0) {
-      count += res.upsertedCount;
+    const filter = s.formNumber ? { $or: [{ id: s.id }, { formNumber: s.formNumber }] } : { id: s.id };
+    const res = await db.collection<Student>(STUDENTS_COL).updateOne(
+      filter,
+      { $set: s },
+      { upsert: true }
+    );
+    if (res.upsertedCount > 0 || res.modifiedCount > 0) {
+      count++;
     }
   }
   return count;
