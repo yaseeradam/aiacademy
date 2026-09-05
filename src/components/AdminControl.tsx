@@ -1308,61 +1308,167 @@ export default function AdminControl({ students }: AdminControlProps) {
                   <span>Classes & Subgroups Roster</span>
                 </h1>
                 <p className="text-slate-500 text-sm font-semibold mt-2.5">
-                  Class arms with 30-student capacity tracking (Gold, Silver, Green).
+                  Class arms with 30-student capacity tracking (Gold, Silver, Green) and instant admission letter printing.
                 </p>
               </div>
 
-              <button
-                onClick={() => setActiveTab('new-verification')}
-                className="self-start sm:self-center flex items-center gap-2 px-4 py-2.5 bg-[#0f7343] hover:bg-[#0b5c34] text-white font-bold text-xs rounded-xl shadow-sm transition-all cursor-pointer"
-              >
-                <Plus className="w-4 h-4" />
-                <span>Add Student to Class</span>
-              </button>
+              <div className="flex flex-wrap items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => printBulkAdmissionLetters(students, schoolSettings.logo)}
+                  className="flex items-center gap-2 px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl shadow-sm transition-all cursor-pointer"
+                >
+                  <Printer className="w-4 h-4 text-emerald-400" />
+                  <span>Bulk Print All Letters ({students.length})</span>
+                </button>
+
+                <button
+                  onClick={() => setActiveTab('new-verification')}
+                  className="flex items-center gap-2 px-4 py-2.5 bg-[#0f7343] hover:bg-[#0b5c34] text-white font-bold text-xs rounded-xl shadow-sm transition-all cursor-pointer"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Add Student to Class</span>
+                </button>
+              </div>
             </div>
 
-            {/* Subgroup Overview Stat Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+            {/* Comprehensive Top Class Stat Cards */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               {['Nursery 1', 'Basic 1', 'Basic 2'].map((mainClass) => {
                 const classStudents = students.filter(s => (s.intendedClass || '').startsWith(mainClass));
                 const goldCount = students.filter(s => (s.intendedClass || '') === `${mainClass} Gold`).length;
                 const silverCount = students.filter(s => (s.intendedClass || '') === `${mainClass} Silver`).length;
                 const greenCount = students.filter(s => (s.intendedClass || '') === `${mainClass} Green`).length;
-                
+
+                const verified = classStudents.filter(s => s.verificationStatus === 'verified').length;
+                const paid = classStudents.filter(s => s.paymentStatus === 'paid').length;
+                const pendingPaid = classStudents.filter(s => s.paymentStatus !== 'paid').length;
+                const totalCapacity = 90; // 3 arms x 30 capacity
+                const mainPct = Math.min(100, Math.round((classStudents.length / totalCapacity) * 100));
+
+                const isSelected = classTabFilter === mainClass;
+
                 return (
                   <div 
                     key={mainClass} 
-                    onClick={() => setClassTabFilter(mainClass)}
-                    className={`soft-card p-6 bg-white rounded-3xl border transition-all cursor-pointer ${
-                      classTabFilter === mainClass 
+                    className={`soft-card bg-white rounded-3xl border flex flex-col justify-between overflow-hidden transition-all shadow-xs ${
+                      isSelected 
                         ? 'border-[#0f7343] ring-2 ring-[#0f7343]/20 shadow-md' 
                         : 'border-slate-200 hover:border-slate-300'
                     }`}
                   >
-                    <div className="flex items-center justify-between">
-                      <div className="w-10 h-10 rounded-2xl bg-emerald-50 text-[#0f7343] flex items-center justify-center font-bold border border-emerald-100">
-                        <GraduationCap className="w-5 h-5" />
+                    {/* Top Card Header */}
+                    <div className="p-5 border-b border-slate-100 bg-slate-50/60">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="w-12 h-12 rounded-2xl bg-emerald-100/80 text-[#0f7343] flex items-center justify-center font-black border border-emerald-200 shadow-xs">
+                            <GraduationCap className="w-6 h-6" />
+                          </div>
+                          <div>
+                            <h3 className="text-xl font-black text-slate-900 tracking-tight">{mainClass}</h3>
+                            <span className="text-[11px] font-bold text-slate-500">
+                              3 Subclasses (Gold, Silver, Green)
+                            </span>
+                          </div>
+                        </div>
+
+                        <span className="text-xs font-black bg-emerald-100 text-emerald-800 px-3 py-1 rounded-full border border-emerald-200">
+                          {classStudents.length} / 90 Enrolled
+                        </span>
                       </div>
-                      <span className="text-[10px] font-black bg-emerald-100 text-emerald-800 px-2.5 py-0.5 rounded-full">
-                        {classStudents.length} Total Enrolled
-                      </span>
                     </div>
-                    <div className="mt-4">
-                      <h3 className="text-xl font-black text-slate-800">{mainClass}</h3>
-                      <div className="mt-3 space-y-1.5 text-xs font-semibold text-slate-600">
-                        <div className="flex justify-between items-center">
-                          <span>Gold Arm:</span>
-                          <span className={`font-bold ${goldCount >= 30 ? 'text-rose-600 font-black' : 'text-slate-800'}`}>{goldCount}/30 {goldCount >= 30 && '(FULL)'}</span>
+
+                    {/* Top Card Detailed Breakdown */}
+                    <div className="p-5 space-y-4 flex-1">
+                      {/* Main Class Stats Grid */}
+                      <div className="grid grid-cols-3 gap-2.5 text-center text-xs">
+                        <div className="p-2.5 bg-emerald-50/60 rounded-xl border border-emerald-100/60">
+                          <span className="block text-[10px] font-bold text-emerald-700 uppercase tracking-wider">Verified</span>
+                          <span className="text-sm font-black text-emerald-900 mt-0.5 block">{verified}</span>
                         </div>
-                        <div className="flex justify-between items-center">
-                          <span>Silver Arm:</span>
-                          <span className={`font-bold ${silverCount >= 30 ? 'text-rose-600 font-black' : 'text-slate-800'}`}>{silverCount}/30 {silverCount >= 30 && '(FULL)'}</span>
+                        <div className="p-2.5 bg-blue-50/60 rounded-xl border border-blue-100/60">
+                          <span className="block text-[10px] font-bold text-blue-700 uppercase tracking-wider">Fees Paid</span>
+                          <span className="text-sm font-black text-blue-900 mt-0.5 block">{paid}</span>
                         </div>
-                        <div className="flex justify-between items-center">
-                          <span>Green Arm:</span>
-                          <span className={`font-bold ${greenCount >= 30 ? 'text-rose-600 font-black' : 'text-slate-800'}`}>{greenCount}/30 {greenCount >= 30 && '(FULL)'}</span>
+                        <div className="p-2.5 bg-amber-50/60 rounded-xl border border-amber-100/60">
+                          <span className="block text-[10px] font-bold text-amber-700 uppercase tracking-wider">Unpaid</span>
+                          <span className="text-sm font-black text-amber-900 mt-0.5 block">{pendingPaid}</span>
                         </div>
                       </div>
+
+                      {/* Main Capacity Meter */}
+                      <div className="space-y-1">
+                        <div className="flex justify-between text-xs font-extrabold text-slate-700">
+                          <span>Total Class Capacity</span>
+                          <span className="text-[#0f7343] font-black">{mainPct}% Filled</span>
+                        </div>
+                        <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                          <div style={{ width: `${mainPct}%` }} className="bg-[#0f7343] h-full rounded-full transition-all" />
+                        </div>
+                      </div>
+
+                      {/* Subclass Arm Rows Breakdown */}
+                      <div className="pt-2 space-y-2 border-t border-slate-100">
+                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">Subclass Arms (30 Max Each):</span>
+                        
+                        {/* Gold */}
+                        <div className="flex items-center justify-between p-2 rounded-xl bg-amber-50/50 border border-amber-100 text-xs">
+                          <div className="flex items-center gap-2 font-bold text-amber-900">
+                            <span className="w-2.5 h-2.5 rounded-full bg-amber-500 shrink-0" />
+                            <span>Gold Arm</span>
+                          </div>
+                          <span className={`font-black ${goldCount >= 30 ? 'text-rose-600' : 'text-slate-800'}`}>
+                            {goldCount} / 30 {goldCount >= 30 && '🔴 FULL'}
+                          </span>
+                        </div>
+
+                        {/* Silver */}
+                        <div className="flex items-center justify-between p-2 rounded-xl bg-slate-50 border border-slate-200 text-xs">
+                          <div className="flex items-center gap-2 font-bold text-slate-700">
+                            <span className="w-2.5 h-2.5 rounded-full bg-slate-500 shrink-0" />
+                            <span>Silver Arm</span>
+                          </div>
+                          <span className={`font-black ${silverCount >= 30 ? 'text-rose-600' : 'text-slate-800'}`}>
+                            {silverCount} / 30 {silverCount >= 30 && '🔴 FULL'}
+                          </span>
+                        </div>
+
+                        {/* Green */}
+                        <div className="flex items-center justify-between p-2 rounded-xl bg-emerald-50/50 border border-emerald-100 text-xs">
+                          <div className="flex items-center gap-2 font-bold text-emerald-900">
+                            <span className="w-2.5 h-2.5 rounded-full bg-emerald-600 shrink-0" />
+                            <span>Green Arm</span>
+                          </div>
+                          <span className={`font-black ${greenCount >= 30 ? 'text-rose-600' : 'text-slate-800'}`}>
+                            {greenCount} / 30 {greenCount >= 30 && '🔴 FULL'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Top Card Actions */}
+                    <div className="p-4 border-t border-slate-100 bg-slate-50/50 flex items-center justify-between gap-2">
+                      <button
+                        type="button"
+                        onClick={() => printBulkAdmissionLetters(classStudents, schoolSettings.logo)}
+                        disabled={classStudents.length === 0}
+                        className="flex-1 py-2 px-3 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-40"
+                      >
+                        <Printer className="w-3.5 h-3.5 text-emerald-400" />
+                        <span>Print All {mainClass} Letters</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setClassTabFilter(mainClass)}
+                        className={`py-2 px-3 rounded-xl font-extrabold text-xs transition-all cursor-pointer ${
+                          isSelected 
+                            ? 'bg-[#0f7343] text-white' 
+                            : 'bg-slate-200 hover:bg-slate-300 text-slate-700'
+                        }`}
+                      >
+                        {isSelected ? 'Filtered ✓' : 'Filter'}
+                      </button>
                     </div>
                   </div>
                 );
@@ -1552,63 +1658,108 @@ export default function AdminControl({ students }: AdminControlProps) {
                 })}
             </div>
 
-            {/* Subgroup Roster Modal (Displays students only when clicked) */}
+            {/* Redesigned Subgroup Roster Modal */}
             {selectedSubgroupRoster && (
-              <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 overflow-y-auto animate-fade-in">
-                <div className="bg-white w-full max-w-3xl rounded-3xl shadow-2xl overflow-hidden border border-slate-200 animate-slide-up my-8">
-                  {/* Modal Banner Header */}
-                  <div className="p-6 bg-slate-900 text-white flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-black border border-emerald-500/30">
-                        <GraduationCap className="w-6 h-6" />
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/70 backdrop-blur-sm p-4 overflow-y-auto animate-fade-in">
+                <div className="bg-white w-full max-w-4xl rounded-3xl shadow-2xl overflow-hidden border border-slate-200 animate-slide-up my-6 flex flex-col max-h-[90vh]">
+                  
+                  {/* Modal Header */}
+                  <div className="p-6 bg-slate-900 text-white flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 shrink-0">
+                    <div className="flex items-center gap-3.5">
+                      <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-black border border-emerald-500/30 shrink-0">
+                        <GraduationCap className="w-7 h-7" />
                       </div>
                       <div>
-                        <h2 className="text-xl font-black text-white">{selectedSubgroupRoster} Roster</h2>
-                        <p className="text-xs text-slate-300 font-semibold mt-0.5">
-                          Enrolled: {students.filter(s => (s.intendedClass || 'Nursery 1 Gold') === selectedSubgroupRoster).length} / 30 Students
+                        <div className="flex items-center gap-2">
+                          <h2 className="text-2xl font-black text-white tracking-tight">{selectedSubgroupRoster} Roster</h2>
+                          <span className="bg-emerald-500/20 text-emerald-300 text-xs font-black px-2.5 py-0.5 rounded-full border border-emerald-500/30">
+                            Class Roster
+                          </span>
+                        </div>
+                        <p className="text-xs text-slate-300 font-semibold mt-1">
+                          Enrolled: <strong className="text-white">{students.filter(s => (s.intendedClass || 'Nursery 1 Gold') === selectedSubgroupRoster).length}</strong> / 30 Capacity • AI Integrated Academy Argungu
                         </p>
                       </div>
                     </div>
-                    <button
-                      onClick={() => {
-                        setSelectedSubgroupRoster(null);
-                        setRosterSearch('');
-                      }}
-                      className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-all cursor-pointer"
-                    >
-                      <X className="w-6 h-6" />
-                    </button>
+
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const rosterSts = students.filter(s => (s.intendedClass || 'Nursery 1 Gold') === selectedSubgroupRoster);
+                          printBulkAdmissionLetters(rosterSts, schoolSettings.logo);
+                        }}
+                        className="px-4 py-2.5 bg-[#0f7343] hover:bg-[#0b5c34] text-white rounded-xl font-bold text-xs flex items-center gap-2 shadow-sm transition-all cursor-pointer shrink-0"
+                      >
+                        <Printer className="w-4 h-4 text-emerald-200" />
+                        <span>Print All Letters (Bulk)</span>
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          setSelectedSubgroupRoster(null);
+                          setRosterSearch('');
+                        }}
+                        className="p-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-all cursor-pointer"
+                        aria-label="Close modal"
+                      >
+                        <X className="w-6 h-6" />
+                      </button>
+                    </div>
                   </div>
 
-                  {/* Search & Actions Bar inside Modal */}
-                  <div className="p-4 bg-slate-50 border-b border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3">
-                    <div className="relative w-full sm:w-72">
+                  {/* Summary Bar & Roster Search inside Modal */}
+                  <div className="p-4 bg-slate-50 border-b border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4 shrink-0">
+                    <div className="relative w-full sm:w-80">
                       <Search className="w-4 h-4 absolute left-3.5 top-3 text-slate-400" />
                       <input
                         type="text"
                         value={rosterSearch}
                         onChange={(e) => setRosterSearch(e.target.value)}
-                        placeholder="Search student, form no, or parent..."
-                        className="w-full pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:border-[#0f7343]"
+                        placeholder="Search by name, serial no, or phone..."
+                        className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-300 rounded-xl text-xs font-semibold focus:outline-none focus:border-[#0f7343] focus:ring-2 focus:ring-[#0f7343]/20 transition-all"
                       />
                     </div>
-                    
-                    <button
-                      onClick={() => {
-                        setNewStudent(prev => ({ ...prev, intendedClass: selectedSubgroupRoster }));
-                        setSelectedSubgroupRoster(null);
-                        setActiveTab('new-verification');
-                      }}
-                      disabled={students.filter(s => (s.intendedClass || 'Nursery 1 Gold') === selectedSubgroupRoster).length >= 30}
-                      className="w-full sm:w-auto px-4 py-2 bg-[#0f7343] hover:bg-[#0b5c34] text-white rounded-xl font-extrabold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      <Plus className="w-4 h-4" />
-                      <span>Add Student to {selectedSubgroupRoster}</span>
-                    </button>
+
+                    {/* Stats Pill Badges */}
+                    <div className="flex items-center gap-2.5 w-full sm:w-auto overflow-x-auto text-xs font-bold">
+                      {(() => {
+                        const classSts = students.filter(s => (s.intendedClass || 'Nursery 1 Gold') === selectedSubgroupRoster);
+                        const verifiedCount = classSts.filter(s => s.verificationStatus === 'verified').length;
+                        const paidCount = classSts.filter(s => s.paymentStatus === 'paid').length;
+
+                        return (
+                          <>
+                            <span className="bg-white border border-slate-200 px-3 py-1.5 rounded-xl text-slate-700 shrink-0">
+                              Total: <strong className="text-slate-900">{classSts.length}/30</strong>
+                            </span>
+                            <span className="bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-xl text-emerald-800 shrink-0">
+                              Verified: <strong>{verifiedCount}</strong>
+                            </span>
+                            <span className="bg-blue-50 border border-blue-200 px-3 py-1.5 rounded-xl text-blue-800 shrink-0">
+                              Paid: <strong>{paidCount}</strong>
+                            </span>
+                          </>
+                        );
+                      })()}
+
+                      <button
+                        onClick={() => {
+                          setNewStudent(prev => ({ ...prev, intendedClass: selectedSubgroupRoster }));
+                          setSelectedSubgroupRoster(null);
+                          setActiveTab('new-verification');
+                        }}
+                        disabled={students.filter(s => (s.intendedClass || 'Nursery 1 Gold') === selectedSubgroupRoster).length >= 30}
+                        className="px-3.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-extrabold flex items-center gap-1 transition-all cursor-pointer shrink-0 disabled:opacity-40"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                        <span>Add Student</span>
+                      </button>
+                    </div>
                   </div>
 
-                  {/* Student List Items */}
-                  <div className="p-6 max-h-[60vh] overflow-y-auto divide-y divide-slate-100">
+                  {/* Student Roster List View */}
+                  <div className="p-6 overflow-y-auto flex-1 space-y-3">
                     {(() => {
                       const rosterStudents = students.filter(s => {
                         const matchesSubgroup = (s.intendedClass || 'Nursery 1 Gold') === selectedSubgroupRoster;
@@ -1623,68 +1774,86 @@ export default function AdminControl({ students }: AdminControlProps) {
 
                       if (rosterStudents.length === 0) {
                         return (
-                          <div className="py-12 text-center text-slate-400 font-semibold text-sm">
-                            No students currently registered in {selectedSubgroupRoster}.
+                          <div className="py-16 text-center text-slate-400 font-semibold text-sm">
+                            <GraduationCap className="w-12 h-12 mx-auto mb-3 text-slate-300" />
+                            <p>No students currently registered in {selectedSubgroupRoster}.</p>
                           </div>
                         );
                       }
 
-                      return rosterStudents.map(student => {
+                      return rosterStudents.map((student, idx) => {
                         const isPaid = student.paymentStatus === 'paid';
                         return (
-                          <div key={student.id} className="py-4 first:pt-0 last:pb-0 flex flex-col sm:flex-row sm:items-center justify-between gap-4 group">
-                            <div className="flex items-center gap-3.5 min-w-0">
+                          <div key={student.id} className="p-4 bg-slate-50/80 hover:bg-slate-100/80 border border-slate-200/80 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-4 transition-all">
+                            {/* Student Identity */}
+                            <div className="flex items-center gap-4 min-w-0">
+                              <span className="text-xs font-black text-slate-400 w-5 text-right shrink-0">{idx + 1}.</span>
                               <StudentAvatar student={student} size="md" />
                               <div className="min-w-0">
-                                <div className="flex items-center gap-2">
-                                  <h4 className="font-black text-slate-900 text-sm truncate">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <h4 className="font-black text-slate-900 text-base truncate">
                                     {student.firstName} {student.lastName}
                                   </h4>
-                                  {student.verificationStatus === 'verified' && (
-                                    <span className="bg-emerald-100 text-emerald-800 text-[10px] font-extrabold px-2 py-0.5 rounded-full flex items-center gap-1">
-                                      <CheckCircle2 className="w-3 h-3" /> Verified
+                                  {student.verificationStatus === 'verified' ? (
+                                    <span className="bg-emerald-100 text-emerald-800 text-[10px] font-black px-2.5 py-0.5 rounded-full flex items-center gap-1 border border-emerald-200">
+                                      <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Verified
+                                    </span>
+                                  ) : (
+                                    <span className="bg-amber-100 text-amber-800 text-[10px] font-bold px-2.5 py-0.5 rounded-full border border-amber-200">
+                                      Review Pending
                                     </span>
                                   )}
                                 </div>
-                                <p className="text-xs font-mono font-bold text-slate-500 mt-0.5">
-                                  {student.formNumber} • {student.gender} • Parent: {student.fatherName || student.motherName || 'N/A'} ({student.phone1 || 'No Phone'})
-                                </p>
+                                
+                                <div className="flex items-center gap-3 text-xs font-semibold text-slate-500 mt-1 flex-wrap">
+                                  <span className="font-mono bg-white px-2 py-0.5 rounded border border-slate-200 text-slate-700 font-bold">
+                                    {student.formNumber}
+                                  </span>
+                                  <span>Gender: <strong>{student.gender}</strong></span>
+                                  <span>Parent: <strong>{student.fatherName || student.motherName || 'N/A'}</strong> ({student.phone1 || 'No Tel'})</span>
+                                </div>
                               </div>
                             </div>
 
-                            <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
+                            {/* Actions (Print Admission, Fee Status, Edit) */}
+                            <div className="flex items-center gap-2.5 self-end md:self-center shrink-0">
+                              {/* Fee Payment Toggle Button */}
                               <button
                                 onClick={() => handleTogglePaymentStatus(student.id, student.paymentStatus || 'pending')}
                                 disabled={isTogglingFee === student.id}
-                                className={`px-3 py-1.5 rounded-xl text-xs font-extrabold flex items-center gap-1.5 transition-all cursor-pointer ${
+                                className={`px-3 py-2 rounded-xl text-xs font-extrabold flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs ${
                                   isPaid 
-                                    ? 'bg-emerald-100 text-emerald-800 border border-emerald-300 hover:bg-emerald-200' 
-                                    : 'bg-slate-100 text-slate-700 border border-slate-200 hover:bg-slate-200'
+                                    ? 'bg-emerald-600 hover:bg-emerald-700 text-white' 
+                                    : 'bg-amber-500 hover:bg-amber-600 text-white'
                                 }`}
                               >
                                 <CreditCard className="w-3.5 h-3.5" />
-                                <span>{isPaid ? 'Fee Paid' : 'Fee Pending'}</span>
+                                <span>{isPaid ? 'Fee Paid ✓' : 'Fee Pending'}</span>
                               </button>
 
+                              {/* Individual Print Admission Letter Button */}
                               <button
                                 onClick={() => {
                                   setLetterModalStudent(student);
                                 }}
-                                className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition-all cursor-pointer"
-                                title="View Admission Letter"
+                                className="px-3.5 py-2 bg-emerald-50 hover:bg-emerald-100 text-[#0f7343] border border-emerald-200 rounded-xl font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs"
+                                title="Print individual admission letter"
                               >
-                                <FileText className="w-4 h-4 text-emerald-700" />
+                                <Printer className="w-3.5 h-3.5 text-[#0f7343]" />
+                                <span>Print Admission</span>
                               </button>
 
+                              {/* Edit Profile Button */}
                               <button
                                 onClick={() => {
                                   setSelectedSubgroupRoster(null);
                                   startEditStudent(student);
                                 }}
-                                className="p-2 bg-slate-100 hover:bg-[#0f7343] text-slate-700 hover:text-white rounded-xl transition-all cursor-pointer"
-                                title="Edit Student Profile"
+                                className="px-3 py-2 bg-white hover:bg-slate-200 text-slate-700 border border-slate-300 rounded-xl font-bold text-xs flex items-center gap-1 transition-all cursor-pointer shadow-2xs"
+                                title="Edit student details"
                               >
-                                <Edit3 className="w-4 h-4" />
+                                <Edit3 className="w-3.5 h-3.5 text-slate-600" />
+                                <span>Edit</span>
                               </button>
                             </div>
                           </div>
@@ -1694,16 +1863,34 @@ export default function AdminControl({ students }: AdminControlProps) {
                   </div>
 
                   {/* Modal Footer */}
-                  <div className="p-4 bg-slate-50 border-t border-slate-200 flex justify-end">
-                    <button
-                      onClick={() => {
-                        setSelectedSubgroupRoster(null);
-                        setRosterSearch('');
-                      }}
-                      className="px-5 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-xl font-bold text-xs cursor-pointer transition-all"
-                    >
-                      Close Roster
-                    </button>
+                  <div className="p-4 bg-slate-50 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3 shrink-0">
+                    <span className="text-xs font-bold text-slate-500">
+                      Showing subclass roster for <strong className="text-slate-800">{selectedSubgroupRoster}</strong>
+                    </span>
+
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const rosterSts = students.filter(s => (s.intendedClass || 'Nursery 1 Gold') === selectedSubgroupRoster);
+                          printBulkAdmissionLetters(rosterSts, schoolSettings.logo);
+                        }}
+                        className="px-4 py-2 bg-[#0f7343] hover:bg-[#0b5c34] text-white rounded-xl font-bold text-xs flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                      >
+                        <Printer className="w-3.5 h-3.5" />
+                        <span>Print Bulk Admission Letters</span>
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          setSelectedSubgroupRoster(null);
+                          setRosterSearch('');
+                        }}
+                        className="px-5 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-xl font-bold text-xs cursor-pointer transition-all"
+                      >
+                        Close Roster
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
