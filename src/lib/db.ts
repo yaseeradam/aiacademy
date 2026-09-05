@@ -237,6 +237,7 @@ const INITIAL_STUDENTS: Student[] = [
     residentialAddress: 'Bakin Kasuwa Argungu',
     phone1: '08068899384', guardianName: 'Salisu Sani',
     guardianAddress: 'Bakin kasuwa Gidan Sarkin Shanu',
+  },
   {
     id: 'stud-b1g-1', parentId: 'parent-2', formNumber: 'FORM-2026-002', admissionNumber: 'AIAA/B/2026/009',
     firstName: 'Asma,u', lastName: 'Aliyu Musa', gender: 'Female', intendedClass: 'Basic 1 Gold',
