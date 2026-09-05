@@ -20,6 +20,7 @@ import {
   getSchoolSettings,
   updateSchoolSettings,
   restoreMissingSeedStudents,
+  clearAllStudentsAndParents,
 } from '@/lib/db';
 import { Student, Parent, SchoolSettings } from '@/types';
 import { getStudentClassArm } from '@/lib/classUtils';
@@ -376,6 +377,21 @@ export async function restoreMissingSeedStudentsAction(): Promise<{ success: boo
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : 'Failed to restore seed data.';
     return { success: false, restoredCount: 0, error: msg };
+  }
+}
+
+export async function clearAllDatabaseDataAction(): Promise<{ success: boolean; studentCount: number; parentCount: number; error?: string }> {
+  try {
+    const res = await clearAllStudentsAndParents();
+    await addAuditLog({
+      action: 'DELETE',
+      actor: 'School Administrator',
+      details: `Admin cleared all initial database seed records (${res.studentCount} students removed)`,
+    });
+    return { success: true, ...res };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : 'Failed to clear database data.';
+    return { success: false, studentCount: 0, parentCount: 0, error: msg };
   }
 }
 

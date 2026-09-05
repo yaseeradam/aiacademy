@@ -13,7 +13,7 @@ import {
   Loader2, Scan, History, MessageSquare, Camera, FileText, CheckCircle2, CreditCard, Printer,
   GraduationCap, Folder, FolderOpen, Edit3
 } from 'lucide-react';
-import { logoutAction, adminUpdateStudentAction, adminDeleteStudentAction, adminDeleteMultipleStudentsAction, unassignStudentFromSubclassAction, unassignMultipleStudentsFromSubclassAction, restoreMissingSeedStudentsAction, adminCreateStudentAction, adminVerifyAction, adminTogglePaymentStatusAction, getAuditLogsAction, scanAdmissionFormOCRAction, getSchoolSettingsAction, updateSchoolSettingsAction, findDuplicateStudentsAction, DuplicateGroup } from '@/app/actions';
+import { logoutAction, adminUpdateStudentAction, adminDeleteStudentAction, adminDeleteMultipleStudentsAction, unassignStudentFromSubclassAction, unassignMultipleStudentsFromSubclassAction, restoreMissingSeedStudentsAction, clearAllDatabaseDataAction, adminCreateStudentAction, adminVerifyAction, adminTogglePaymentStatusAction, getAuditLogsAction, scanAdmissionFormOCRAction, getSchoolSettingsAction, updateSchoolSettingsAction, findDuplicateStudentsAction, DuplicateGroup } from '@/app/actions';
 import AdmissionLetterModal, { printBulkAdmissionLetters, getStudentClassArm, getStudentAdmissionNumber } from './AdmissionLetterModal';
 
 interface AdminControlProps {
@@ -464,6 +464,48 @@ export default function AdminControl({ students }: AdminControlProps) {
         isOpen: true,
         type: 'error',
         title: 'Restore Error',
+        message: msg,
+      });
+    }
+  };
+
+  const handleClearAllSeededData = async () => {
+    const confirm = window.confirm(
+      'Are you sure you want to clear ALL initial seeded demo data from the database?\n\nThis will remove all demo student records and start with a fresh empty database.'
+    );
+    if (!confirm) return;
+
+    setFeedbackModal({
+      isOpen: true,
+      type: 'loading',
+      title: 'Clearing Database Seed Data...',
+      message: 'Removing all demo student & parent records from database...',
+    });
+
+    try {
+      const res = await clearAllDatabaseDataAction();
+      if (res.success) {
+        router.refresh();
+        setFeedbackModal({
+          isOpen: true,
+          type: 'success',
+          title: 'Database Seed Data Cleared!',
+          message: `Successfully removed ${res.studentCount} demo student records. Your database is now fresh and clean!`,
+        });
+      } else {
+        setFeedbackModal({
+          isOpen: true,
+          type: 'error',
+          title: 'Clear Failed',
+          message: res.error || 'Failed to clear seed data.',
+        });
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Error clearing seed data.';
+      setFeedbackModal({
+        isOpen: true,
+        type: 'error',
+        title: 'Clear Error',
         message: msg,
       });
     }
@@ -1867,12 +1909,12 @@ export default function AdminControl({ students }: AdminControlProps) {
                     </button>
 
                     <button
-                      onClick={handleRestoreMissingData}
-                      className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-extrabold transition-all cursor-pointer flex items-center gap-1.5 shadow-2xs shrink-0"
-                      title="Restore missing default student records if any were accidentally deleted"
+                      onClick={handleClearAllSeededData}
+                      className="px-4 py-2 rounded-xl bg-rose-700 hover:bg-rose-800 text-white text-xs font-extrabold transition-all cursor-pointer flex items-center gap-1.5 shadow-2xs shrink-0"
+                      title="Clear all initial seed/demo student data from the database"
                     >
-                      <RefreshCw className="w-4 h-4 text-white" />
-                      <span>Restore Missing Data</span>
+                      <Trash2 className="w-4 h-4 text-white" />
+                      <span>Clear All Seeded Data</span>
                     </button>
 
                     <div className="flex items-center gap-2 text-xs font-extrabold text-slate-500 shrink-0">
