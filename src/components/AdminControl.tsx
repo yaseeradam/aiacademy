@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Student, AuditLog } from '@/types';
 import { useRouter } from 'next/navigation';
 import { createWorker } from 'tesseract.js';
@@ -8,9 +8,10 @@ import JSZip from 'jszip';
 import { 
   Upload, Download, Search, RefreshCw, 
   Users, Clock, AlertOctagon, HelpCircle, 
-  ShieldCheck, ChevronRight, X, Menu,
+  ShieldCheck, ChevronRight, ChevronDown, X, Menu,
   Grid, Settings, Plus, LogOut, Trash2, Save, BookOpen,
-  Loader2, Scan, History, MessageSquare, Camera, FileText, CheckCircle2, CreditCard, Printer
+  Loader2, Scan, History, MessageSquare, Camera, FileText, CheckCircle2, CreditCard, Printer,
+  GraduationCap, Folder, FolderOpen
 } from 'lucide-react';
 import { logoutAction, adminUpdateStudentAction, adminDeleteStudentAction, adminCreateStudentAction, adminVerifyAction, adminTogglePaymentStatusAction, getAuditLogsAction, scanAdmissionFormOCRAction, getSchoolSettingsAction, updateSchoolSettingsAction } from '@/app/actions';
 import AdmissionLetterModal, { printBulkAdmissionLetters } from './AdmissionLetterModal';
@@ -90,6 +91,30 @@ export default function AdminControl({ students }: AdminControlProps) {
     message: string;
     details?: Record<string, string>;
   } | null>(null);
+
+  // Class & Student Explorer Sidebar state
+  const [isClassSidebarOpen, setIsClassSidebarOpen] = useState(true);
+  const [expandedClasses, setExpandedClasses] = useState<Record<string, boolean>>({});
+  const [classSidebarSearch, setClassSidebarSearch] = useState('');
+
+  // Class list and student mapping
+  const classList = useMemo(() => {
+    return Array.from(new Set(students.map(s => s.intendedClass || 'Unassigned'))).sort();
+  }, [students]);
+
+  const classStudentMap = useMemo(() => {
+    const map: Record<string, Student[]> = {};
+    students.forEach(student => {
+      const cls = student.intendedClass || 'Unassigned';
+      if (!map[cls]) map[cls] = [];
+      map[cls].push(student);
+    });
+    return map;
+  }, [students]);
+
+  const toggleClassExpand = (cls: string) => {
+    setExpandedClasses(prev => ({ ...prev, [cls]: !prev[cls] }));
+  };
 
   // OCR Form Scanning state
   const [isScanningOCR, setIsScanningOCR] = useState(false);
@@ -915,6 +940,22 @@ export default function AdminControl({ students }: AdminControlProps) {
               <span>Overview</span>
             </button>
             <button 
+              onClick={() => setIsClassSidebarOpen(prev => !prev)}
+              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl font-bold text-sm transition-all text-left cursor-pointer ${
+                isClassSidebarOpen 
+                  ? 'bg-emerald-50 text-[#0f7343] border border-emerald-200/80 shadow-2xs' 
+                  : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <GraduationCap className="w-4 h-4 text-[#0f7343]" />
+                <span>Class Explorer</span>
+              </div>
+              <span className="bg-[#0f7343] text-white text-[10px] font-black px-1.5 py-0.5 rounded-full">
+                {classList.length}
+              </span>
+            </button>
+            <button 
               onClick={() => setActiveTab('directory')}
               className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl font-bold text-sm transition-all text-left cursor-pointer ${
                 activeTab === 'directory' 
@@ -1022,6 +1063,150 @@ export default function AdminControl({ students }: AdminControlProps) {
           </div>
         </div>
       </aside>
+
+      {/* ================= SECONDARY CLASS & STUDENT NAVIGATOR SIDEBAR ================= */}
+      {isClassSidebarOpen && (
+        <aside className="w-72 bg-white border-r border-slate-200/80 flex flex-col shrink-0 hidden lg:flex shadow-2xs animate-slide-right">
+          {/* Sidebar Header */}
+          <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-xl bg-emerald-50 text-[#0f7343] flex items-center justify-center border border-emerald-100 font-bold shrink-0">
+                <GraduationCap className="w-4.5 h-4.5 text-[#0f7343]" />
+              </div>
+              <div>
+                <h3 className="font-black text-slate-800 text-sm tracking-tight leading-tight">Class Explorer</h3>
+                <span className="text-[10px] font-bold text-slate-400">
+                  {students.length} Total Students
+                </span>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setIsClassSidebarOpen(false)}
+              className="p-1.5 hover:bg-slate-200/60 rounded-lg text-slate-400 hover:text-slate-600 transition-colors cursor-pointer"
+              title="Close Class Explorer"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+
+          {/* Quick Search */}
+          <div className="p-3 border-b border-slate-100 bg-white">
+            <div className="relative">
+              <Search className="w-3.5 h-3.5 absolute left-3 top-3 text-slate-400" />
+              <input
+                type="text"
+                value={classSidebarSearch}
+                onChange={(e) => setClassSidebarSearch(e.target.value)}
+                placeholder="Search class or student..."
+                className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200/80 rounded-xl text-xs font-semibold focus:outline-none focus:border-[#0f7343] focus:bg-white transition-all"
+              />
+            </div>
+          </div>
+
+          {/* Class Tree List */}
+          <div className="flex-1 overflow-y-auto p-3 space-y-2.5">
+            {classList.map(cls => {
+              const classStudents = classStudentMap[cls] || [];
+              const filteredClassStudents = classStudents.filter(s => {
+                if (!classSidebarSearch.trim()) return true;
+                const q = classSidebarSearch.toLowerCase();
+                return `${s.firstName} ${s.lastName}`.toLowerCase().includes(q) ||
+                       s.formNumber.toLowerCase().includes(q) ||
+                       cls.toLowerCase().includes(q);
+              });
+
+              if (classSidebarSearch.trim() && filteredClassStudents.length === 0) return null;
+
+              const isExpanded = expandedClasses[cls] ?? (classSidebarSearch.trim() !== '' || classList.length <= 4);
+
+              return (
+                <div key={cls} className="border border-slate-200/80 rounded-2xl overflow-hidden bg-white shadow-2xs">
+                  {/* Class Header */}
+                  <button
+                    type="button"
+                    onClick={() => toggleClassExpand(cls)}
+                    className="w-full p-3 bg-slate-50/80 hover:bg-slate-100/80 flex items-center justify-between text-left transition-all cursor-pointer border-b border-slate-100"
+                  >
+                    <div className="flex items-center gap-2 min-w-0">
+                      {isExpanded ? (
+                        <FolderOpen className="w-4 h-4 text-[#0f7343] shrink-0" />
+                      ) : (
+                        <Folder className="w-4 h-4 text-slate-400 shrink-0" />
+                      )}
+                      <span className="font-extrabold text-xs text-slate-800 truncate">{cls}</span>
+                    </div>
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <span className="text-[10px] font-black bg-[#0f7343]/10 text-[#0f7343] px-2 py-0.5 rounded-full">
+                        {classStudents.length}
+                      </span>
+                      {isExpanded ? (
+                        <ChevronDown className="w-4 h-4 text-slate-400" />
+                      ) : (
+                        <ChevronRight className="w-4 h-4 text-slate-400" />
+                      )}
+                    </div>
+                  </button>
+
+                  {/* Student List in Class */}
+                  {isExpanded && (
+                    <div className="p-1.5 space-y-1 bg-white divide-y divide-slate-100/60">
+                      {filteredClassStudents.length > 0 ? (
+                        filteredClassStudents.map(student => {
+                          const isPaid = student.paymentStatus === 'paid';
+                          const isVerified = student.verificationStatus === 'verified';
+                          return (
+                            <div
+                              key={student.id}
+                              onClick={() => startEditStudent(student)}
+                              className="p-2 rounded-xl hover:bg-slate-50 transition-all cursor-pointer flex items-center justify-between gap-2 group"
+                            >
+                              <div className="flex items-center gap-2.5 min-w-0">
+                                <div className="w-7 h-7 rounded-lg bg-slate-100 border border-slate-200 overflow-hidden flex items-center justify-center text-[10px] font-bold text-slate-700 shrink-0 group-hover:border-[#0f7343]">
+                                  {student.photo ? (
+                                    <img src={student.photo} alt="" className="w-full h-full object-cover" />
+                                  ) : (
+                                    <span>{student.firstName[0]}</span>
+                                  )}
+                                </div>
+                                <div className="min-w-0 leading-tight">
+                                  <span className="block font-bold text-xs text-slate-800 truncate group-hover:text-[#0f7343]">
+                                    {student.firstName} {student.lastName}
+                                  </span>
+                                  <span className="block text-[10px] font-semibold text-slate-400 font-mono">
+                                    {student.formNumber}
+                                  </span>
+                                </div>
+                              </div>
+
+                              <div className="flex items-center gap-1 shrink-0">
+                                {isPaid && (
+                                  <span className="text-[9px] font-black bg-emerald-100 text-emerald-800 px-1.5 py-0.2 rounded border border-emerald-200">
+                                    Paid
+                                  </span>
+                                )}
+                                {isVerified ? (
+                                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                                ) : (
+                                  <Clock className="w-3.5 h-3.5 text-amber-500" />
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })
+                      ) : (
+                        <div className="p-3 text-center text-xs text-slate-400 font-semibold italic">
+                          No matching students
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </aside>
+      )}
 
       {/* ================= MAIN PANEL CONTENT AREA ================= */}
       <main className="flex-1 bg-[#f8fafc] p-6 md:p-10 overflow-y-auto">
