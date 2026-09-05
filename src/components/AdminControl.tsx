@@ -3767,6 +3767,7 @@ export default function AdminControl({ students }: AdminControlProps) {
           student={letterModalStudent}
           isOpen={!!letterModalStudent}
           onClose={() => setLetterModalStudent(null)}
+          allStudents={students}
         />
       )}
 

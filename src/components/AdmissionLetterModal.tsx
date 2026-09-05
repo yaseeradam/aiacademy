@@ -9,6 +9,7 @@ interface AdmissionLetterModalProps {
   student: Student;
   isOpen: boolean;
   onClose: () => void;
+  allStudents?: Student[];
 }
 
 import { getStudentClassArm } from '@/lib/classUtils';
@@ -24,7 +25,7 @@ export function getStudentAdmissionNumber(student: Student): string {
   return `AIAA-B${currentYearShort}-${num}`;
 }
 
-export function printBulkAdmissionLetters(students: Student[], logoSrc: string = '/logo.jpg') {
+export function printBulkAdmissionLetters(students: Student[], logoSrc: string = '/logo.jpg', allStudents?: Student[]) {
   if (!students || students.length === 0) {
     alert('No student records found to generate admission letters.');
     return;
@@ -39,7 +40,7 @@ export function printBulkAdmissionLetters(students: Student[], logoSrc: string =
     const academicSession = student.academicSession || '2026/2027';
     const resumptionDate = student.resumptionDate || '14th September, 2026';
     const admissionNumber = getStudentAdmissionNumber(student);
-    const studentClassArm = getStudentClassArm(student.intendedClass);
+    const studentClassArm = getStudentClassArm(student.intendedClass, student.id, allStudents || students);
     const studentName = `${student.firstName} ${student.lastName}`;
     const photoSrc = student.photo || '';
 
@@ -103,7 +104,7 @@ export function printBulkAdmissionLetters(students: Student[], logoSrc: string =
         <!-- Body -->
         <div class="letter-body">
           <p class="greeting">Dear Parent/Guardian,</p>
-          <p>We are pleased to inform you that your child has been offered admission into <strong>AI Integrated Academy Argungu</strong> for the <strong>${academicSession}</strong> Academic Session.</p>
+          <p>We are pleased to inform you that your child has been offered admission into <strong>AI Integrated Academy Argungu</strong> into <strong>${studentClassArm.toUpperCase()}</strong> for the <strong>${academicSession}</strong> Academic Session.</p>
           <p>The admission is offered based on the assessment and admission requirements of the school. We are delighted to welcome your child into our learning community and look forward to supporting his/her academic, moral, and personal development.</p>
           <p>Please complete the registration process and settle the applicable school fees and other required charges on or before the stated deadline. Admission is subject to compliance with the school's rules, regulations, and code of conduct.</p>
           <p>We kindly request that the parent/guardian report to the school for final registration and submission of the required documents.</p>
@@ -113,7 +114,7 @@ export function printBulkAdmissionLetters(students: Student[], logoSrc: string =
         <!-- Summary Table -->
         <table class="summary-table">
           <tr><td class="label-cell">Student Name</td><td class="value-cell">${studentName.toUpperCase()}</td></tr>
-          <tr><td class="label-cell">Class / Level</td><td class="value-cell">${studentClassArm}</td></tr>
+          <tr><td class="label-cell">Class / Level / Arm</td><td class="value-cell">${studentClassArm.toUpperCase()}</td></tr>
           <tr><td class="label-cell">Academic Session</td><td class="value-cell">${academicSession}</td></tr>
           <tr><td class="label-cell">Resumption Date</td><td class="value-cell">${resumptionDate}</td></tr>
         </table>
@@ -445,7 +446,7 @@ export function printBulkAdmissionLetters(students: Student[], logoSrc: string =
   }
 }
 
-export default function AdmissionLetterModal({ student, isOpen, onClose }: AdmissionLetterModalProps) {
+export default function AdmissionLetterModal({ student, isOpen, onClose, allStudents }: AdmissionLetterModalProps) {
   const [logoSrc, setLogoSrc] = useState<string>(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('ai_academy_school_settings');
@@ -482,7 +483,7 @@ export default function AdmissionLetterModal({ student, isOpen, onClose }: Admis
   const academicSession = student.academicSession || '2026/2027';
   const resumptionDate = student.resumptionDate || '14th September, 2026';
   const admissionNumber = getStudentAdmissionNumber(student);
-  const studentClassArm = getStudentClassArm(student.intendedClass);
+  const studentClassArm = getStudentClassArm(student.intendedClass, student.id, allStudents);
   const studentName = `${student.firstName} ${student.lastName}`;
   const photoSrc = student.photo || '';
 
@@ -977,7 +978,7 @@ export default function AdmissionLetterModal({ student, isOpen, onClose }: Admis
         <div class="meta-info">
           <div><span class="label">Student Name: </span><span class="value">${studentName}</span></div>
           <div><span class="label">Admission Number: </span><span class="value">${admissionNumber}</span></div>
-          <div><span class="label">Class: </span><span class="value">${studentClassArm}</span></div>
+          <div><span class="label">Class: </span><span class="value">${studentClassArm.toUpperCase()}</span></div>
         </div>
         <div class="right-col">
           <div class="date-line">Date: <span class="value">${formattedDate}</span></div>
@@ -993,7 +994,7 @@ export default function AdmissionLetterModal({ student, isOpen, onClose }: Admis
       <!-- Body -->
       <div class="letter-body">
         <p class="greeting">Dear Parent/Guardian,</p>
-        <p>We are pleased to inform you that your child has been offered admission into <strong>AI Integrated Academy Argungu</strong> for the <strong>${academicSession}</strong> Academic Session.</p>
+        <p>We are pleased to inform you that your child has been offered admission into <strong>AI INTEGRATED ACADEMY ARGUNGU</strong> into <strong>${studentClassArm.toUpperCase()}</strong> for the <strong>${academicSession}</strong> Academic Session.</p>
         <p>The admission is offered based on the assessment and admission requirements of the school. We are delighted to welcome your child into our learning community and look forward to supporting his/her academic, moral, and personal development.</p>
         <p>Please complete the registration process and settle the applicable school fees and other required charges on or before the stated deadline. Admission is subject to compliance with the school's rules, regulations, and code of conduct.</p>
         <p>We kindly request that the parent/guardian report to the school for final registration and submission of the required documents.</p>
@@ -1003,7 +1004,7 @@ export default function AdmissionLetterModal({ student, isOpen, onClose }: Admis
       <!-- Summary Table -->
       <table class="summary-table">
         <tr><td class="label-cell">Student Name</td><td class="value-cell">${studentName.toUpperCase()}</td></tr>
-        <tr><td class="label-cell">Class / Level</td><td class="value-cell">${studentClassArm}</td></tr>
+        <tr><td class="label-cell">Class / Level / Arm</td><td class="value-cell">${studentClassArm.toUpperCase()}</td></tr>
         <tr><td class="label-cell">Academic Session</td><td class="value-cell">${academicSession}</td></tr>
         <tr><td class="label-cell">Resumption Date</td><td class="value-cell">${resumptionDate}</td></tr>
       </table>
@@ -1198,7 +1199,8 @@ export default function AdmissionLetterModal({ student, isOpen, onClose }: Admis
                 <p className="font-bold font-sans">Dear Parent/Guardian,</p>
                 <p>
                   We are pleased to inform you that your child has been offered admission into{' '}
-                  <strong className="font-bold font-sans">AI Integrated Academy Argungu</strong> for the{' '}
+                  <strong className="font-bold font-sans">AI Integrated Academy Argungu</strong> into{' '}
+                  <strong className="font-bold font-sans uppercase text-slate-900 border-b border-slate-400 px-1">{studentClassArm}</strong> for the{' '}
                   <span className="font-bold border-b border-slate-400 px-1">{academicSession}</span> Academic Session.
                 </p>
                 <p>
@@ -1230,8 +1232,8 @@ export default function AdmissionLetterModal({ student, isOpen, onClose }: Admis
                       <td className="p-2.5 font-extrabold text-slate-900 uppercase">{student.firstName} {student.lastName}</td>
                     </tr>
                     <tr className="border border-slate-400">
-                      <td className="p-2.5 font-bold text-slate-800 bg-slate-50 border-r border-slate-400">Class / Level</td>
-                      <td className="p-2.5 font-extrabold text-slate-900">{studentClassArm}</td>
+                      <td className="p-2.5 font-bold text-slate-800 bg-slate-50 border-r border-slate-400">Class / Level / Arm</td>
+                      <td className="p-2.5 font-extrabold text-slate-900 uppercase">{studentClassArm}</td>
                     </tr>
                     <tr className="border border-slate-400">
                       <td className="p-2.5 font-bold text-slate-800 bg-slate-50 border-r border-slate-400">Academic Session</td>
