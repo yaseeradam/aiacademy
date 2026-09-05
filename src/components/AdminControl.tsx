@@ -275,6 +275,8 @@ export default function AdminControl({ students }: AdminControlProps) {
     groups: [],
   });
 
+  const [confirmDeleteDuplicateStudent, setConfirmDeleteDuplicateStudent] = useState<Student | null>(null);
+
   const handleScanDuplicates = async () => {
     setDuplicateModal({ isOpen: true, isLoading: true, groups: [] });
     try {
@@ -286,6 +288,59 @@ export default function AdminControl({ students }: AdminControlProps) {
       }
     } catch {
       setDuplicateModal({ isOpen: true, isLoading: false, groups: [] });
+    }
+  };
+
+  const handleDeleteDuplicate = async (student: Student) => {
+    const studentName = `${student.firstName} ${student.lastName}`;
+    setFeedbackModal({
+      isOpen: true,
+      type: 'loading',
+      title: 'Deleting Duplicate Record...',
+      message: `Removing profile for ${studentName}...`,
+    });
+
+    try {
+      const res = await adminDeleteStudentAction(student.id);
+      if (res.success) {
+        setDuplicateModal(prev => {
+          const newGroups = prev.groups
+            .map(g => ({
+              ...g,
+              students: g.students.filter(s => s.id !== student.id)
+            }))
+            .filter(g => g.students.length > 1);
+
+          return {
+            ...prev,
+            groups: newGroups
+          };
+        });
+
+        router.refresh();
+
+        setFeedbackModal({
+          isOpen: true,
+          type: 'success',
+          title: 'Duplicate Record Deleted!',
+          message: `Successfully deleted duplicate record for "${studentName}".`,
+        });
+      } else {
+        setFeedbackModal({
+          isOpen: true,
+          type: 'error',
+          title: 'Deletion Failed',
+          message: res.error || 'Failed to delete duplicate record.',
+        });
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Error deleting duplicate.';
+      setFeedbackModal({
+        isOpen: true,
+        type: 'error',
+        title: 'Deletion Error',
+        message: msg,
+      });
     }
   };
 
@@ -4010,11 +4065,7 @@ export default function AdminControl({ students }: AdminControlProps) {
                                 </button>
                                 <button
                                   type="button"
-                                  onClick={() => {
-                                    setDuplicateModal({ isOpen: false, isLoading: false, groups: [] });
-                                    startEditStudent(student);
-                                    setDeleteConfirm(true);
-                                  }}
+                                  onClick={() => setConfirmDeleteDuplicateStudent(student)}
                                   className="py-2 px-3 bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-700 rounded-xl font-bold text-xs flex items-center justify-center gap-1 cursor-pointer transition-all shadow-2xs"
                                 >
                                   <Trash2 className="w-3.5 h-3.5" />
@@ -4041,6 +4092,50 @@ export default function AdminControl({ students }: AdminControlProps) {
                 className="px-5 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-bold text-xs cursor-pointer transition-all"
               >
                 Close Detector
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Confirmation Modal for Direct Duplicate Deletion */}
+      {confirmDeleteDuplicateStudent && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-slate-900/70 backdrop-blur-xs p-4 animate-fade-in">
+          <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl border border-slate-200 animate-slide-up text-center space-y-5">
+            <div className="w-16 h-16 rounded-2xl bg-rose-100 text-rose-600 border border-rose-200 flex items-center justify-center mx-auto shadow-xs">
+              <Trash2 className="w-8 h-8" />
+            </div>
+
+            <div>
+              <h3 className="text-xl font-black text-slate-900 tracking-tight">Delete Duplicate Student?</h3>
+              <p className="text-xs text-slate-500 font-semibold mt-2 leading-relaxed">
+                Are you sure you want to permanently delete <strong className="text-slate-900 font-bold">{confirmDeleteDuplicateStudent.firstName} {confirmDeleteDuplicateStudent.lastName}</strong> (Form: <span className="font-mono">{confirmDeleteDuplicateStudent.formNumber}</span>)?
+              </p>
+              <p className="text-[11px] text-rose-600 font-bold mt-1.5 bg-rose-50 border border-rose-100 p-2 rounded-xl">
+                This action will permanently delete this duplicate record from the database.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setConfirmDeleteDuplicateStudent(null)}
+                className="flex-1 py-3 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold text-xs transition-all cursor-pointer"
+              >
+                Cancel
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  const target = confirmDeleteDuplicateStudent;
+                  setConfirmDeleteDuplicateStudent(null);
+                  handleDeleteDuplicate(target);
+                }}
+                className="flex-1 py-3 px-4 bg-rose-600 hover:bg-rose-700 text-white rounded-xl font-extrabold text-xs shadow-md transition-all cursor-pointer flex items-center justify-center gap-1.5"
+              >
+                <Trash2 className="w-4 h-4" />
+                <span>Confirm Delete</span>
               </button>
             </div>
           </div>
