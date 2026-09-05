@@ -2103,12 +2103,23 @@ export default function AdminControl({ students }: AdminControlProps) {
                   <select
                     value={newStudent.intendedClass}
                     onChange={(e) => setNewStudent({...newStudent, intendedClass: e.target.value})}
-                    className="w-full soft-input cursor-pointer"
+                    className="w-full soft-input cursor-pointer font-bold"
                     required
                   >
-                    {classList.map(cls => (
-                      <option key={cls} value={cls}>{cls}</option>
-                    ))}
+                    {classList.map(cls => {
+                      const count = students.filter(s => s.intendedClass === cls).length;
+                      const isFull = count >= 30;
+                      return (
+                        <option 
+                          key={cls} 
+                          value={cls} 
+                          disabled={isFull}
+                          className={isFull ? 'text-rose-400 bg-slate-100 font-normal' : 'font-bold text-slate-800'}
+                        >
+                          {cls} {isFull ? '🔴 FULL (30/30)' : `🟢 (${count}/30 enrolled)`}
+                        </option>
+                      );
+                    })}
                   </select>
                 </div>
               </div>
@@ -2676,12 +2687,24 @@ export default function AdminControl({ students }: AdminControlProps) {
                   <select
                     value={editingStudent.intendedClass}
                     onChange={(e) => setEditingStudent({...editingStudent, intendedClass: e.target.value})}
-                    className="w-full soft-input text-sm cursor-pointer"
+                    className="w-full soft-input text-sm cursor-pointer font-bold"
                     required
                   >
-                    {classList.map(cls => (
-                      <option key={cls} value={cls}>{cls}</option>
-                    ))}
+                    {classList.map(cls => {
+                      const count = students.filter(s => s.intendedClass === cls).length;
+                      const isCurrent = editingStudent.intendedClass === cls;
+                      const isFull = count >= 30 && !isCurrent;
+                      return (
+                        <option 
+                          key={cls} 
+                          value={cls} 
+                          disabled={isFull}
+                          className={isFull ? 'text-rose-400 bg-slate-100 font-normal' : 'font-bold text-slate-800'}
+                        >
+                          {cls} {isCurrent ? '(Current)' : isFull ? '🔴 FULL (30/30)' : `🟢 (${count}/30 enrolled)`}
+                        </option>
+                      );
+                    })}
                   </select>
                 </div>
                 <div>

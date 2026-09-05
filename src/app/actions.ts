@@ -302,6 +302,18 @@ export async function adminCreateStudentAction(studentData: Omit<Student, 'id' |
     };
   }
 
+  // Check class capacity limit (max 30 per class arm)
+  if (studentData.intendedClass) {
+    const allStudents = await getAllStudents();
+    const enrolledInClass = allStudents.filter(s => s.intendedClass === studentData.intendedClass);
+    if (enrolledInClass.length >= 30) {
+      return {
+        success: false,
+        error: `Class "${studentData.intendedClass}" has reached its maximum capacity of 30 students. Please select another available class arm.`,
+      };
+    }
+  }
+
   const newId = `stud-${Date.now()}`;
   const newStudent: Student = {
     id: newId,
