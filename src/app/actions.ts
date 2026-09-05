@@ -81,11 +81,11 @@ export async function logoutAction() {
   redirect('/');
 }
 
-export async function confirmStudentAction(studentId: string) {
+export async function confirmStudentAction(studentId: string): Promise<{ success: boolean; error?: string }> {
   const student = await getStudentById(studentId);
   const success = await updateStudentStatus(studentId, 'verified');
   if (!success) {
-    throw new Error('Failed to update student status');
+    return { success: false, error: 'Failed to update student verification status.' };
   }
   const studentName = student ? `${student.firstName} ${student.lastName}` : studentId;
   await addAuditLog({
@@ -98,11 +98,11 @@ export async function confirmStudentAction(studentId: string) {
   return { success: true };
 }
 
-export async function submitCorrectionAction(studentId: string, notes: string) {
+export async function submitCorrectionAction(studentId: string, notes: string): Promise<{ success: boolean; error?: string }> {
   const student = await getStudentById(studentId);
   const success = await updateStudentStatus(studentId, 'requires_correction', notes);
   if (!success) {
-    throw new Error('Failed to submit correction');
+    return { success: false, error: 'Failed to submit correction request.' };
   }
   const studentName = student ? `${student.firstName} ${student.lastName}` : studentId;
   await addAuditLog({
@@ -119,11 +119,11 @@ export async function submitCorrectionAction(studentId: string, notes: string) {
 // Admin Actions
 // ─────────────────────────────────────────────────────────────────────────────
 
-export async function adminVerifyAction(studentId: string) {
+export async function adminVerifyAction(studentId: string): Promise<{ success: boolean; error?: string }> {
   const student = await getStudentById(studentId);
   const success = await updateStudentStatus(studentId, 'verified', '');
   if (!success) {
-    throw new Error('Failed to verify student');
+    return { success: false, error: 'Student not found or failed to update verification status.' };
   }
   const studentName = student ? `${student.firstName} ${student.lastName}` : studentId;
   await addAuditLog({
@@ -136,10 +136,10 @@ export async function adminVerifyAction(studentId: string) {
   return { success: true };
 }
 
-export async function adminTogglePaymentStatusAction(studentId: string, paymentStatus: 'paid' | 'pending') {
+export async function adminTogglePaymentStatusAction(studentId: string, paymentStatus: 'paid' | 'pending'): Promise<{ success: boolean; error?: string }> {
   const student = await getStudentById(studentId);
   if (!student) {
-    return { error: 'Student not found.' };
+    return { success: false, error: 'Student not found.' };
   }
 
   const todayStr = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
@@ -195,10 +195,10 @@ export async function adminTogglePaymentStatusAction(studentId: string, paymentS
 export async function adminUpdateStudentAction(
   studentId: string,
   updatedFields: Partial<Student>
-) {
+): Promise<{ success: boolean; error?: string }> {
   const student = await getStudentById(studentId);
   if (!student) {
-    return { error: 'Student not found.' };
+    return { success: false, error: 'Student not found.' };
   }
 
   const updatedStudent: Student = {
@@ -269,11 +269,11 @@ export async function adminUpdateStudentAction(
   return { success: true };
 }
 
-export async function adminDeleteStudentAction(studentId: string) {
+export async function adminDeleteStudentAction(studentId: string): Promise<{ success: boolean; error?: string }> {
   const student = await getStudentById(studentId);
   const deleted = await deleteStudent(studentId);
   if (!deleted) {
-    return { error: 'Student not found.' };
+    return { success: false, error: 'Student not found.' };
   }
   const studentName = student ? `${student.firstName} ${student.lastName}` : studentId;
   await addAuditLog({
@@ -344,10 +344,10 @@ export async function adminCreateStudentAction(studentData: Omit<Student, 'id' |
   return { success: true, id: newId };
 }
 
-export async function updateStudentPhotoAction(studentId: string, photoBase64: string) {
+export async function updateStudentPhotoAction(studentId: string, photoBase64: string): Promise<{ success: boolean; error?: string }> {
   const student = await getStudentById(studentId);
   if (!student) {
-    return { error: 'Student not found.' };
+    return { success: false, error: 'Student not found.' };
   }
 
   const updatedStudent: Student = {

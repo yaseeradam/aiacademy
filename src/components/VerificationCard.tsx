@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Student, VerificationStatus } from '@/types';
-import { Check, Edit3, Info, Camera, Loader2, FileText, CheckCircle2, CreditCard } from 'lucide-react';
+import { Check, Edit3, Info, Camera, Loader2, FileText, CheckCircle2, CreditCard, AlertOctagon, X } from 'lucide-react';
 import { confirmStudentAction, submitCorrectionAction, updateStudentPhotoAction, adminTogglePaymentStatusAction } from '@/app/actions';
 import AdmissionLetterModal from './AdmissionLetterModal';
 
@@ -22,18 +22,52 @@ export default function VerificationCard({ student, isAdmin = false }: Verificat
   const [isTogglingPayment, setIsTogglingPayment] = useState(false);
   const [isLetterOpen, setIsLetterOpen] = useState(false);
 
+  const [feedbackModal, setFeedbackModal] = useState<{
+    isOpen: boolean;
+    type: 'loading' | 'success' | 'error';
+    title: string;
+    message: string;
+  } | null>(null);
+
   const isPaid = student.paymentStatus === 'paid';
 
   const handleConfirm = async () => {
     setIsConfirming(true);
+    setFeedbackModal({
+      isOpen: true,
+      type: 'loading',
+      title: 'Confirming Student Details...',
+      message: `Marking profile details for ${student.firstName} as confirmed...`,
+    });
     try {
-      await confirmStudentAction(student.id);
-      if (isPaid) {
-        setIsLetterOpen(true);
+      const result = await confirmStudentAction(student.id);
+      if (result.success) {
+        if (isPaid) {
+          setIsLetterOpen(true);
+        }
+        router.refresh();
+        setFeedbackModal({
+          isOpen: true,
+          type: 'success',
+          title: 'Details Confirmed!',
+          message: `The enrollment details for ${student.firstName} ${student.lastName} have been confirmed as correct.`,
+        });
+      } else {
+        setFeedbackModal({
+          isOpen: true,
+          type: 'error',
+          title: 'Confirmation Failed',
+          message: result.error || 'Failed to confirm student details.',
+        });
       }
-      router.refresh();
-    } catch (err) {
-      console.error(err);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'An error occurred.';
+      setFeedbackModal({
+        isOpen: true,
+        type: 'error',
+        title: 'Confirmation Error',
+        message: msg,
+      });
     } finally {
       setIsConfirming(false);
     }
@@ -41,12 +75,41 @@ export default function VerificationCard({ student, isAdmin = false }: Verificat
 
   const handleTogglePayment = async () => {
     setIsTogglingPayment(true);
+    const newStatus = isPaid ? 'pending' : 'paid';
+    setFeedbackModal({
+      isOpen: true,
+      type: 'loading',
+      title: isPaid ? 'Revoking Payment Approval...' : 'Approving Payment & Issuing Letter...',
+      message: `Updating fee status for ${student.firstName} ${student.lastName}...`,
+    });
     try {
-      const newStatus = isPaid ? 'pending' : 'paid';
-      await adminTogglePaymentStatusAction(student.id, newStatus);
-      router.refresh();
-    } catch (err) {
-      console.error(err);
+      const result = await adminTogglePaymentStatusAction(student.id, newStatus);
+      if (result.success) {
+        router.refresh();
+        setFeedbackModal({
+          isOpen: true,
+          type: 'success',
+          title: newStatus === 'paid' ? 'Payment Approved & Admission Letter Issued!' : 'Payment Approval Revoked',
+          message: newStatus === 'paid'
+            ? `School fee payment for ${student.firstName} ${student.lastName} is approved. The A4 Admission Letter is now unlocked.`
+            : `Fee payment approval for ${student.firstName} ${student.lastName} has been reset to pending.`,
+        });
+      } else {
+        setFeedbackModal({
+          isOpen: true,
+          type: 'error',
+          title: 'Payment Status Update Failed',
+          message: result.error || 'Could not update payment status.',
+        });
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'An error occurred.';
+      setFeedbackModal({
+        isOpen: true,
+        type: 'error',
+        title: 'Payment Status Error',
+        message: msg,
+      });
     } finally {
       setIsTogglingPayment(false);
     }
@@ -56,12 +119,39 @@ export default function VerificationCard({ student, isAdmin = false }: Verificat
     e.preventDefault();
     if (!correctionNotes.trim()) return;
     setIsSubmitting(true);
+    setFeedbackModal({
+      isOpen: true,
+      type: 'loading',
+      title: 'Submitting Correction Request...',
+      message: 'Sending correction notes to school administration...',
+    });
     try {
-      await submitCorrectionAction(student.id, correctionNotes);
-      setIsCorrecting(false);
-      router.refresh();
-    } catch (err) {
-      console.error(err);
+      const result = await submitCorrectionAction(student.id, correctionNotes);
+      if (result.success) {
+        setIsCorrecting(false);
+        router.refresh();
+        setFeedbackModal({
+          isOpen: true,
+          type: 'success',
+          title: 'Correction Request Submitted!',
+          message: 'Your correction notes have been submitted to the school administration office for review.',
+        });
+      } else {
+        setFeedbackModal({
+          isOpen: true,
+          type: 'error',
+          title: 'Submission Failed',
+          message: result.error || 'Could not submit correction request.',
+        });
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'An error occurred.';
+      setFeedbackModal({
+        isOpen: true,
+        type: 'error',
+        title: 'Submission Error',
+        message: msg,
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -107,13 +197,39 @@ export default function VerificationCard({ student, isAdmin = false }: Verificat
     if (!file) return;
 
     setIsUploadingPhoto(true);
+    setFeedbackModal({
+      isOpen: true,
+      type: 'loading',
+      title: 'Uploading Photo...',
+      message: 'Compressing and saving student photo...',
+    });
     try {
       const compressedBase64 = await compressImage(file);
-      await updateStudentPhotoAction(student.id, compressedBase64);
-      router.refresh();
-    } catch (err) {
-      console.error('Photo upload failed:', err);
-      alert('Failed to upload photo. Please try a different image.');
+      const result = await updateStudentPhotoAction(student.id, compressedBase64);
+      if (result.success) {
+        router.refresh();
+        setFeedbackModal({
+          isOpen: true,
+          type: 'success',
+          title: 'Photo Uploaded Successfully!',
+          message: `Profile photo for ${student.firstName} ${student.lastName} has been updated.`,
+        });
+      } else {
+        setFeedbackModal({
+          isOpen: true,
+          type: 'error',
+          title: 'Photo Upload Failed',
+          message: result.error || 'Could not update student photo.',
+        });
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to upload photo.';
+      setFeedbackModal({
+        isOpen: true,
+        type: 'error',
+        title: 'Upload Error',
+        message: `${msg}. Please try a different image.`,
+      });
     } finally {
       setIsUploadingPhoto(false);
     }
@@ -419,7 +535,65 @@ export default function VerificationCard({ student, isAdmin = false }: Verificat
         )}
       </div>
 
-      {(isConfirming || isSubmitting || isUploadingPhoto || isTogglingPayment) && (
+      {/* Global Card Action Feedback Modal */}
+      {feedbackModal?.isOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 animate-fade-in">
+          <div className="bg-white rounded-3xl p-6 md:p-8 max-w-md w-full shadow-2xl border border-slate-100 animate-slide-up flex flex-col items-center text-center space-y-4 relative">
+            {feedbackModal.type !== 'loading' && (
+              <button
+                type="button"
+                onClick={() => setFeedbackModal(null)}
+                className="absolute right-4 top-4 p-1.5 hover:bg-slate-100 rounded-full text-slate-400 cursor-pointer transition-all"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            )}
+
+            {/* Icon Banner */}
+            <div className={`w-16 h-16 rounded-2xl flex items-center justify-center border shadow-xs ${
+              feedbackModal.type === 'loading'
+                ? 'bg-slate-50 border-slate-100 text-[#0f7343]'
+                : feedbackModal.type === 'success'
+                ? 'bg-emerald-50 border-emerald-200 text-emerald-600'
+                : 'bg-rose-50 border-rose-200 text-rose-600'
+            }`}>
+              {feedbackModal.type === 'loading' && <Loader2 className="w-8 h-8 animate-spin text-[#0f7343]" />}
+              {feedbackModal.type === 'success' && <CheckCircle2 className="w-8 h-8 text-emerald-600" />}
+              {feedbackModal.type === 'error' && <AlertOctagon className="w-8 h-8 text-rose-600" />}
+            </div>
+
+            {/* Title & Description */}
+            <div>
+              <h3 className="text-xl font-black text-slate-900 tracking-tight leading-snug">
+                {feedbackModal.title}
+              </h3>
+              <p className="text-xs text-slate-500 font-semibold mt-1.5 leading-relaxed whitespace-pre-line">
+                {feedbackModal.message}
+              </p>
+            </div>
+
+            {/* Action Buttons */}
+            {feedbackModal.type !== 'loading' && (
+              <div className="w-full pt-2">
+                <button
+                  type="button"
+                  onClick={() => setFeedbackModal(null)}
+                  className={`w-full py-3.5 px-6 rounded-xl font-extrabold text-sm shadow-md transition-all active:scale-[0.98] cursor-pointer ${
+                    feedbackModal.type === 'success'
+                      ? 'bg-[#0f7343] hover:bg-[#0b5c34] text-white'
+                      : 'bg-slate-900 hover:bg-slate-800 text-white'
+                  }`}
+                >
+                  {feedbackModal.type === 'success' ? 'Great, Got It ✓' : 'Dismiss'}
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Fallback Progress Overlay */}
+      {(isConfirming || isSubmitting || isUploadingPhoto || isTogglingPayment) && !feedbackModal?.isOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/40 backdrop-blur-xs">
           <div className="bg-white rounded-3xl p-8 max-w-sm w-full mx-4 shadow-2xl flex flex-col items-center text-center space-y-4 animate-slide-down">
             <div className="w-16 h-16 rounded-2xl bg-slate-50 flex items-center justify-center border border-slate-100">
@@ -430,7 +604,7 @@ export default function VerificationCard({ student, isAdmin = false }: Verificat
                 {isConfirming && 'Confirming Student Details...'}
                 {isSubmitting && 'Submitting Correction Request...'}
                 {isUploadingPhoto && 'Uploading Student Photo...'}
-                {isTogglingPayment && 'Updating Payment & Admission Status...'}
+                {isTogglingPayment && 'Updating Payment Status...'}
               </h3>
               <p className="text-xs text-slate-500 font-semibold mt-1">Please wait while we process your request...</p>
             </div>

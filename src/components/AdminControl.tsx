@@ -311,6 +311,12 @@ export default function AdminControl({ students }: AdminControlProps) {
 
     setIsImporting(true);
     setImportStatus(null);
+    setFeedbackModal({
+      isOpen: true,
+      type: 'loading',
+      title: 'Importing CSV Records...',
+      message: `Reading and parsing "${file.name}"...`,
+    });
 
     const formData = new FormData();
     formData.append('file', file);
@@ -325,12 +331,31 @@ export default function AdminControl({ students }: AdminControlProps) {
       if (res.ok && data.success) {
         setImportStatus({ success: true, message: data.message });
         router.refresh();
+        setFeedbackModal({
+          isOpen: true,
+          type: 'success',
+          title: 'CSV Imported Successfully!',
+          message: data.message || 'Student records have been imported into the database.',
+        });
       } else {
-        setImportStatus({ success: false, message: data.error || 'Failed to import CSV.' });
+        const errorMsg = data.error || 'Failed to import CSV.';
+        setImportStatus({ success: false, message: errorMsg });
+        setFeedbackModal({
+          isOpen: true,
+          type: 'error',
+          title: 'CSV Import Failed',
+          message: errorMsg,
+        });
       }
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'An error occurred during upload.';
       setImportStatus({ success: false, message });
+      setFeedbackModal({
+        isOpen: true,
+        type: 'error',
+        title: 'CSV Import Error',
+        message,
+      });
     } finally {
       setIsImporting(false);
       e.target.value = '';
@@ -346,16 +371,40 @@ export default function AdminControl({ students }: AdminControlProps) {
     e.preventDefault();
     if (!editingStudent) return;
     setIsSavingStudent(true);
+    setFeedbackModal({
+      isOpen: true,
+      type: 'loading',
+      title: 'Saving Student Details...',
+      message: `Updating profile for ${editingStudent.firstName} ${editingStudent.lastName}...`,
+    });
     try {
       const result = await adminUpdateStudentAction(editingStudent.id, editingStudent);
       if (result.success) {
+        const studentName = `${editingStudent.firstName} ${editingStudent.lastName}`;
         setEditingStudent(null);
         router.refresh();
+        setFeedbackModal({
+          isOpen: true,
+          type: 'success',
+          title: 'Student Profile Updated!',
+          message: `All details for "${studentName}" have been updated successfully.`,
+        });
       } else {
-        console.error(result.error);
+        setFeedbackModal({
+          isOpen: true,
+          type: 'error',
+          title: 'Update Failed',
+          message: result.error || 'Failed to update student profile.',
+        });
       }
-    } catch (err) {
-      console.error(err);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'An error occurred while saving.';
+      setFeedbackModal({
+        isOpen: true,
+        type: 'error',
+        title: 'Update Error',
+        message: msg,
+      });
     } finally {
       setIsSavingStudent(false);
     }
@@ -364,16 +413,40 @@ export default function AdminControl({ students }: AdminControlProps) {
   const handleDeleteStudent = async () => {
     if (!editingStudent) return;
     setIsDeletingStudent(true);
+    setFeedbackModal({
+      isOpen: true,
+      type: 'loading',
+      title: 'Deleting Student Record...',
+      message: `Removing profile for ${editingStudent.firstName} ${editingStudent.lastName}...`,
+    });
     try {
+      const studentName = `${editingStudent.firstName} ${editingStudent.lastName}`;
       const result = await adminDeleteStudentAction(editingStudent.id);
       if (result.success) {
         setEditingStudent(null);
         router.refresh();
+        setFeedbackModal({
+          isOpen: true,
+          type: 'success',
+          title: 'Student Record Deleted',
+          message: `The profile for "${studentName}" has been permanently removed from the system.`,
+        });
       } else {
-        console.error(result.error);
+        setFeedbackModal({
+          isOpen: true,
+          type: 'error',
+          title: 'Deletion Failed',
+          message: result.error || 'Failed to delete student record.',
+        });
       }
-    } catch (err) {
-      console.error(err);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'An error occurred while deleting.';
+      setFeedbackModal({
+        isOpen: true,
+        type: 'error',
+        title: 'Deletion Error',
+        message: msg,
+      });
     } finally {
       setIsDeletingStudent(false);
       setDeleteConfirm(false);
@@ -382,11 +455,38 @@ export default function AdminControl({ students }: AdminControlProps) {
 
   const handleVerify = async (studentId: string) => {
     setIsVerifying(true);
+    setFeedbackModal({
+      isOpen: true,
+      type: 'loading',
+      title: 'Verifying Student Details...',
+      message: 'Updating verification status to verified...',
+    });
     try {
-      await adminVerifyAction(studentId);
-      router.refresh();
-    } catch (err) {
-      console.error(err);
+      const result = await adminVerifyAction(studentId);
+      if (result.success) {
+        router.refresh();
+        setFeedbackModal({
+          isOpen: true,
+          type: 'success',
+          title: 'Student Profile Verified!',
+          message: 'The student enrollment details have been officially marked as verified.',
+        });
+      } else {
+        setFeedbackModal({
+          isOpen: true,
+          type: 'error',
+          title: 'Verification Failed',
+          message: result.error || 'Could not verify student details.',
+        });
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'An error occurred during verification.';
+      setFeedbackModal({
+        isOpen: true,
+        type: 'error',
+        title: 'Verification Error',
+        message: msg,
+      });
     } finally {
       setIsVerifying(false);
     }
@@ -470,6 +570,12 @@ export default function AdminControl({ students }: AdminControlProps) {
 
   const handleExportPhotos = async () => {
     setIsExportingPhotos(true);
+    setFeedbackModal({
+      isOpen: true,
+      type: 'loading',
+      title: 'Packaging Student Photos...',
+      message: 'Converting images and packaging into ZIP archive...',
+    });
     try {
       const zip = new JSZip();
       const folder = zip.folder("Student_Photos");
@@ -490,7 +596,6 @@ export default function AdminControl({ students }: AdminControlProps) {
 
         try {
           if (rawPhoto.includes(';base64,')) {
-            // Data URL format: data:image/png;base64,iVBORw0KGgo...
             const parts = rawPhoto.split(';base64,');
             const header = parts[0];
             const base64Content = parts[1].replace(/\s+/g, '');
@@ -501,7 +606,6 @@ export default function AdminControl({ students }: AdminControlProps) {
             folder?.file(`${fileName}.${ext}`, base64Content, { base64: true });
             count++;
           } else if (rawPhoto.startsWith('http://') || rawPhoto.startsWith('https://') || rawPhoto.startsWith('/')) {
-            // Remote or relative URL fetch
             const res = await fetch(rawPhoto);
             if (res.ok) {
               const blob = await res.blob();
@@ -512,7 +616,6 @@ export default function AdminControl({ students }: AdminControlProps) {
               count++;
             }
           } else {
-            // Raw base64 string without data:image prefix
             const cleanBase64 = rawPhoto.replace(/\s+/g, '');
             folder?.file(`${fileName}.jpg`, cleanBase64, { base64: true });
             count++;
@@ -523,7 +626,12 @@ export default function AdminControl({ students }: AdminControlProps) {
       }
 
       if (count === 0) {
-        alert(`No exportable student photos found among ${students.length} student records (${skippedNoPhoto} students have no photo uploaded).`);
+        setFeedbackModal({
+          isOpen: true,
+          type: 'error',
+          title: 'No Photos Found',
+          message: `No exportable student photos found among ${students.length} student records (${skippedNoPhoto} students have no photo uploaded).`,
+        });
         return;
       }
 
@@ -537,10 +645,20 @@ export default function AdminControl({ students }: AdminControlProps) {
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
 
-      alert(`Successfully exported ${count} student photo(s) into AI_Academy_Student_Photos.zip!\n(${skippedNoPhoto} student(s) had no photo uploaded).`);
+      setFeedbackModal({
+        isOpen: true,
+        type: 'success',
+        title: 'Photos Exported Successfully!',
+        message: `Exported ${count} student photo(s) into AI_Academy_Student_Photos.zip! (${skippedNoPhoto} student(s) had no photo uploaded).`,
+      });
     } catch (err) {
       console.error("Error creating photos zip:", err);
-      alert("Failed to package photos into ZIP file. Please try again.");
+      setFeedbackModal({
+        isOpen: true,
+        type: 'error',
+        title: 'Export Photos Error',
+        message: 'Failed to package photos into ZIP file. Please try again.',
+      });
     } finally {
       setIsExportingPhotos(false);
     }
@@ -548,17 +666,39 @@ export default function AdminControl({ students }: AdminControlProps) {
 
   const handleSaveSettings = async (e: React.FormEvent) => {
     e.preventDefault();
-    localStorage.setItem('ai_academy_school_settings', JSON.stringify(schoolSettings));
-    await updateSchoolSettingsAction({
-      schoolName: schoolSettings.name,
-      motto: schoolSettings.motto,
-      address: schoolSettings.address,
-      phones: `${schoolSettings.tel1}, ${schoolSettings.tel2}`,
-      logo: schoolSettings.logo,
-      geminiApiKey: schoolSettings.geminiApiKey,
+    setFeedbackModal({
+      isOpen: true,
+      type: 'loading',
+      title: 'Updating School Settings...',
+      message: 'Saving updated configuration to database...',
     });
-    setSettingsSaved(true);
-    setTimeout(() => setSettingsSaved(false), 3000);
+    try {
+      localStorage.setItem('ai_academy_school_settings', JSON.stringify(schoolSettings));
+      await updateSchoolSettingsAction({
+        schoolName: schoolSettings.name,
+        motto: schoolSettings.motto,
+        address: schoolSettings.address,
+        phones: `${schoolSettings.tel1}, ${schoolSettings.tel2}`,
+        logo: schoolSettings.logo,
+        geminiApiKey: schoolSettings.geminiApiKey,
+      });
+      setSettingsSaved(true);
+      setTimeout(() => setSettingsSaved(false), 3000);
+      setFeedbackModal({
+        isOpen: true,
+        type: 'success',
+        title: 'School Settings Saved!',
+        message: 'School name, motto, address, phone numbers, and Gemini API Key settings have been updated.',
+      });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Failed to save settings.';
+      setFeedbackModal({
+        isOpen: true,
+        type: 'error',
+        title: 'Save Settings Error',
+        message: msg,
+      });
+    }
   };
 
   return (
