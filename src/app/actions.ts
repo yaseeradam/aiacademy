@@ -284,12 +284,90 @@ export async function adminDeleteStudentAction(studentId: string): Promise<{ suc
   return { success: true };
 }
 
+export interface DuplicateGroup {
+  reason: string;
+  key: string;
+  students: Student[];
+}
+
 export async function checkDuplicateStudentAction(studentData: Partial<Student>): Promise<{ duplicate: boolean; existingStudent?: Student }> {
   const existing = await findDuplicateStudent(studentData);
   if (existing) {
     return { duplicate: true, existingStudent: existing };
   }
   return { duplicate: false };
+}
+
+export async function findDuplicateStudentsAction(): Promise<{ success: boolean; duplicateGroups: DuplicateGroup[] }> {
+  const allStudents = await getAllStudents();
+  const groups: DuplicateGroup[] = [];
+
+  // 1. Group by Form Number
+  const formMap = new Map<string, Student[]>();
+  allStudents.forEach(s => {
+    if (!s.formNumber) return;
+    const key = s.formNumber.trim().toLowerCase();
+    if (!formMap.has(key)) formMap.set(key, []);
+    formMap.get(key)!.push(s);
+  });
+
+  formMap.forEach((students, key) => {
+    if (students.length > 1) {
+      groups.push({
+        reason: 'Duplicate Form / Serial Number',
+        key: students[0].formNumber,
+        students
+      });
+    }
+  });
+
+  // 2. Group by Full Name + Phone
+  const namePhoneMap = new Map<string, Student[]>();
+  allStudents.forEach(s => {
+    const name = `${s.firstName} ${s.lastName}`.trim().toLowerCase();
+    const phone = s.phone1 ? normalizePhone(s.phone1) : '';
+    if (!name || !phone) return;
+    const key = `${name}__${phone}`;
+    if (!namePhoneMap.has(key)) namePhoneMap.set(key, []);
+    namePhoneMap.get(key)!.push(s);
+  });
+
+  namePhoneMap.forEach((students) => {
+    if (students.length > 1) {
+      const alreadyInFormGroup = groups.some(g => g.reason === 'Duplicate Form / Serial Number' && g.students.some(s => s.id === students[0].id));
+      if (!alreadyInFormGroup) {
+        groups.push({
+          reason: 'Duplicate Name & Parent Contact Phone',
+          key: `${students[0].firstName} ${students[0].lastName} (${students[0].phone1})`,
+          students
+        });
+      }
+    }
+  });
+
+  // 3. Group by Admission Number (if assigned)
+  const admMap = new Map<string, Student[]>();
+  allStudents.forEach(s => {
+    if (!s.admissionNumber) return;
+    const key = s.admissionNumber.trim().toLowerCase();
+    if (!admMap.has(key)) admMap.set(key, []);
+    admMap.get(key)!.push(s);
+  });
+
+  admMap.forEach((students) => {
+    if (students.length > 1) {
+      const alreadyInGroup = groups.some(g => g.students.some(s => s.id === students[0].id));
+      if (!alreadyInGroup) {
+        groups.push({
+          reason: 'Duplicate Official Admission Number',
+          key: students[0].admissionNumber!,
+          students
+        });
+      }
+    }
+  });
+
+  return { success: true, duplicateGroups: groups };
 }
 
 export async function resolveAutoSubgroup(requestedClass: string, allStudents: Student[]): Promise<string> {

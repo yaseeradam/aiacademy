@@ -13,7 +13,7 @@ import {
   Loader2, Scan, History, MessageSquare, Camera, FileText, CheckCircle2, CreditCard, Printer,
   GraduationCap, Folder, FolderOpen, Edit3
 } from 'lucide-react';
-import { logoutAction, adminUpdateStudentAction, adminDeleteStudentAction, adminCreateStudentAction, adminVerifyAction, adminTogglePaymentStatusAction, getAuditLogsAction, scanAdmissionFormOCRAction, getSchoolSettingsAction, updateSchoolSettingsAction } from '@/app/actions';
+import { logoutAction, adminUpdateStudentAction, adminDeleteStudentAction, adminCreateStudentAction, adminVerifyAction, adminTogglePaymentStatusAction, getAuditLogsAction, scanAdmissionFormOCRAction, getSchoolSettingsAction, updateSchoolSettingsAction, findDuplicateStudentsAction, DuplicateGroup } from '@/app/actions';
 import AdmissionLetterModal, { printBulkAdmissionLetters, getStudentClassArm, getStudentAdmissionNumber } from './AdmissionLetterModal';
 
 interface AdminControlProps {
@@ -263,6 +263,31 @@ export default function AdminControl({ students }: AdminControlProps) {
 
   // Duplicate Student Warning state
   const [duplicateWarning, setDuplicateWarning] = useState<Student | null>(null);
+
+  // Duplicate Detector Modal State
+  const [duplicateModal, setDuplicateModal] = useState<{
+    isOpen: boolean;
+    isLoading: boolean;
+    groups: DuplicateGroup[];
+  }>({
+    isOpen: false,
+    isLoading: false,
+    groups: [],
+  });
+
+  const handleScanDuplicates = async () => {
+    setDuplicateModal({ isOpen: true, isLoading: true, groups: [] });
+    try {
+      const res = await findDuplicateStudentsAction();
+      if (res.success) {
+        setDuplicateModal({ isOpen: true, isLoading: false, groups: res.duplicateGroups });
+      } else {
+        setDuplicateModal({ isOpen: true, isLoading: false, groups: [] });
+      }
+    } catch {
+      setDuplicateModal({ isOpen: true, isLoading: false, groups: [] });
+    }
+  };
 
   useEffect(() => {
     if (activeTab === 'audit-log') {
@@ -2216,11 +2241,22 @@ export default function AdminControl({ students }: AdminControlProps) {
         {/* TAB 2: STUDENT DIRECTORY (Matches students list page.png) */}
         {activeTab === 'directory' && (
           <div className="space-y-6 animate-slide-down">
-            <div>
-              <h1 className="text-3xl font-black text-slate-800 tracking-tight leading-none">Student Directory</h1>
-              <p className="text-slate-500 text-sm font-semibold mt-2.5">
-                Manage student records. Use filters to locate specific individuals.
-              </p>
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div>
+                <h1 className="text-3xl font-black text-slate-800 tracking-tight leading-none">Student Directory</h1>
+                <p className="text-slate-500 text-sm font-semibold mt-2.5">
+                  Manage student records. Use filters to locate specific individuals or scan for duplicate records.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleScanDuplicates}
+                className="py-2.5 px-4 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-xs font-black transition-all flex items-center gap-2 cursor-pointer shadow-md self-start md:self-auto shrink-0"
+              >
+                <AlertOctagon className="w-4 h-4 text-white" />
+                <span>Scan & Review Duplicates</span>
+              </button>
             </div>
 
             <div className="soft-card bg-white rounded-[2rem] border border-slate-200 overflow-hidden shadow-sm">
@@ -2238,7 +2274,17 @@ export default function AdminControl({ students }: AdminControlProps) {
                   />
                 </div>
 
-                <div className="flex gap-3">
+                <div className="flex gap-3 flex-wrap sm:flex-nowrap">
+                  <button
+                    type="button"
+                    onClick={handleScanDuplicates}
+                    className="py-3 px-4 bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-900 rounded-xl text-sm font-extrabold transition-all flex items-center gap-2 cursor-pointer shadow-2xs shrink-0"
+                    title="Scan database to find potential duplicate student records"
+                  >
+                    <AlertOctagon className="w-4 h-4 text-amber-600" />
+                    <span>Detect Duplicates</span>
+                  </button>
+
                   <select
                     value={classFilter}
                     onChange={(e) => setClassFilter(e.target.value)}
@@ -3628,6 +3674,158 @@ export default function AdminControl({ students }: AdminControlProps) {
                 </button>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Duplicate Detector Modal */}
+      {duplicateModal.isOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/80 backdrop-blur-md p-3 sm:p-6 overflow-y-auto animate-fade-in">
+          <div className="bg-white w-full max-w-5xl rounded-3xl shadow-2xl overflow-hidden border border-slate-200 animate-slide-up my-4 flex flex-col max-h-[90vh]">
+            
+            {/* Modal Header */}
+            <div className="p-6 bg-slate-900 text-white flex items-center justify-between gap-4 shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-2xl bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center justify-center font-black shrink-0">
+                  <AlertOctagon className="w-6 h-6" />
+                </div>
+                <div>
+                  <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">Duplicate Student Detector</h2>
+                  <p className="text-xs text-slate-400 font-semibold mt-0.5">
+                    {duplicateModal.isLoading 
+                      ? 'Scanning database for matching records...' 
+                      : duplicateModal.groups.length === 0 
+                      ? 'No duplicate student records detected in database.' 
+                      : `Found ${duplicateModal.groups.length} duplicate group(s) that require review.`
+                    }
+                  </p>
+                </div>
+              </div>
+
+              <button
+                onClick={() => setDuplicateModal({ isOpen: false, isLoading: false, groups: [] })}
+                className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-all cursor-pointer"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 overflow-y-auto flex-1 bg-slate-50 space-y-6">
+              {duplicateModal.isLoading ? (
+                <div className="py-20 text-center space-y-4">
+                  <Loader2 className="w-10 h-10 text-amber-500 animate-spin mx-auto" />
+                  <p className="text-sm font-bold text-slate-600">Scanning all student records for duplicate form numbers, names, and contact phones...</p>
+                </div>
+              ) : duplicateModal.groups.length === 0 ? (
+                <div className="py-16 text-center bg-white rounded-3xl border border-slate-200 shadow-2xs space-y-4 max-w-lg mx-auto">
+                  <div className="w-16 h-16 rounded-3xl bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto">
+                    <CheckCircle2 className="w-8 h-8" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-black text-slate-800">Database is Clean!</h3>
+                    <p className="text-xs text-slate-500 font-semibold mt-1">
+                      No duplicate student records were found matching identical Form Numbers, Names, or Contact Numbers.
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setDuplicateModal({ isOpen: false, isLoading: false, groups: [] })}
+                    className="px-6 py-2.5 bg-slate-900 text-white rounded-xl text-xs font-extrabold shadow-sm hover:bg-slate-800 transition-all cursor-pointer"
+                  >
+                    Done
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  {duplicateModal.groups.map((group, groupIdx) => (
+                    <div key={groupIdx} className="bg-white rounded-3xl border border-amber-200 overflow-hidden shadow-xs">
+                      <div className="p-4 bg-amber-50 border-b border-amber-100 flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-2">
+                          <span className="bg-amber-500 text-white text-[10px] font-black px-2.5 py-1 rounded-lg uppercase tracking-wider">
+                            Group #{groupIdx + 1}
+                          </span>
+                          <h4 className="text-sm font-black text-amber-950">
+                            {group.reason}: <strong className="text-slate-900 font-mono">{group.key}</strong>
+                          </h4>
+                        </div>
+                        <span className="text-xs font-bold text-amber-800">
+                          {group.students.length} matching students
+                        </span>
+                      </div>
+
+                      <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {group.students.map((student) => {
+                          const arm = getStudentClassArm(student.intendedClass, student.id, students);
+                          const admNo = getStudentAdmissionNumber(student);
+
+                          return (
+                            <div key={student.id} className="p-4 bg-slate-50 rounded-2xl border border-slate-200 flex flex-col justify-between space-y-3">
+                              <div className="flex items-start justify-between gap-2">
+                                <div className="flex items-center gap-3">
+                                  <StudentAvatar student={student} size="md" />
+                                  <div>
+                                    <h5 className="font-black text-slate-900 text-sm">{student.firstName} {student.lastName}</h5>
+                                    <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                                      <span className="text-[10px] font-bold font-mono bg-slate-200 px-1.5 py-0.5 rounded text-slate-700">Form: {student.formNumber}</span>
+                                      <span className="text-[10px] font-bold bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded">{arm}</span>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+
+                              <div className="text-xs text-slate-600 space-y-1 bg-white p-2.5 rounded-xl border border-slate-100">
+                                <p><strong>Parent:</strong> {student.fatherName || student.motherName || student.guardianName || 'N/A'}</p>
+                                <p><strong>Phone:</strong> {student.phone1 || 'N/A'}</p>
+                                <p><strong>Adm No:</strong> <span className="font-mono text-slate-800">{admNo}</span></p>
+                              </div>
+
+                              <div className="flex items-center gap-2 pt-1">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setDuplicateModal({ isOpen: false, isLoading: false, groups: [] });
+                                    startEditStudent(student);
+                                  }}
+                                  className="flex-1 py-2 px-3 bg-white hover:bg-slate-100 border border-slate-300 text-slate-700 rounded-xl font-bold text-xs flex items-center justify-center gap-1 cursor-pointer transition-all shadow-2xs"
+                                >
+                                  <Edit3 className="w-3.5 h-3.5" />
+                                  <span>Edit</span>
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setDuplicateModal({ isOpen: false, isLoading: false, groups: [] });
+                                    startEditStudent(student);
+                                    setDeleteConfirm(true);
+                                  }}
+                                  className="py-2 px-3 bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-700 rounded-xl font-bold text-xs flex items-center justify-center gap-1 cursor-pointer transition-all shadow-2xs"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                  <span>Delete</span>
+                                </button>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between gap-3 shrink-0">
+              <span className="text-xs font-bold text-slate-500">
+                Found {duplicateModal.groups.length} duplicate group(s)
+              </span>
+              <button
+                onClick={() => setDuplicateModal({ isOpen: false, isLoading: false, groups: [] })}
+                className="px-5 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-bold text-xs cursor-pointer transition-all"
+              >
+                Close Detector
+              </button>
+            </div>
           </div>
         </div>
       )}
