@@ -118,8 +118,8 @@ export default function AdminControl({ students }: AdminControlProps) {
   const sortedMainClasses = useMemo(() => {
     const classes = ['Nursery 1', 'Basic 1', 'Basic 2'];
     return classes.sort((a, b) => {
-      const countA = students.filter(s => getStudentClassArm(s.intendedClass).startsWith(a)).length;
-      const countB = students.filter(s => getStudentClassArm(s.intendedClass).startsWith(b)).length;
+      const countA = students.filter(s => getStudentClassArm(s.intendedClass, s.id, students).startsWith(a)).length;
+      const countB = students.filter(s => getStudentClassArm(s.intendedClass, s.id, students).startsWith(b)).length;
       return countB - countA;
     });
   }, [students]);
@@ -128,20 +128,20 @@ export default function AdminControl({ students }: AdminControlProps) {
   const classList = useMemo(() => {
     const set = new Set([
       ...defaultSubgroups,
-      ...students.map(s => getStudentClassArm(s.intendedClass)).filter(Boolean)
+      ...students.map(s => getStudentClassArm(s.intendedClass, s.id, students)).filter(Boolean)
     ]);
     const list = Array.from(set);
 
     return list.sort((a, b) => {
-      const countA = students.filter(s => getStudentClassArm(s.intendedClass) === a).length;
-      const countB = students.filter(s => getStudentClassArm(s.intendedClass) === b).length;
+      const countA = students.filter(s => getStudentClassArm(s.intendedClass, s.id, students) === a).length;
+      const countB = students.filter(s => getStudentClassArm(s.intendedClass, s.id, students) === b).length;
 
       if (subgroupSortOrder === 'most_populated') {
         if (countB !== countA) return countB - countA; // Highest enrollment first!
         return a.localeCompare(b);
       } else if (subgroupSortOrder === 'capacity') {
-        const isFullA = countA >= 30 ? 1 : 0;
-        const isFullB = countB >= 30 ? 1 : 0;
+        const isFullA = countA >= 35 ? 1 : 0;
+        const isFullB = countB >= 35 ? 1 : 0;
         if (isFullB !== isFullA) return isFullB - isFullA;
         return countB - countA;
       } else {
@@ -153,7 +153,7 @@ export default function AdminControl({ students }: AdminControlProps) {
   const classStudentMap = useMemo(() => {
     const map: Record<string, Student[]> = {};
     students.forEach(student => {
-      const cls = getStudentClassArm(student.intendedClass);
+      const cls = getStudentClassArm(student.intendedClass, student.id, students);
       if (!map[cls]) map[cls] = [];
       map[cls].push(student);
     });
@@ -1338,7 +1338,7 @@ export default function AdminControl({ students }: AdminControlProps) {
                   <span>Classes & Subgroups Roster</span>
                 </h1>
                 <p className="text-slate-500 text-sm font-semibold mt-2.5">
-                  Class arms with 30-student capacity tracking (Gold, Silver, Green) and instant admission letter printing.
+                  Class arms with 35-student capacity tracking (Gold, Silver, Green) with automatic overflow and instant admission letter printing.
                 </p>
               </div>
 
@@ -1365,15 +1365,15 @@ export default function AdminControl({ students }: AdminControlProps) {
             {/* Comprehensive Top Class Stat Cards */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               {sortedMainClasses.map((mainClass) => {
-                const classStudents = students.filter(s => getStudentClassArm(s.intendedClass).startsWith(mainClass));
-                const goldCount = students.filter(s => getStudentClassArm(s.intendedClass) === `${mainClass} Gold`).length;
-                const silverCount = students.filter(s => getStudentClassArm(s.intendedClass) === `${mainClass} Silver`).length;
-                const greenCount = students.filter(s => getStudentClassArm(s.intendedClass) === `${mainClass} Green`).length;
+                const classStudents = students.filter(s => getStudentClassArm(s.intendedClass, s.id, students).startsWith(mainClass));
+                const goldCount = students.filter(s => getStudentClassArm(s.intendedClass, s.id, students) === `${mainClass} Gold`).length;
+                const silverCount = students.filter(s => getStudentClassArm(s.intendedClass, s.id, students) === `${mainClass} Silver`).length;
+                const greenCount = students.filter(s => getStudentClassArm(s.intendedClass, s.id, students) === `${mainClass} Green`).length;
 
                 const verified = classStudents.filter(s => s.verificationStatus === 'verified').length;
                 const paid = classStudents.filter(s => s.paymentStatus === 'paid').length;
                 const pendingPaid = classStudents.filter(s => s.paymentStatus !== 'paid').length;
-                const totalCapacity = 90; // 3 arms x 30 capacity
+                const totalCapacity = 105; // 3 arms x 35 capacity
                 const mainPct = Math.min(100, Math.round((classStudents.length / totalCapacity) * 100));
 
                 const isSelected = classTabFilter === mainClass;
@@ -1403,7 +1403,7 @@ export default function AdminControl({ students }: AdminControlProps) {
                         </div>
 
                         <span className="text-xs font-black bg-emerald-100 text-emerald-800 px-3 py-1 rounded-full border border-emerald-200">
-                          {classStudents.length} / 90 Enrolled
+                          {classStudents.length} / 105 Enrolled
                         </span>
                       </div>
                     </div>
@@ -1439,7 +1439,7 @@ export default function AdminControl({ students }: AdminControlProps) {
 
                       {/* Subclass Arm Rows Breakdown */}
                       <div className="pt-2 space-y-2 border-t border-slate-100">
-                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">Subclass Arms (30 Max Each):</span>
+                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">Subclass Arms (35 Max Each):</span>
                         
                         {/* Gold */}
                         <div className="flex items-center justify-between p-2 rounded-xl bg-amber-50/50 border border-amber-100 text-xs">
@@ -1447,8 +1447,8 @@ export default function AdminControl({ students }: AdminControlProps) {
                             <span className="w-2.5 h-2.5 rounded-full bg-amber-500 shrink-0" />
                             <span>Gold Arm</span>
                           </div>
-                          <span className={`font-black ${goldCount >= 30 ? 'text-rose-600' : 'text-slate-800'}`}>
-                            {goldCount} / 30 {goldCount >= 30 && '🔴 FULL'}
+                          <span className={`font-black ${goldCount >= 35 ? 'text-rose-600' : 'text-slate-800'}`}>
+                            {goldCount} / 35 {goldCount >= 35 && '🔴 FULL'}
                           </span>
                         </div>
 
@@ -1458,8 +1458,8 @@ export default function AdminControl({ students }: AdminControlProps) {
                             <span className="w-2.5 h-2.5 rounded-full bg-slate-500 shrink-0" />
                             <span>Silver Arm</span>
                           </div>
-                          <span className={`font-black ${silverCount >= 30 ? 'text-rose-600' : 'text-slate-800'}`}>
-                            {silverCount} / 30 {silverCount >= 30 && '🔴 FULL'}
+                          <span className={`font-black ${silverCount >= 35 ? 'text-rose-600' : 'text-slate-800'}`}>
+                            {silverCount} / 35 {silverCount >= 35 && '🔴 FULL'}
                           </span>
                         </div>
 
@@ -1469,8 +1469,8 @@ export default function AdminControl({ students }: AdminControlProps) {
                             <span className="w-2.5 h-2.5 rounded-full bg-emerald-600 shrink-0" />
                             <span>Green Arm</span>
                           </div>
-                          <span className={`font-black ${greenCount >= 30 ? 'text-rose-600' : 'text-slate-800'}`}>
-                            {greenCount} / 30 {greenCount >= 30 && '🔴 FULL'}
+                          <span className={`font-black ${greenCount >= 35 ? 'text-rose-600' : 'text-slate-800'}`}>
+                            {greenCount} / 35 {greenCount >= 35 && '🔴 FULL'}
                           </span>
                         </div>
                       </div>
@@ -1528,7 +1528,7 @@ export default function AdminControl({ students }: AdminControlProps) {
                         : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                     }`}
                   >
-                    {mainCls} ({students.filter(s => getStudentClassArm(s.intendedClass).startsWith(mainCls)).length})
+                    {mainCls} ({students.filter(s => getStudentClassArm(s.intendedClass, s.id, students).startsWith(mainCls)).length})
                   </button>
                 ))}
               </div>
@@ -1568,10 +1568,10 @@ export default function AdminControl({ students }: AdminControlProps) {
                   return subgroupName.startsWith(classTabFilter);
                 })
                 .map(subgroupName => {
-                  const classStudents = students.filter(s => getStudentClassArm(s.intendedClass) === subgroupName);
+                  const classStudents = students.filter(s => getStudentClassArm(s.intendedClass, s.id, students) === subgroupName);
                   const count = classStudents.length;
-                  const isFull = count >= 30;
-                  const pct = Math.min(100, Math.round((count / 30) * 100));
+                  const isFull = count >= 35;
+                  const pct = Math.min(100, Math.round((count / 35) * 100));
 
                   const verifiedCount = classStudents.filter(s => s.verificationStatus === 'verified').length;
                   const paidCount = classStudents.filter(s => s.paymentStatus === 'paid').length;
@@ -1617,18 +1617,18 @@ export default function AdminControl({ students }: AdminControlProps) {
                                 {subgroupName}
                               </h2>
                               <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
-                                Max Capacity: 30
+                                Max Capacity: 35
                               </span>
                             </div>
                           </div>
 
                           {isFull ? (
                             <span className="bg-rose-100 text-rose-800 text-[10px] font-black px-2.5 py-1 rounded-full border border-rose-200 shrink-0">
-                              🔴 FULL (30/30)
+                              🔴 FULL (35/35)
                             </span>
                           ) : (
                             <span className="bg-emerald-100 text-emerald-800 text-[10px] font-black px-2.5 py-1 rounded-full border border-emerald-200 shrink-0">
-                              🟢 {30 - count} Available
+                              🟢 {35 - count} Available
                             </span>
                           )}
                         </div>
@@ -1640,7 +1640,7 @@ export default function AdminControl({ students }: AdminControlProps) {
                         <div className="grid grid-cols-2 gap-3 text-xs">
                           <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100/80">
                             <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Enrolled</span>
-                            <span className="text-base font-black text-slate-800 mt-0.5 block">{count} / 30</span>
+                            <span className="text-base font-black text-slate-800 mt-0.5 block">{count} / 35</span>
                           </div>
                           <div className="p-3 bg-emerald-50/50 rounded-2xl border border-emerald-100/60">
                             <span className="block text-[10px] font-bold text-emerald-600 uppercase tracking-wider">Verified</span>
@@ -1692,7 +1692,7 @@ export default function AdminControl({ students }: AdminControlProps) {
                               ? 'bg-slate-200 text-slate-400 cursor-not-allowed' 
                               : 'bg-[#0f7343] hover:bg-[#0b5c34] text-white shadow-2xs'
                           }`}
-                          title={isFull ? 'Subclass arm is full (30/30)' : 'Add student to this arm'}
+                          title={isFull ? 'Subclass arm is full (35/35)' : 'Add student to this arm'}
                         >
                           <Plus className="w-4 h-4" />
                           <span>{isFull ? 'Full' : 'Add'}</span>
@@ -1713,10 +1713,10 @@ export default function AdminControl({ students }: AdminControlProps) {
                     const isGold = selectedSubgroupRoster.includes('Gold');
                     const isSilver = selectedSubgroupRoster.includes('Silver');
                     const isGreen = selectedSubgroupRoster.includes('Green');
-                    const rosterStudents = students.filter(s => getStudentClassArm(s.intendedClass) === selectedSubgroupRoster);
+                    const rosterStudents = students.filter(s => getStudentClassArm(s.intendedClass, s.id, students) === selectedSubgroupRoster);
                     const enrolledCount = rosterStudents.length;
-                    const isFull = enrolledCount >= 30;
-                    const fillPct = Math.min(100, Math.round((enrolledCount / 30) * 100));
+                    const isFull = enrolledCount >= 35;
+                    const fillPct = Math.min(100, Math.round((enrolledCount / 35) * 100));
 
                     return (
                       <>
@@ -1745,14 +1745,14 @@ export default function AdminControl({ students }: AdminControlProps) {
                                     ? 'bg-rose-500/20 text-rose-300 border-rose-500/30' 
                                     : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
                                 }`}>
-                                  {isFull ? '🔴 ARM FULL (30/30)' : `🟢 ${30 - enrolledCount} SPOTS OPEN`}
+                                  {isFull ? '🔴 ARM FULL (35/35)' : `🟢 ${35 - enrolledCount} SPOTS OPEN`}
                                 </span>
                               </div>
                               
                               {/* Capacity Bar & Counter */}
                               <div className="flex items-center gap-3 mt-2">
                                 <p className="text-xs text-slate-300 font-bold">
-                                  Enrolled: <strong className="text-white text-sm">{enrolledCount}</strong> / 30 Max Capacity
+                                  Enrolled: <strong className="text-white text-sm">{enrolledCount}</strong> / 35 Max Capacity
                                 </p>
                                 <div className="w-32 bg-slate-800 h-2 rounded-full overflow-hidden border border-slate-700">
                                   <div 
@@ -1830,7 +1830,7 @@ export default function AdminControl({ students }: AdminControlProps) {
                               return (
                                 <>
                                   <span className="bg-white border border-slate-200 px-3.5 py-2 rounded-xl text-slate-700 shrink-0 shadow-2xs">
-                                    Subclass Arm: <strong className="text-slate-900">{enrolledCount}/30</strong>
+                                    Subclass Arm: <strong className="text-slate-900">{enrolledCount}/35</strong>
                                   </span>
                                   <span className="bg-emerald-50 border border-emerald-200 px-3.5 py-2 rounded-xl text-emerald-800 shrink-0 shadow-2xs">
                                     Verified: <strong>{verifiedCount}</strong>
@@ -2038,7 +2038,7 @@ export default function AdminControl({ students }: AdminControlProps) {
                         {/* Modal Footer */}
                         <div className="p-4 bg-slate-50 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3 shrink-0">
                           <span className="text-xs font-bold text-slate-600">
-                            Viewing Subclass Arm Roster: <strong className="text-slate-900 font-black">{selectedSubgroupRoster}</strong> ({rosterStudents.length}/30 Enrolled)
+                            Viewing Subclass Arm Roster: <strong className="text-slate-900 font-black">{selectedSubgroupRoster}</strong> ({rosterStudents.length}/35 Enrolled)
                           </span>
 
                           <div className="flex items-center gap-2">
