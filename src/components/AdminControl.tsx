@@ -289,6 +289,44 @@ export default function AdminControl({ students }: AdminControlProps) {
     }
   };
 
+  const handleRemoveStudentFromSubclass = async (student: Student, subgroupName: string) => {
+    const studentName = `${student.firstName} ${student.lastName}`;
+    setFeedbackModal({
+      isOpen: true,
+      type: 'loading',
+      title: `Removing ${studentName}...`,
+      message: `Removing student from ${subgroupName} and updating subclass arm capacity...`,
+    });
+
+    try {
+      const res = await adminDeleteStudentAction(student.id);
+      if (res.success) {
+        router.refresh();
+        setFeedbackModal({
+          isOpen: true,
+          type: 'success',
+          title: 'Student Removed from Subclass!',
+          message: `"${studentName}" has been removed from ${subgroupName}. Subclass capacity updated automatically.`,
+        });
+      } else {
+        setFeedbackModal({
+          isOpen: true,
+          type: 'error',
+          title: 'Removal Failed',
+          message: res.error || 'Failed to remove student from subclass.',
+        });
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'An error occurred during removal.';
+      setFeedbackModal({
+        isOpen: true,
+        type: 'error',
+        title: 'Removal Error',
+        message: msg,
+      });
+    }
+  };
+
   useEffect(() => {
     if (activeTab === 'audit-log') {
       setIsLoadingAudit(true);
@@ -2179,6 +2217,20 @@ export default function AdminControl({ students }: AdminControlProps) {
                                           <Edit3 className="w-3.5 h-3.5 text-slate-600" />
                                           <span>Edit</span>
                                         </button>
+
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            if (window.confirm(`Are you sure you want to remove ${student.firstName} ${student.lastName} from ${selectedSubgroupRoster}?`)) {
+                                              handleRemoveStudentFromSubclass(student, selectedSubgroupRoster);
+                                            }
+                                          }}
+                                          className="py-2 px-3 bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-700 rounded-xl font-bold text-xs flex items-center justify-center gap-1 transition-all cursor-pointer shadow-2xs"
+                                          title={`Remove ${student.firstName} from ${selectedSubgroupRoster}`}
+                                        >
+                                          <Trash2 className="w-3.5 h-3.5 text-rose-600" />
+                                          <span>Remove</span>
+                                        </button>
                                       </div>
                                     </div>
                                   );
@@ -2356,6 +2408,19 @@ export default function AdminControl({ students }: AdminControlProps) {
                             className="px-3.5 py-1.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg text-xs font-bold text-slate-600 transition-all cursor-pointer"
                           >
                             Edit Student Record
+                          </button>
+                          <button
+                            onClick={() => {
+                              const arm = getStudentClassArm(student.intendedClass, student.id, students);
+                              if (window.confirm(`Are you sure you want to remove ${student.firstName} ${student.lastName} from ${arm}?`)) {
+                                handleRemoveStudentFromSubclass(student, arm);
+                              }
+                            }}
+                            className="px-3.5 py-1.5 bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-700 rounded-lg text-xs font-bold transition-all flex items-center gap-1 cursor-pointer"
+                            title="Remove student from subclass"
+                          >
+                            <Trash2 className="w-3.5 h-3.5 text-rose-600" />
+                            <span className="hidden sm:inline">Remove</span>
                           </button>
                         </div>
                       </div>
