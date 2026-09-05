@@ -95,6 +95,8 @@ export default function AdminControl({ students }: AdminControlProps) {
   // Classes Page filter state
   const [classTabFilter, setClassTabFilter] = useState<string>('all');
   const [classPageSearch, setClassPageSearch] = useState<string>('');
+  const [selectedSubgroupRoster, setSelectedSubgroupRoster] = useState<string | null>(null);
+  const [rosterSearch, setRosterSearch] = useState<string>('');
 
   // Default Class Subgroups / Streams (30 students per class capacity)
   const defaultSubgroups = useMemo(() => [
@@ -1415,56 +1417,56 @@ export default function AdminControl({ students }: AdminControlProps) {
                   return subgroupName.startsWith(classTabFilter);
                 })
                 .map(subgroupName => {
-                  const classStudents = students.filter(s => {
-                    const matchesClass = (s.intendedClass || 'Nursery 1 Gold') === subgroupName;
-                    if (!matchesClass) return false;
-                    if (!classPageSearch.trim()) return true;
-                    const q = classPageSearch.toLowerCase();
-                    return `${s.firstName} ${s.lastName}`.toLowerCase().includes(q) ||
-                           s.formNumber.toLowerCase().includes(q) ||
-                           (s.phone1 && s.phone1.includes(q)) ||
-                           (s.fatherName && s.fatherName.toLowerCase().includes(q));
-                  });
-
+                  const classStudents = students.filter(s => (s.intendedClass || 'Nursery 1 Gold') === subgroupName);
                   const count = classStudents.length;
                   const isFull = count >= 30;
                   const pct = Math.min(100, Math.round((count / 30) * 100));
+
+                  const verifiedCount = classStudents.filter(s => s.verificationStatus === 'verified').length;
+                  const paidCount = classStudents.filter(s => s.paymentStatus === 'paid').length;
+                  const pendingPaidCount = classStudents.filter(s => s.paymentStatus !== 'paid').length;
 
                   const isGold = subgroupName.includes('Gold');
                   const isSilver = subgroupName.includes('Silver');
                   const isGreen = subgroupName.includes('Green');
 
                   return (
-                    <div key={subgroupName} className={`soft-card bg-white rounded-3xl border flex flex-col justify-between overflow-hidden shadow-xs transition-all hover:shadow-md ${
-                      isGold 
-                        ? 'border-amber-200 hover:border-amber-400' 
-                        : isSilver 
-                        ? 'border-slate-300 hover:border-slate-400' 
-                        : isGreen 
-                        ? 'border-emerald-200 hover:border-emerald-400' 
-                        : 'border-slate-200'
-                    }`}>
+                    <div 
+                      key={subgroupName} 
+                      onClick={() => setSelectedSubgroupRoster(subgroupName)}
+                      className={`soft-card bg-white rounded-3xl border flex flex-col justify-between overflow-hidden shadow-xs transition-all hover:shadow-lg hover:-translate-y-0.5 cursor-pointer group ${
+                        isGold 
+                          ? 'border-amber-200 hover:border-amber-400 hover:ring-2 hover:ring-amber-400/20' 
+                          : isSilver 
+                          ? 'border-slate-300 hover:border-slate-400 hover:ring-2 hover:ring-slate-400/20' 
+                          : isGreen 
+                          ? 'border-emerald-200 hover:border-emerald-400 hover:ring-2 hover:ring-emerald-400/20' 
+                          : 'border-slate-200 hover:border-slate-300'
+                      }`}
+                    >
                       {/* Subgroup Banner Header */}
                       <div className={`p-5 border-b border-slate-100 ${
                         isGold 
-                          ? 'bg-amber-50/50' 
+                          ? 'bg-amber-50/60' 
                           : isSilver 
                           ? 'bg-slate-50' 
                           : isGreen 
-                          ? 'bg-emerald-50/50' 
+                          ? 'bg-emerald-50/60' 
                           : 'bg-slate-50'
                       }`}>
                         <div className="flex items-center justify-between gap-3">
                           <div className="flex items-center gap-3">
-                            <div className={`w-10 h-10 rounded-2xl text-white flex items-center justify-center font-black shadow-xs ${
-                              isGold ? 'bg-amber-500' : isSilver ? 'bg-slate-500' : isGreen ? 'bg-emerald-600' : 'bg-[#0f7343]'
+                            <div className={`w-11 h-11 rounded-2xl text-white flex items-center justify-center font-black shadow-xs ${
+                              isGold ? 'bg-amber-500' : isSilver ? 'bg-slate-600' : isGreen ? 'bg-emerald-600' : 'bg-[#0f7343]'
                             }`}>
-                              <GraduationCap className="w-5 h-5" />
+                              <GraduationCap className="w-6 h-6" />
                             </div>
                             <div>
-                              <h2 className="text-lg font-black text-slate-800 tracking-tight">{subgroupName}</h2>
+                              <h2 className="text-lg font-black text-slate-800 tracking-tight group-hover:text-[#0f7343] transition-colors">
+                                {subgroupName}
+                              </h2>
                               <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
-                                Capacity: 30 Max
+                                Max Capacity: 30
                               </span>
                             </div>
                           </div>
@@ -1475,16 +1477,39 @@ export default function AdminControl({ students }: AdminControlProps) {
                             </span>
                           ) : (
                             <span className="bg-emerald-100 text-emerald-800 text-[10px] font-black px-2.5 py-1 rounded-full border border-emerald-200 shrink-0">
-                              🟢 {30 - count} Left
+                              🟢 {30 - count} Available
                             </span>
                           )}
                         </div>
+                      </div>
+
+                      {/* Card Content - Subclass Details Grid */}
+                      <div className="p-5 space-y-4 flex-1">
+                        {/* Subclass Metrics Grid */}
+                        <div className="grid grid-cols-2 gap-3 text-xs">
+                          <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100/80">
+                            <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Enrolled</span>
+                            <span className="text-base font-black text-slate-800 mt-0.5 block">{count} / 30</span>
+                          </div>
+                          <div className="p-3 bg-emerald-50/50 rounded-2xl border border-emerald-100/60">
+                            <span className="block text-[10px] font-bold text-emerald-600 uppercase tracking-wider">Verified</span>
+                            <span className="text-base font-black text-emerald-800 mt-0.5 block">{verifiedCount}</span>
+                          </div>
+                          <div className="p-3 bg-blue-50/50 rounded-2xl border border-blue-100/60">
+                            <span className="block text-[10px] font-bold text-blue-600 uppercase tracking-wider">Fees Paid</span>
+                            <span className="text-base font-black text-blue-800 mt-0.5 block">{paidCount}</span>
+                          </div>
+                          <div className="p-3 bg-amber-50/50 rounded-2xl border border-amber-100/60">
+                            <span className="block text-[10px] font-bold text-amber-600 uppercase tracking-wider">Fees Pending</span>
+                            <span className="text-base font-black text-amber-800 mt-0.5 block">{pendingPaidCount}</span>
+                          </div>
+                        </div>
 
                         {/* Capacity Progress Bar */}
-                        <div className="mt-4 pt-3 border-t border-slate-200/50 space-y-1.5">
+                        <div className="space-y-1.5 pt-1">
                           <div className="flex justify-between items-center text-xs font-extrabold text-slate-700">
-                            <span>Roster Capacity</span>
-                            <span className={isFull ? 'text-rose-600 font-black' : 'text-emerald-700'}>{count} / 30 ({pct}%)</span>
+                            <span>Capacity Gauge</span>
+                            <span className={isFull ? 'text-rose-600 font-black' : 'text-emerald-700'}>{pct}% Filled</span>
                           </div>
                           <div className="w-full bg-slate-200/80 h-2.5 rounded-full overflow-hidden">
                             <div 
@@ -1495,82 +1520,194 @@ export default function AdminControl({ students }: AdminControlProps) {
                         </div>
                       </div>
 
-                      {/* Student List Grid Card Body */}
-                      <div className="p-4 flex-1 overflow-y-auto max-h-[380px] divide-y divide-slate-100">
-                        {classStudents.length > 0 ? (
-                          classStudents.map(student => {
-                            const isPaid = student.paymentStatus === 'paid';
-                            return (
-                              <div key={student.id} className="py-3 first:pt-0 last:pb-0 flex items-center justify-between gap-3 group">
-                                <div className="flex items-center gap-3 min-w-0">
-                                  <StudentAvatar student={student} size="sm" />
-                                  <div className="min-w-0">
-                                    <h4 className="font-extrabold text-slate-900 text-xs truncate group-hover:text-[#0f7343] transition-colors">
-                                      {student.firstName} {student.lastName}
-                                    </h4>
-                                    <p className="text-[10px] font-mono font-semibold text-slate-400">
-                                      {student.formNumber} • {student.gender[0]}
-                                    </p>
-                                  </div>
-                                </div>
-
-                                <div className="flex items-center gap-1.5 shrink-0">
-                                  <button
-                                    onClick={() => handleTogglePaymentStatus(student.id, student.paymentStatus || 'pending')}
-                                    disabled={isTogglingFee === student.id}
-                                    className={`px-2 py-1 rounded-lg text-[10px] font-extrabold flex items-center gap-1 transition-all cursor-pointer ${
-                                      isPaid 
-                                        ? 'bg-emerald-100 text-emerald-800 border border-emerald-300 hover:bg-emerald-200' 
-                                        : 'bg-slate-100 text-slate-600 border border-slate-200 hover:bg-slate-200'
-                                    }`}
-                                  >
-                                    <CreditCard className="w-3 h-3" />
-                                    <span>{isPaid ? 'Paid' : 'Pending'}</span>
-                                  </button>
-
-                                  <button
-                                    onClick={() => startEditStudent(student)}
-                                    className="p-1.5 bg-slate-100 hover:bg-[#0f7343] text-slate-600 hover:text-white rounded-lg transition-all cursor-pointer"
-                                    title="View / Edit Profile"
-                                  >
-                                    <Edit3 className="w-3.5 h-3.5" />
-                                  </button>
-                                </div>
-                              </div>
-                            );
-                          })
-                        ) : (
-                          <div className="p-8 text-center text-xs text-slate-400 font-semibold italic">
-                            No students currently registered in {subgroupName}.
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Subgroup Card Footer */}
-                      <div className="p-4 border-t border-slate-100 bg-slate-50/50 flex items-center justify-between text-xs">
-                        <span className="text-[11px] font-bold text-slate-500">
-                          Verified: <strong className="text-emerald-700">{classStudents.filter(s => s.verificationStatus === 'verified').length}</strong>
-                        </span>
+                      {/* Subgroup Card Footer Actions */}
+                      <div className="p-4 border-t border-slate-100 bg-slate-50/50 flex items-center justify-between gap-2" onClick={(e) => e.stopPropagation()}>
+                        <button
+                          onClick={() => setSelectedSubgroupRoster(subgroupName)}
+                          className="flex-1 py-2.5 px-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-extrabold text-xs transition-all flex items-center justify-center gap-1.5 shadow-2xs cursor-pointer"
+                        >
+                          <Users className="w-4 h-4 text-emerald-400" />
+                          <span>View Roster ({count})</span>
+                        </button>
+                        
                         <button
                           onClick={() => {
                             setNewStudent(prev => ({ ...prev, intendedClass: subgroupName }));
                             setActiveTab('new-verification');
                           }}
                           disabled={isFull}
-                          className={`px-3 py-1.5 rounded-xl font-extrabold text-[11px] transition-all flex items-center gap-1 cursor-pointer ${
+                          className={`py-2.5 px-3 rounded-xl font-extrabold text-xs transition-all flex items-center justify-center gap-1 cursor-pointer ${
                             isFull 
                               ? 'bg-slate-200 text-slate-400 cursor-not-allowed' 
                               : 'bg-[#0f7343] hover:bg-[#0b5c34] text-white shadow-2xs'
                           }`}
+                          title={isFull ? 'Subclass arm is full (30/30)' : 'Add student to this arm'}
                         >
-                          <Plus className="w-3.5 h-3.5" />
-                          <span>{isFull ? 'Full' : 'Add Student'}</span>
+                          <Plus className="w-4 h-4" />
+                          <span>{isFull ? 'Full' : 'Add'}</span>
                         </button>
                       </div>
                     </div>
                   );
                 })}
             </div>
+
+            {/* Subgroup Roster Modal (Displays students only when clicked) */}
+            {selectedSubgroupRoster && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 overflow-y-auto animate-fade-in">
+                <div className="bg-white w-full max-w-3xl rounded-3xl shadow-2xl overflow-hidden border border-slate-200 animate-slide-up my-8">
+                  {/* Modal Banner Header */}
+                  <div className="p-6 bg-slate-900 text-white flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-black border border-emerald-500/30">
+                        <GraduationCap className="w-6 h-6" />
+                      </div>
+                      <div>
+                        <h2 className="text-xl font-black text-white">{selectedSubgroupRoster} Roster</h2>
+                        <p className="text-xs text-slate-300 font-semibold mt-0.5">
+                          Enrolled: {students.filter(s => (s.intendedClass || 'Nursery 1 Gold') === selectedSubgroupRoster).length} / 30 Students
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => {
+                        setSelectedSubgroupRoster(null);
+                        setRosterSearch('');
+                      }}
+                      className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-all cursor-pointer"
+                    >
+                      <X className="w-6 h-6" />
+                    </button>
+                  </div>
+
+                  {/* Search & Actions Bar inside Modal */}
+                  <div className="p-4 bg-slate-50 border-b border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3">
+                    <div className="relative w-full sm:w-72">
+                      <Search className="w-4 h-4 absolute left-3.5 top-3 text-slate-400" />
+                      <input
+                        type="text"
+                        value={rosterSearch}
+                        onChange={(e) => setRosterSearch(e.target.value)}
+                        placeholder="Search student, form no, or parent..."
+                        className="w-full pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:border-[#0f7343]"
+                      />
+                    </div>
+                    
+                    <button
+                      onClick={() => {
+                        setNewStudent(prev => ({ ...prev, intendedClass: selectedSubgroupRoster }));
+                        setSelectedSubgroupRoster(null);
+                        setActiveTab('new-verification');
+                      }}
+                      disabled={students.filter(s => (s.intendedClass || 'Nursery 1 Gold') === selectedSubgroupRoster).length >= 30}
+                      className="w-full sm:w-auto px-4 py-2 bg-[#0f7343] hover:bg-[#0b5c34] text-white rounded-xl font-extrabold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <Plus className="w-4 h-4" />
+                      <span>Add Student to {selectedSubgroupRoster}</span>
+                    </button>
+                  </div>
+
+                  {/* Student List Items */}
+                  <div className="p-6 max-h-[60vh] overflow-y-auto divide-y divide-slate-100">
+                    {(() => {
+                      const rosterStudents = students.filter(s => {
+                        const matchesSubgroup = (s.intendedClass || 'Nursery 1 Gold') === selectedSubgroupRoster;
+                        if (!matchesSubgroup) return false;
+                        if (!rosterSearch.trim()) return true;
+                        const q = rosterSearch.toLowerCase();
+                        return `${s.firstName} ${s.lastName}`.toLowerCase().includes(q) ||
+                               s.formNumber.toLowerCase().includes(q) ||
+                               (s.phone1 && s.phone1.includes(q)) ||
+                               (s.fatherName && s.fatherName.toLowerCase().includes(q));
+                      });
+
+                      if (rosterStudents.length === 0) {
+                        return (
+                          <div className="py-12 text-center text-slate-400 font-semibold text-sm">
+                            No students currently registered in {selectedSubgroupRoster}.
+                          </div>
+                        );
+                      }
+
+                      return rosterStudents.map(student => {
+                        const isPaid = student.paymentStatus === 'paid';
+                        return (
+                          <div key={student.id} className="py-4 first:pt-0 last:pb-0 flex flex-col sm:flex-row sm:items-center justify-between gap-4 group">
+                            <div className="flex items-center gap-3.5 min-w-0">
+                              <StudentAvatar student={student} size="md" />
+                              <div className="min-w-0">
+                                <div className="flex items-center gap-2">
+                                  <h4 className="font-black text-slate-900 text-sm truncate">
+                                    {student.firstName} {student.lastName}
+                                  </h4>
+                                  {student.verificationStatus === 'verified' && (
+                                    <span className="bg-emerald-100 text-emerald-800 text-[10px] font-extrabold px-2 py-0.5 rounded-full flex items-center gap-1">
+                                      <CheckCircle2 className="w-3 h-3" /> Verified
+                                    </span>
+                                  )}
+                                </div>
+                                <p className="text-xs font-mono font-bold text-slate-500 mt-0.5">
+                                  {student.formNumber} • {student.gender} • Parent: {student.fatherName || student.motherName || 'N/A'} ({student.phone1 || 'No Phone'})
+                                </p>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
+                              <button
+                                onClick={() => handleTogglePaymentStatus(student.id, student.paymentStatus || 'pending')}
+                                disabled={isTogglingFee === student.id}
+                                className={`px-3 py-1.5 rounded-xl text-xs font-extrabold flex items-center gap-1.5 transition-all cursor-pointer ${
+                                  isPaid 
+                                    ? 'bg-emerald-100 text-emerald-800 border border-emerald-300 hover:bg-emerald-200' 
+                                    : 'bg-slate-100 text-slate-700 border border-slate-200 hover:bg-slate-200'
+                                }`}
+                              >
+                                <CreditCard className="w-3.5 h-3.5" />
+                                <span>{isPaid ? 'Fee Paid' : 'Fee Pending'}</span>
+                              </button>
+
+                              <button
+                                onClick={() => {
+                                  setLetterModalStudent(student);
+                                }}
+                                className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition-all cursor-pointer"
+                                title="View Admission Letter"
+                              >
+                                <FileText className="w-4 h-4 text-emerald-700" />
+                              </button>
+
+                              <button
+                                onClick={() => {
+                                  setSelectedSubgroupRoster(null);
+                                  startEditStudent(student);
+                                }}
+                                className="p-2 bg-slate-100 hover:bg-[#0f7343] text-slate-700 hover:text-white rounded-xl transition-all cursor-pointer"
+                                title="Edit Student Profile"
+                              >
+                                <Edit3 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      });
+                    })()}
+                  </div>
+
+                  {/* Modal Footer */}
+                  <div className="p-4 bg-slate-50 border-t border-slate-200 flex justify-end">
+                    <button
+                      onClick={() => {
+                        setSelectedSubgroupRoster(null);
+                        setRosterSearch('');
+                      }}
+                      className="px-5 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-xl font-bold text-xs cursor-pointer transition-all"
+                    >
+                      Close Roster
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
