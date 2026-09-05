@@ -160,6 +160,103 @@ export default function AdminControl({ students }: AdminControlProps) {
     return map;
   }, [students]);
 
+  const handleDownloadSubclassFullNames = (subgroupName: string, subgroupStudents: Student[]) => {
+    if (!subgroupStudents || subgroupStudents.length === 0) return;
+
+    const headers = [
+      'S/N',
+      'Full Name',
+      'Admission Number',
+      'Form Number',
+      'Subclass Arm',
+      'Gender',
+      'Date of Birth',
+      'Parent / Guardian Name',
+      'Phone Number',
+      'Verification Status',
+      'Fee Payment Status'
+    ];
+
+    const rows = subgroupStudents.map((s, idx) => {
+      const fullName = `${s.firstName} ${s.lastName}`.trim();
+      const admNo = getStudentAdmissionNumber(s);
+      const parentName = s.fatherName || s.motherName || s.guardianName || 'N/A';
+      return [
+        idx + 1,
+        `"${fullName.replace(/"/g, '""')}"`,
+        `"${admNo.replace(/"/g, '""')}"`,
+        `"${(s.formNumber || '').replace(/"/g, '""')}"`,
+        `"${subgroupName.replace(/"/g, '""')}"`,
+        `"${(s.gender || '').replace(/"/g, '""')}"`,
+        `"${(s.dateOfBirth || '').replace(/"/g, '""')}"`,
+        `"${parentName.replace(/"/g, '""')}"`,
+        `"${(s.phone1 || '').replace(/"/g, '""')}"`,
+        `"${(s.verificationStatus || 'pending').replace(/"/g, '""')}"`,
+        `"${(s.paymentStatus || 'pending').replace(/"/g, '""')}"`
+      ].join(',');
+    });
+
+    const csvContent = 'data:text/csv;charset=utf-8,\uFEFF' + [headers.join(','), ...rows].join('\n');
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    const fileName = `${subgroupName.replace(/\s+/g, '_')}_Student_Full_Names.csv`;
+    link.setAttribute('download', fileName);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleDownloadAllSubclassesFullNames = () => {
+    if (!students || students.length === 0) return;
+
+    const headers = [
+      'S/N',
+      'Subclass Arm',
+      'Full Name',
+      'Admission Number',
+      'Form Number',
+      'Gender',
+      'Parent / Guardian Name',
+      'Phone Number',
+      'Verification Status',
+      'Fee Payment Status'
+    ];
+
+    let rowIdx = 1;
+    const rows: string[] = [];
+
+    classList.forEach((subgroupName) => {
+      const subgroupStudents = students.filter(s => getStudentClassArm(s.intendedClass, s.id, students) === subgroupName);
+      subgroupStudents.forEach((s) => {
+        const fullName = `${s.firstName} ${s.lastName}`.trim();
+        const admNo = getStudentAdmissionNumber(s);
+        const parentName = s.fatherName || s.motherName || s.guardianName || 'N/A';
+        rows.push([
+          rowIdx++,
+          `"${subgroupName.replace(/"/g, '""')}"`,
+          `"${fullName.replace(/"/g, '""')}"`,
+          `"${admNo.replace(/"/g, '""')}"`,
+          `"${(s.formNumber || '').replace(/"/g, '""')}"`,
+          `"${(s.gender || '').replace(/"/g, '""')}"`,
+          `"${parentName.replace(/"/g, '""')}"`,
+          `"${(s.phone1 || '').replace(/"/g, '""')}"`,
+          `"${(s.verificationStatus || 'pending').replace(/"/g, '""')}"`,
+          `"${(s.paymentStatus || 'pending').replace(/"/g, '""')}"`
+        ].join(','));
+      });
+    });
+
+    const csvContent = 'data:text/csv;charset=utf-8,\uFEFF' + [headers.join(','), ...rows].join('\n');
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', `All_Subclasses_Student_Full_Names.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   // OCR Form Scanning state
   const [isScanningOCR, setIsScanningOCR] = useState(false);
   const [ocrProgress, setOcrProgress] = useState('');
@@ -1533,7 +1630,17 @@ export default function AdminControl({ students }: AdminControlProps) {
                 ))}
               </div>
 
-              <div className="flex items-center gap-3 w-full md:w-auto">
+              <div className="flex items-center gap-3 w-full md:w-auto flex-wrap sm:flex-nowrap">
+                <button
+                  onClick={handleDownloadAllSubclassesFullNames}
+                  disabled={students.length === 0}
+                  className="px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-extrabold transition-all cursor-pointer flex items-center gap-1.5 shadow-2xs shrink-0 disabled:opacity-40"
+                  title="Download CSV file of full names for all subclasses"
+                >
+                  <Download className="w-4 h-4 text-emerald-400" />
+                  <span>Download All Subclasses (CSV)</span>
+                </button>
+
                 <div className="flex items-center gap-2 text-xs font-extrabold text-slate-500 shrink-0">
                   <span>Priority:</span>
                   <select
@@ -1682,6 +1789,16 @@ export default function AdminControl({ students }: AdminControlProps) {
                         </button>
                         
                         <button
+                          onClick={() => handleDownloadSubclassFullNames(subgroupName, classStudents)}
+                          disabled={count === 0}
+                          className="py-2.5 px-3 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-800 border border-blue-200 font-extrabold text-xs transition-all flex items-center justify-center gap-1 cursor-pointer disabled:opacity-40"
+                          title="Download student full names CSV for this arm"
+                        >
+                          <Download className="w-4 h-4 text-blue-600" />
+                          <span className="hidden sm:inline">Download</span>
+                        </button>
+
+                        <button
                           onClick={() => {
                             setNewStudent(prev => ({ ...prev, intendedClass: subgroupName }));
                             setActiveTab('new-verification');
@@ -1780,6 +1897,17 @@ export default function AdminControl({ students }: AdminControlProps) {
                             >
                               <Plus className="w-4 h-4" />
                               <span>Add Student to {selectedSubgroupRoster.split(' ')[2] || 'Class'}</span>
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => handleDownloadSubclassFullNames(selectedSubgroupRoster, rosterStudents)}
+                              disabled={enrolledCount === 0}
+                              className="px-4 py-2.5 bg-blue-700 hover:bg-blue-600 text-white rounded-xl font-bold text-xs flex items-center gap-2 border border-blue-600 shadow-sm transition-all cursor-pointer disabled:opacity-40"
+                              title="Download full list of student names as CSV"
+                            >
+                              <Download className="w-4 h-4 text-blue-200" />
+                              <span>Download Full Names ({enrolledCount})</span>
                             </button>
 
                             <button
@@ -2041,7 +2169,18 @@ export default function AdminControl({ students }: AdminControlProps) {
                             Viewing Subclass Arm Roster: <strong className="text-slate-900 font-black">{selectedSubgroupRoster}</strong> ({rosterStudents.length}/35 Enrolled)
                           </span>
 
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+                            <button
+                              type="button"
+                              onClick={() => handleDownloadSubclassFullNames(selectedSubgroupRoster, rosterStudents)}
+                              disabled={enrolledCount === 0}
+                              className="px-4 py-2 bg-blue-700 hover:bg-blue-800 text-white rounded-xl font-bold text-xs flex items-center gap-1.5 cursor-pointer shadow-2xs disabled:opacity-40"
+                              title="Download full names CSV for this subclass"
+                            >
+                              <Download className="w-3.5 h-3.5" />
+                              <span>Download Full Names (CSV)</span>
+                            </button>
+
                             <button
                               type="button"
                               onClick={() => {
