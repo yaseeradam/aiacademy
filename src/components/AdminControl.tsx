@@ -1928,14 +1928,16 @@ export default function AdminControl({ students }: AdminControlProps) {
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Intended Admission Class</label>
-                  <input
-                    type="text"
+                  <select
                     value={newStudent.intendedClass}
                     onChange={(e) => setNewStudent({...newStudent, intendedClass: e.target.value})}
-                    placeholder="e.g., Primary 1"
-                    className="w-full soft-input"
+                    className="w-full soft-input cursor-pointer"
                     required
-                  />
+                  >
+                    <option value="Basic 1">Basic 1</option>
+                    <option value="Basic 2">Basic 2</option>
+                    <option value="Nursery 1">Nursery 1</option>
+                  </select>
                 </div>
               </div>
 
@@ -2499,13 +2501,16 @@ export default function AdminControl({ students }: AdminControlProps) {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Admission Class</label>
-                  <input
-                    type="text"
+                  <select
                     value={editingStudent.intendedClass}
                     onChange={(e) => setEditingStudent({...editingStudent, intendedClass: e.target.value})}
-                    className="w-full soft-input text-sm"
+                    className="w-full soft-input text-sm cursor-pointer"
                     required
-                  />
+                  >
+                    <option value="Basic 1">Basic 1</option>
+                    <option value="Basic 2">Basic 2</option>
+                    <option value="Nursery 1">Nursery 1</option>
+                  </select>
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Date of Birth</label>
