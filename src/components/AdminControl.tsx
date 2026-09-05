@@ -71,8 +71,44 @@ export default function AdminControl({ students }: AdminControlProps) {
     );
   };
 
+  type AdminTabType = 'overview' | 'classes' | 'directory' | 'pending' | 'corrections' | 'settings' | 'new-verification' | 'audit-log' | 'admission-letters';
+
+  // Helper functions to persist view state across router.refresh() re-renders
+  const getInitialTab = (): AdminTabType => {
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      const tabParam = urlParams.get('tab');
+      if (tabParam) return tabParam as AdminTabType;
+      const savedTab = sessionStorage.getItem('admin_active_tab');
+      if (savedTab) return savedTab as AdminTabType;
+    }
+    return 'overview';
+  };
+
+  const getInitialSubgroup = (): string | null => {
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      const subgroupParam = urlParams.get('subgroup');
+      if (subgroupParam) return subgroupParam;
+      const savedSubgroup = sessionStorage.getItem('admin_subgroup_roster');
+      if (savedSubgroup) return savedSubgroup;
+    }
+    return null;
+  };
+
+  const getInitialClassFilter = (): string => {
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      const filterParam = urlParams.get('classFilter');
+      if (filterParam) return filterParam;
+      const savedFilter = sessionStorage.getItem('admin_class_filter');
+      if (savedFilter) return savedFilter;
+    }
+    return 'all';
+  };
+
   // Sidebar tab state
-  const [activeTab, setActiveTab] = useState<'overview' | 'classes' | 'directory' | 'pending' | 'corrections' | 'settings' | 'new-verification' | 'audit-log' | 'admission-letters'>('overview');
+  const [activeTab, setActiveTabState] = useState<AdminTabType>(getInitialTab);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   // Modal State for viewing Admission Letter
@@ -93,11 +129,46 @@ export default function AdminControl({ students }: AdminControlProps) {
   } | null>(null);
 
   // Classes Page filter state
-  const [classTabFilter, setClassTabFilter] = useState<string>('all');
+  const [classTabFilter, setClassTabFilterState] = useState<string>(getInitialClassFilter);
   const [classPageSearch, setClassPageSearch] = useState<string>('');
-  const [selectedSubgroupRoster, setSelectedSubgroupRoster] = useState<string | null>(null);
+  const [selectedSubgroupRoster, setSelectedSubgroupRosterState] = useState<string | null>(getInitialSubgroup);
   const [rosterSearch, setRosterSearch] = useState<string>('');
   const [subgroupSortOrder, setSubgroupSortOrder] = useState<'most_populated' | 'alphabetical' | 'capacity'>('most_populated');
+
+  const setActiveTab = (tab: AdminTabType) => {
+    setActiveTabState(tab);
+    if (typeof window !== 'undefined') {
+      sessionStorage.setItem('admin_active_tab', tab);
+      const url = new URL(window.location.href);
+      url.searchParams.set('tab', tab);
+      window.history.replaceState({}, '', url.toString());
+    }
+  };
+
+  const setSelectedSubgroupRoster = (subgroup: string | null) => {
+    setSelectedSubgroupRosterState(subgroup);
+    if (typeof window !== 'undefined') {
+      const url = new URL(window.location.href);
+      if (subgroup) {
+        sessionStorage.setItem('admin_subgroup_roster', subgroup);
+        url.searchParams.set('subgroup', subgroup);
+      } else {
+        sessionStorage.removeItem('admin_subgroup_roster');
+        url.searchParams.delete('subgroup');
+      }
+      window.history.replaceState({}, '', url.toString());
+    }
+  };
+
+  const setClassTabFilter = (filter: string) => {
+    setClassTabFilterState(filter);
+    if (typeof window !== 'undefined') {
+      sessionStorage.setItem('admin_class_filter', filter);
+      const url = new URL(window.location.href);
+      url.searchParams.set('classFilter', filter);
+      window.history.replaceState({}, '', url.toString());
+    }
+  };
 
   // Default Class Subgroups / Streams (30 students per class capacity)
   const defaultSubgroups = useMemo(() => [
