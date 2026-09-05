@@ -12,15 +12,13 @@ interface AdmissionLetterModalProps {
 }
 
 export function getStudentAdmissionNumber(student: Student): string {
-  if (student.admissionNumber && student.admissionNumber.startsWith('AIAA/')) {
+  if (student.admissionNumber && (student.admissionNumber.startsWith('AIAA-B') || student.admissionNumber.startsWith('AIAA/'))) {
     return student.admissionNumber;
   }
-  const isNursery = (student.intendedClass || '').toLowerCase().includes('nursery');
-  const sectionPrefix = isNursery ? 'N' : 'B';
-  const currentYear = new Date().getFullYear();
+  const currentYearShort = new Date().getFullYear().toString().slice(-2);
   const digits = (student.formNumber || student.id || '').replace(/\D/g, '');
   const num = digits ? String(parseInt(digits.slice(-3), 10) || 1).padStart(3, '0') : '001';
-  return `AIAA/${sectionPrefix}/${currentYear}/${num}`;
+  return `AIAA-B${currentYearShort}-${num}`;
 }
 
 export function printBulkAdmissionLetters(students: Student[], logoSrc: string = '/logo.jpg') {

@@ -145,19 +145,16 @@ export async function adminTogglePaymentStatusAction(studentId: string, paymentS
   const todayStr = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
   const currentYear = new Date().getFullYear();
 
-  // Generate admission number if approving and not already assigned
+  // Generate admission number if approving and not already assigned (Refined Variant 3C: AIAA-B26-001)
   let admissionNumber = student.admissionNumber;
   if (paymentStatus === 'paid' && !admissionNumber) {
     const allStudents = await getAllStudents();
-    // Determine section prefix based on class
-    const isNursery = (student.intendedClass || '').toLowerCase().includes('nursery');
-    const sectionPrefix = isNursery ? 'N' : 'B';
-    // Find max numeric suffix among existing admission numbers in the same section
-    const sectionPattern = `AIAA/${sectionPrefix}/`;
+    const currentYearShort = new Date().getFullYear().toString().slice(-2); // e.g. '26'
+    const pattern = `AIAA-B${currentYearShort}-`;
     let maxNum = 0;
     allStudents.forEach(s => {
-      if (s.admissionNumber && s.admissionNumber.startsWith(sectionPattern) && s.id !== studentId) {
-        const parts = s.admissionNumber.split('/');
+      if (s.admissionNumber && s.id !== studentId) {
+        const parts = s.admissionNumber.split('-');
         const lastPart = parts[parts.length - 1];
         const num = parseInt(lastPart, 10);
         if (!isNaN(num) && num > maxNum) {
@@ -166,7 +163,7 @@ export async function adminTogglePaymentStatusAction(studentId: string, paymentS
       }
     });
     const nextNum = String(maxNum + 1).padStart(3, '0');
-    admissionNumber = `AIAA/${sectionPrefix}/${currentYear}/${nextNum}`;
+    admissionNumber = `AIAA-B${currentYearShort}-${nextNum}`;
   }
 
   const updatedStudent: Student = {
