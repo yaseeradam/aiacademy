@@ -96,15 +96,32 @@ export default function AdminControl({ students }: AdminControlProps) {
   const [classTabFilter, setClassTabFilter] = useState<string>('all');
   const [classPageSearch, setClassPageSearch] = useState<string>('');
 
+  // Default Class Subgroups / Streams (30 students per class capacity)
+  const defaultSubgroups = useMemo(() => [
+    'Nursery 1 Gold',
+    'Nursery 1 Silver',
+    'Nursery 1 Green',
+    'Basic 1 Gold',
+    'Basic 1 Silver',
+    'Basic 1 Green',
+    'Basic 2 Gold',
+    'Basic 2 Silver',
+    'Basic 2 Green',
+  ], []);
+
   // Class list and student mapping
   const classList = useMemo(() => {
-    return Array.from(new Set(students.map(s => s.intendedClass || 'Unassigned'))).sort();
-  }, [students]);
+    const set = new Set([
+      ...defaultSubgroups,
+      ...students.map(s => s.intendedClass).filter(Boolean)
+    ]);
+    return Array.from(set);
+  }, [students, defaultSubgroups]);
 
   const classStudentMap = useMemo(() => {
     const map: Record<string, Student[]> = {};
     students.forEach(student => {
-      const cls = student.intendedClass || 'Unassigned';
+      const cls = student.intendedClass || 'Nursery 1 Gold';
       if (!map[cls]) map[cls] = [];
       map[cls].push(student);
     });
@@ -552,7 +569,7 @@ export default function AdminControl({ students }: AdminControlProps) {
           lastName: '',
           dateOfBirth: '',
           gender: 'Male',
-          intendedClass: 'Nursery 1',
+          intendedClass: 'Nursery 1 Gold',
           fatherName: '',
           motherName: '',
           residentialAddress: '',
@@ -1286,10 +1303,10 @@ export default function AdminControl({ students }: AdminControlProps) {
               <div>
                 <h1 className="text-3xl font-black text-slate-800 tracking-tight leading-none flex items-center gap-3">
                   <GraduationCap className="w-8 h-8 text-[#0f7343]" />
-                  <span>Classes & Student Roster</span>
+                  <span>Classes & Subgroups Roster</span>
                 </h1>
                 <p className="text-slate-500 text-sm font-semibold mt-2.5">
-                  Browse students organized by their assigned class (Basic 1, Basic 2, Nursery 1).
+                  Class arms with 30-student capacity tracking (Gold, Silver, Green).
                 </p>
               </div>
 
@@ -1302,18 +1319,20 @@ export default function AdminControl({ students }: AdminControlProps) {
               </button>
             </div>
 
-            {/* Class Summary Cards */}
+            {/* Subgroup Overview Stat Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-              {['Basic 1', 'Basic 2', 'Nursery 1'].map((clsName) => {
-                const count = students.filter(s => (s.intendedClass || 'Nursery 1') === clsName).length;
-                const verifiedInCls = students.filter(s => (s.intendedClass || 'Nursery 1') === clsName && s.verificationStatus === 'verified').length;
-                const paidInCls = students.filter(s => (s.intendedClass || 'Nursery 1') === clsName && s.paymentStatus === 'paid').length;
+              {['Nursery 1', 'Basic 1', 'Basic 2'].map((mainClass) => {
+                const classStudents = students.filter(s => (s.intendedClass || '').startsWith(mainClass));
+                const goldCount = students.filter(s => (s.intendedClass || '') === `${mainClass} Gold`).length;
+                const silverCount = students.filter(s => (s.intendedClass || '') === `${mainClass} Silver`).length;
+                const greenCount = students.filter(s => (s.intendedClass || '') === `${mainClass} Green`).length;
+                
                 return (
                   <div 
-                    key={clsName} 
-                    onClick={() => setClassTabFilter(clsName)}
+                    key={mainClass} 
+                    onClick={() => setClassTabFilter(mainClass)}
                     className={`soft-card p-6 bg-white rounded-3xl border transition-all cursor-pointer ${
-                      classTabFilter === clsName 
+                      classTabFilter === mainClass 
                         ? 'border-[#0f7343] ring-2 ring-[#0f7343]/20 shadow-md' 
                         : 'border-slate-200 hover:border-slate-300'
                     }`}
@@ -1323,15 +1342,24 @@ export default function AdminControl({ students }: AdminControlProps) {
                         <GraduationCap className="w-5 h-5" />
                       </div>
                       <span className="text-[10px] font-black bg-emerald-100 text-emerald-800 px-2.5 py-0.5 rounded-full">
-                        {count} Enrolled
+                        {classStudents.length} Total Enrolled
                       </span>
                     </div>
                     <div className="mt-4">
-                      <h3 className="text-xl font-black text-slate-800">{clsName}</h3>
-                      <div className="flex items-center gap-3 mt-2 text-xs font-semibold text-slate-500">
-                        <span>Verified: <strong className="text-emerald-700 font-bold">{verifiedInCls}</strong></span>
-                        <span>•</span>
-                        <span>Fees Paid: <strong className="text-emerald-700 font-bold">{paidInCls}</strong></span>
+                      <h3 className="text-xl font-black text-slate-800">{mainClass}</h3>
+                      <div className="mt-3 space-y-1.5 text-xs font-semibold text-slate-600">
+                        <div className="flex justify-between items-center">
+                          <span>Gold Arm:</span>
+                          <span className={`font-bold ${goldCount >= 30 ? 'text-rose-600 font-black' : 'text-slate-800'}`}>{goldCount}/30 {goldCount >= 30 && '(FULL)'}</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span>Silver Arm:</span>
+                          <span className={`font-bold ${silverCount >= 30 ? 'text-rose-600 font-black' : 'text-slate-800'}`}>{silverCount}/30 {silverCount >= 30 && '(FULL)'}</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span>Green Arm:</span>
+                          <span className={`font-bold ${greenCount >= 30 ? 'text-rose-600 font-black' : 'text-slate-800'}`}>{greenCount}/30 {greenCount >= 30 && '(FULL)'}</span>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -1350,19 +1378,19 @@ export default function AdminControl({ students }: AdminControlProps) {
                       : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                   }`}
                 >
-                  All Classes ({students.length})
+                  All Subgroups ({students.length})
                 </button>
-                {['Basic 1', 'Basic 2', 'Nursery 1'].map(cls => (
+                {['Nursery 1', 'Basic 1', 'Basic 2'].map(mainCls => (
                   <button
-                    key={cls}
-                    onClick={() => setClassTabFilter(cls)}
+                    key={mainCls}
+                    onClick={() => setClassTabFilter(mainCls)}
                     className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                      classTabFilter === cls
-                        ? 'bg-[#0f7343] text-[#ffffff] shadow-xs'
+                      classTabFilter === mainCls
+                        ? 'bg-[#0f7343] text-white shadow-xs'
                         : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                     }`}
                   >
-                    {cls} ({students.filter(s => (s.intendedClass || 'Nursery 1') === cls).length})
+                    {mainCls} ({students.filter(s => (s.intendedClass || '').startsWith(mainCls)).length})
                   </button>
                 ))}
               </div>
@@ -1379,13 +1407,16 @@ export default function AdminControl({ students }: AdminControlProps) {
               </div>
             </div>
 
-            {/* Class Roster Groups */}
+            {/* Subgroup Roster Sections */}
             <div className="space-y-8">
-              {['Basic 1', 'Basic 2', 'Nursery 1']
-                .filter(cls => classTabFilter === 'all' || classTabFilter === cls)
-                .map(clsName => {
+              {classList
+                .filter(subgroupName => {
+                  if (classTabFilter === 'all') return true;
+                  return subgroupName.startsWith(classTabFilter);
+                })
+                .map(subgroupName => {
                   const classStudents = students.filter(s => {
-                    const matchesClass = (s.intendedClass || 'Nursery 1') === clsName;
+                    const matchesClass = (s.intendedClass || 'Nursery 1 Gold') === subgroupName;
                     if (!matchesClass) return false;
                     if (!classPageSearch.trim()) return true;
                     const q = classPageSearch.toLowerCase();
@@ -1395,19 +1426,50 @@ export default function AdminControl({ students }: AdminControlProps) {
                            (s.fatherName && s.fatherName.toLowerCase().includes(q));
                   });
 
+                  const count = classStudents.length;
+                  const isFull = count >= 30;
+                  const pct = Math.min(100, Math.round((count / 30) * 100));
+
                   return (
-                    <div key={clsName} className="soft-card bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-xs">
-                      {/* Class Header Banner */}
+                    <div key={subgroupName} className="soft-card bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-xs">
+                      {/* Subgroup Banner Header */}
                       <div className="p-6 border-b border-slate-100 bg-slate-50/80 flex items-center justify-between flex-wrap gap-4">
                         <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-2xl bg-[#0f7343] text-white flex items-center justify-center font-black shadow-sm">
+                          <div className={`w-10 h-10 rounded-2xl text-white flex items-center justify-center font-black shadow-sm ${
+                            subgroupName.includes('Gold') 
+                              ? 'bg-amber-500' 
+                              : subgroupName.includes('Silver') 
+                              ? 'bg-slate-400' 
+                              : subgroupName.includes('Green') 
+                              ? 'bg-emerald-600' 
+                              : 'bg-[#0f7343]'
+                          }`}>
                             <GraduationCap className="w-5 h-5" />
                           </div>
                           <div>
-                            <h2 className="text-xl font-black text-slate-800 tracking-tight">{clsName}</h2>
-                            <p className="text-xs text-slate-500 font-semibold mt-0.5">
-                              {classStudents.length} {classStudents.length === 1 ? 'Student' : 'Students'} Enrolled
-                            </p>
+                            <div className="flex items-center gap-2">
+                              <h2 className="text-xl font-black text-slate-800 tracking-tight">{subgroupName}</h2>
+                              {isFull ? (
+                                <span className="bg-rose-100 text-rose-800 text-[10px] font-black px-2 py-0.5 rounded-full border border-rose-200">
+                                  🔴 FULL (30/30)
+                                </span>
+                              ) : (
+                                <span className="bg-emerald-100 text-emerald-800 text-[10px] font-black px-2 py-0.5 rounded-full border border-emerald-200">
+                                  🟢 AVAILABLE ({30 - count} spots left)
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-3 mt-1.5">
+                              <div className="w-32 bg-slate-200 h-2 rounded-full overflow-hidden">
+                                <div 
+                                  style={{ width: `${pct}%` }} 
+                                  className={`h-full transition-all ${isFull ? 'bg-rose-500' : 'bg-[#0f7343]'}`} 
+                                />
+                              </div>
+                              <span className="text-xs font-bold text-slate-500">
+                                {count} / 30 Students ({pct}%)
+                              </span>
+                            </div>
                           </div>
                         </div>
 
@@ -1420,6 +1482,16 @@ export default function AdminControl({ students }: AdminControlProps) {
                           </span>
                         </div>
                       </div>
+
+                      {/* Capacity Exceeded Warning Banner */}
+                      {isFull && (
+                        <div className="p-3 bg-amber-50 border-b border-amber-200/80 text-amber-900 text-xs font-semibold flex items-center justify-between px-6">
+                          <div className="flex items-center gap-2">
+                            <AlertOctagon className="w-4 h-4 text-amber-600 shrink-0" />
+                            <span>This subgroup has reached maximum capacity (30/30 students). Please assign new applicants to another subgroup arm.</span>
+                          </div>
+                        </div>
+                      )}
 
                       {/* Roster Student Cards */}
                       {classStudents.length > 0 ? (
@@ -1487,7 +1559,7 @@ export default function AdminControl({ students }: AdminControlProps) {
                         </div>
                       ) : (
                         <div className="p-8 text-center text-xs text-slate-400 font-semibold italic">
-                          No students registered in {clsName} matching your search.
+                          No students currently registered in {subgroupName}.
                         </div>
                       )}
                     </div>
@@ -2034,9 +2106,9 @@ export default function AdminControl({ students }: AdminControlProps) {
                     className="w-full soft-input cursor-pointer"
                     required
                   >
-                    <option value="Basic 1">Basic 1</option>
-                    <option value="Basic 2">Basic 2</option>
-                    <option value="Nursery 1">Nursery 1</option>
+                    {classList.map(cls => (
+                      <option key={cls} value={cls}>{cls}</option>
+                    ))}
                   </select>
                 </div>
               </div>
@@ -2607,9 +2679,9 @@ export default function AdminControl({ students }: AdminControlProps) {
                     className="w-full soft-input text-sm cursor-pointer"
                     required
                   >
-                    <option value="Basic 1">Basic 1</option>
-                    <option value="Basic 2">Basic 2</option>
-                    <option value="Nursery 1">Nursery 1</option>
+                    {classList.map(cls => (
+                      <option key={cls} value={cls}>{cls}</option>
+                    ))}
                   </select>
                 </div>
                 <div>
