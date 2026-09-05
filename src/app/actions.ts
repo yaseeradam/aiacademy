@@ -292,6 +292,32 @@ export async function adminDeleteStudentAction(studentId: string): Promise<{ suc
   return { success: true };
 }
 
+export async function adminDeleteMultipleStudentsAction(studentIds: string[]): Promise<{ success: boolean; count: number; error?: string }> {
+  try {
+    let deletedCount = 0;
+    for (const id of studentIds) {
+      const student = await getStudentById(id);
+      const ok = await deleteStudent(id);
+      if (ok) {
+        deletedCount++;
+        const studentName = student ? `${student.firstName} ${student.lastName}` : id;
+        await addAuditLog({
+          action: 'DELETE',
+          actor: 'School Administrator',
+          details: `Admin bulk-removed student record from subclass`,
+          studentId: id,
+          studentName,
+        });
+      }
+    }
+    return { success: true, count: deletedCount };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : 'Failed to delete students.';
+    return { success: false, count: 0, error: msg };
+  }
+}
+
+
 export interface DuplicateGroup {
   reason: string;
   key: string;

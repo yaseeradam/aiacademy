@@ -13,7 +13,7 @@ import {
   Loader2, Scan, History, MessageSquare, Camera, FileText, CheckCircle2, CreditCard, Printer,
   GraduationCap, Folder, FolderOpen, Edit3
 } from 'lucide-react';
-import { logoutAction, adminUpdateStudentAction, adminDeleteStudentAction, adminCreateStudentAction, adminVerifyAction, adminTogglePaymentStatusAction, getAuditLogsAction, scanAdmissionFormOCRAction, getSchoolSettingsAction, updateSchoolSettingsAction, findDuplicateStudentsAction, DuplicateGroup } from '@/app/actions';
+import { logoutAction, adminUpdateStudentAction, adminDeleteStudentAction, adminDeleteMultipleStudentsAction, adminCreateStudentAction, adminVerifyAction, adminTogglePaymentStatusAction, getAuditLogsAction, scanAdmissionFormOCRAction, getSchoolSettingsAction, updateSchoolSettingsAction, findDuplicateStudentsAction, DuplicateGroup } from '@/app/actions';
 import AdmissionLetterModal, { printBulkAdmissionLetters, getStudentClassArm, getStudentAdmissionNumber } from './AdmissionLetterModal';
 
 interface AdminControlProps {
@@ -318,6 +318,59 @@ export default function AdminControl({ students }: AdminControlProps) {
       }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'An error occurred during removal.';
+      setFeedbackModal({
+        isOpen: true,
+        type: 'error',
+        title: 'Removal Error',
+        message: msg,
+      });
+    }
+  };
+
+  const handleRemoveAllFromSubclass = async (subgroupName: string, studentsToRemove: Student[]) => {
+    if (!studentsToRemove || studentsToRemove.length === 0) {
+      alert(`There are no students to remove in ${subgroupName}.`);
+      return;
+    }
+
+    const confirm1 = window.confirm(
+      `⚠️ ARE YOU SURE?\n\nYou are about to remove ALL ${studentsToRemove.length} students from "${subgroupName}".\n\nThis will permanently delete/unassign their student records from this subclass arm. Continue?`
+    );
+    if (!confirm1) return;
+
+    const confirm2 = window.confirm(
+      `🚨 FINAL CONFIRMATION:\n\nClick OK to confirm removing ALL ${studentsToRemove.length} students from ${subgroupName}.`
+    );
+    if (!confirm2) return;
+
+    setFeedbackModal({
+      isOpen: true,
+      type: 'loading',
+      title: `Removing ${studentsToRemove.length} Students...`,
+      message: `Clearing all student records assigned to ${subgroupName}...`,
+    });
+
+    try {
+      const ids = studentsToRemove.map(s => s.id);
+      const res = await adminDeleteMultipleStudentsAction(ids);
+      if (res.success) {
+        router.refresh();
+        setFeedbackModal({
+          isOpen: true,
+          type: 'success',
+          title: 'Subclass Cleared!',
+          message: `Successfully removed all ${res.count} students from ${subgroupName}. Capacity is now 0/35.`,
+        });
+      } else {
+        setFeedbackModal({
+          isOpen: true,
+          type: 'error',
+          title: 'Bulk Removal Failed',
+          message: res.error || 'Failed to remove students.',
+        });
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'An error occurred during bulk removal.';
       setFeedbackModal({
         isOpen: true,
         type: 'error',
@@ -1862,6 +1915,16 @@ export default function AdminControl({ students }: AdminControlProps) {
                         </button>
 
                         <button
+                          onClick={() => handleRemoveAllFromSubclass(subgroupName, classStudents)}
+                          disabled={count === 0}
+                          className="py-2.5 px-3 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-extrabold text-xs transition-all flex items-center justify-center gap-1 cursor-pointer disabled:opacity-40"
+                          title={`Remove all ${count} students from ${subgroupName}`}
+                        >
+                          <Trash2 className="w-4 h-4 text-rose-600" />
+                          <span className="hidden sm:inline">Clear</span>
+                        </button>
+
+                        <button
                           onClick={() => {
                             setNewStudent(prev => ({ ...prev, intendedClass: subgroupName }));
                             setActiveTab('new-verification');
@@ -1983,6 +2046,17 @@ export default function AdminControl({ students }: AdminControlProps) {
                             >
                               <Printer className="w-4 h-4 text-emerald-400" />
                               <span>Bulk Print Letters ({enrolledCount})</span>
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveAllFromSubclass(selectedSubgroupRoster, rosterStudents)}
+                              disabled={enrolledCount === 0}
+                              className="px-4 py-2.5 bg-rose-700 hover:bg-rose-600 text-white rounded-xl font-bold text-xs flex items-center gap-2 border border-rose-600 shadow-sm transition-all cursor-pointer disabled:opacity-40"
+                              title={`Remove all ${enrolledCount} students from ${selectedSubgroupRoster}`}
+                            >
+                              <Trash2 className="w-4 h-4 text-rose-200" />
+                              <span>Remove All ({enrolledCount})</span>
                             </button>
 
                             <button
@@ -2268,6 +2342,17 @@ export default function AdminControl({ students }: AdminControlProps) {
                             >
                               <Printer className="w-3.5 h-3.5" />
                               <span>Bulk Print Admission Letters</span>
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveAllFromSubclass(selectedSubgroupRoster, rosterStudents)}
+                              disabled={enrolledCount === 0}
+                              className="px-4 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-xl font-bold text-xs flex items-center gap-1.5 cursor-pointer shadow-2xs disabled:opacity-40"
+                              title="Remove all students from this subclass arm"
+                            >
+                              <Trash2 className="w-3.5 h-3.5 text-rose-600" />
+                              <span>Remove All</span>
                             </button>
 
                             <button
