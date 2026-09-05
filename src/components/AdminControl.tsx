@@ -1217,9 +1217,9 @@ export default function AdminControl({ students }: AdminControlProps) {
           {/* Navigation Links */}
           <nav className="space-y-1">
             <button 
-              onClick={() => setActiveTab('overview')}
+              onClick={() => { setSelectedSubgroupRoster(null); setActiveTab('overview'); }}
               className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl font-bold text-sm transition-all text-left cursor-pointer ${
-                activeTab === 'overview' 
+                activeTab === 'overview' && !selectedSubgroupRoster 
                   ? 'bg-slate-900 text-white shadow-sm shadow-slate-900/10' 
                   : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'
               }`}
@@ -1228,25 +1228,43 @@ export default function AdminControl({ students }: AdminControlProps) {
               <span>Overview</span>
             </button>
             <button 
-              onClick={() => setActiveTab('classes')}
+              onClick={() => { setSelectedSubgroupRoster(null); setActiveTab('classes'); }}
               className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl font-bold text-sm transition-all text-left cursor-pointer ${
-                activeTab === 'classes' 
+                activeTab === 'classes' && !selectedSubgroupRoster 
                   ? 'bg-slate-900 text-white shadow-sm shadow-slate-900/10' 
                   : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'
               }`}
             >
               <div className="flex items-center gap-3">
                 <GraduationCap className="w-4 h-4 text-emerald-500" />
-                <span>Classes & Students</span>
+                <span>Classes & Subclasses</span>
               </div>
               <span className="bg-[#0f7343] text-white text-[10px] font-black px-1.5 py-0.5 rounded-full">
                 {classList.length}
               </span>
             </button>
+
+            {/* If a subclass page is active, show its active badge link */}
+            {selectedSubgroupRoster && (
+              <div className="pl-4 py-1">
+                <div className="flex items-center gap-2 px-3 py-2 bg-slate-900 text-white rounded-xl text-xs font-black shadow-sm">
+                  <GraduationCap className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                  <span className="truncate">{selectedSubgroupRoster} Page</span>
+                  <button 
+                    onClick={() => setSelectedSubgroupRoster(null)} 
+                    className="ml-auto p-0.5 hover:bg-slate-800 rounded text-slate-400 hover:text-white"
+                    title="Exit subclass page"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+            )}
+
             <button 
-              onClick={() => setActiveTab('directory')}
+              onClick={() => { setSelectedSubgroupRoster(null); setActiveTab('directory'); }}
               className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl font-bold text-sm transition-all text-left cursor-pointer ${
-                activeTab === 'directory' 
+                activeTab === 'directory' && !selectedSubgroupRoster
                   ? 'bg-slate-900 text-white shadow-sm shadow-slate-900/10' 
                   : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'
               }`}
@@ -1255,9 +1273,9 @@ export default function AdminControl({ students }: AdminControlProps) {
               <span>Student Directory</span>
             </button>
             <button 
-              onClick={() => setActiveTab('admission-letters')}
+              onClick={() => { setSelectedSubgroupRoster(null); setActiveTab('admission-letters'); }}
               className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl font-bold text-sm transition-all text-left cursor-pointer ${
-                activeTab === 'admission-letters' 
+                activeTab === 'admission-letters' && !selectedSubgroupRoster 
                   ? 'bg-slate-900 text-white shadow-sm shadow-slate-900/10' 
                   : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'
               }`}
@@ -1271,9 +1289,9 @@ export default function AdminControl({ students }: AdminControlProps) {
               )}
             </button>
             <button 
-              onClick={() => setActiveTab('pending')}
+              onClick={() => { setSelectedSubgroupRoster(null); setActiveTab('pending'); }}
               className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl font-bold text-sm transition-all text-left cursor-pointer ${
-                activeTab === 'pending' 
+                activeTab === 'pending' && !selectedSubgroupRoster 
                   ? 'bg-slate-900 text-white shadow-sm shadow-slate-900/10' 
                   : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'
               }`}
@@ -1287,9 +1305,9 @@ export default function AdminControl({ students }: AdminControlProps) {
               )}
             </button>
             <button 
-              onClick={() => setActiveTab('corrections')}
+              onClick={() => { setSelectedSubgroupRoster(null); setActiveTab('corrections'); }}
               className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl font-bold text-sm transition-all text-left cursor-pointer ${
-                activeTab === 'corrections' 
+                activeTab === 'corrections' && !selectedSubgroupRoster 
                   ? 'bg-slate-900 text-white shadow-sm shadow-slate-900/10' 
                   : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'
               }`}
@@ -1303,9 +1321,9 @@ export default function AdminControl({ students }: AdminControlProps) {
               )}
             </button>
             <button 
-              onClick={() => setActiveTab('settings')}
+              onClick={() => { setSelectedSubgroupRoster(null); setActiveTab('settings'); }}
               className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl font-bold text-sm transition-all text-left cursor-pointer ${
-                activeTab === 'settings' 
+                activeTab === 'settings' && !selectedSubgroupRoster 
                   ? 'bg-slate-900 text-white shadow-sm shadow-slate-900/10' 
                   : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'
               }`}
@@ -1314,9 +1332,9 @@ export default function AdminControl({ students }: AdminControlProps) {
               <span>School Settings</span>
             </button>
             <button 
-              onClick={() => setActiveTab('audit-log')}
+              onClick={() => { setSelectedSubgroupRoster(null); setActiveTab('audit-log'); }}
               className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl font-bold text-sm transition-all text-left cursor-pointer ${
-                activeTab === 'audit-log' 
+                activeTab === 'audit-log' && !selectedSubgroupRoster 
                   ? 'bg-slate-900 text-white shadow-sm shadow-slate-900/10' 
                   : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'
               }`}
@@ -1946,430 +1964,410 @@ export default function AdminControl({ students }: AdminControlProps) {
                 })}
             </div>
 
-            {/* Redesigned Subgroup Roster Modal */}
+            {/* Full-Page Subgroup Roster Section (replaces modal popup) */}
             {selectedSubgroupRoster && (
-              <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/80 backdrop-blur-md p-2 sm:p-4 overflow-y-auto animate-fade-in">
-                <div className="bg-white w-full max-w-6xl rounded-3xl shadow-2xl overflow-hidden border border-slate-200 animate-slide-up my-2 sm:my-4 flex flex-col h-[90vh]">
-                  
-                  {/* Modal Header */}
-                  {(() => {
-                    const isGold = selectedSubgroupRoster.includes('Gold');
-                    const isSilver = selectedSubgroupRoster.includes('Silver');
-                    const isGreen = selectedSubgroupRoster.includes('Green');
-                    const rosterStudents = students.filter(s => getStudentClassArm(s.intendedClass, s.id, students) === selectedSubgroupRoster);
-                    const enrolledCount = rosterStudents.length;
-                    const isFull = enrolledCount >= 35;
-                    const fillPct = Math.min(100, Math.round((enrolledCount / 35) * 100));
+              <div className="space-y-6 animate-slide-down mt-6">
+                {/* Page Navigation & Breadcrumbs Header */}
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-200/80 pb-4">
+                  <button
+                    onClick={() => {
+                      setSelectedSubgroupRoster(null);
+                      setRosterSearch('');
+                    }}
+                    className="px-4 py-2.5 bg-white hover:bg-slate-100 text-slate-800 border border-slate-300 rounded-2xl font-black text-xs flex items-center gap-2 transition-all cursor-pointer shadow-2xs hover:shadow-md"
+                  >
+                    <ChevronRight className="w-4 h-4 rotate-180 text-[#0f7343]" />
+                    <span>Back to All Subclasses</span>
+                  </button>
 
-                    return (
-                      <>
-                        <div className={`p-5 sm:p-6 text-white flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 shrink-0 ${
-                          isGold 
-                            ? 'bg-gradient-to-r from-amber-950 via-slate-900 to-amber-900' 
-                            : isSilver 
-                            ? 'bg-gradient-to-r from-slate-950 via-slate-900 to-slate-800' 
-                            : 'bg-gradient-to-r from-emerald-950 via-slate-900 to-emerald-900'
-                        }`}>
-                          <div className="flex items-center gap-4">
-                            <div className={`w-14 h-14 rounded-2xl flex items-center justify-center font-black shadow-md border text-white shrink-0 ${
-                              isGold 
-                                ? 'bg-amber-500 border-amber-300/40 shadow-amber-500/20' 
-                                : isSilver 
-                                ? 'bg-slate-600 border-slate-400/40 shadow-slate-600/20' 
-                                : 'bg-emerald-600 border-emerald-300/40 shadow-emerald-600/20'
-                            }`}>
-                              <GraduationCap className="w-8 h-8" />
+                  <div className="flex items-center gap-2 text-xs font-bold text-slate-500">
+                    <span className="cursor-pointer hover:text-slate-800" onClick={() => setSelectedSubgroupRoster(null)}>Classes</span>
+                    <span>/</span>
+                    <span className="text-slate-900 font-black">{selectedSubgroupRoster} Roster Page</span>
+                  </div>
+                </div>
+
+                {(() => {
+                  const isGold = selectedSubgroupRoster.includes('Gold');
+                  const isSilver = selectedSubgroupRoster.includes('Silver');
+                  const isGreen = selectedSubgroupRoster.includes('Green');
+                  const rosterStudents = students.filter(s => getStudentClassArm(s.intendedClass, s.id, students) === selectedSubgroupRoster);
+                  const enrolledCount = rosterStudents.length;
+                  const isFull = enrolledCount >= 35;
+                  const fillPct = Math.min(100, Math.round((enrolledCount / 35) * 100));
+
+                  const verifiedCount = rosterStudents.filter(s => s.verificationStatus === 'verified').length;
+                  const paidCount = rosterStudents.filter(s => s.paymentStatus === 'paid').length;
+                  const pendingPaidCount = rosterStudents.filter(s => s.paymentStatus !== 'paid').length;
+
+                  return (
+                    <div className="space-y-6">
+                      {/* Subclass Hero Card */}
+                      <div className={`p-6 sm:p-8 text-white rounded-3xl shadow-xl flex flex-col lg:flex-row lg:items-center justify-between gap-6 border ${
+                        isGold 
+                          ? 'bg-gradient-to-r from-amber-950 via-slate-900 to-amber-900 border-amber-800/40' 
+                          : isSilver 
+                          ? 'bg-gradient-to-r from-slate-950 via-slate-900 to-slate-800 border-slate-700/40' 
+                          : 'bg-gradient-to-r from-emerald-950 via-slate-900 to-emerald-900 border-emerald-800/40'
+                      }`}>
+                        <div className="flex items-center gap-4">
+                          <div className={`w-16 h-16 rounded-2xl flex items-center justify-center font-black shadow-md border text-white shrink-0 ${
+                            isGold 
+                              ? 'bg-amber-500 border-amber-300/40 shadow-amber-500/20' 
+                              : isSilver 
+                              ? 'bg-slate-600 border-slate-400/40 shadow-slate-600/20' 
+                              : 'bg-emerald-600 border-emerald-300/40 shadow-emerald-600/20'
+                          }`}>
+                            <GraduationCap className="w-9 h-9" />
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-3 flex-wrap">
+                              <h2 className="text-3xl font-black text-white tracking-tight">{selectedSubgroupRoster}</h2>
+                              <span className={`text-xs font-black px-3.5 py-1 rounded-full border shadow-2xs ${
+                                isFull 
+                                  ? 'bg-rose-500/20 text-rose-300 border-rose-500/30' 
+                                  : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
+                              }`}>
+                                {isFull ? '🔴 ARM FULL (35/35)' : `🟢 ${35 - enrolledCount} SPOTS OPEN`}
+                              </span>
                             </div>
-                            <div>
-                              <div className="flex items-center gap-2.5 flex-wrap">
-                                <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight">{selectedSubgroupRoster}</h2>
-                                <span className={`text-xs font-black px-3 py-1 rounded-full border shadow-2xs ${
-                                  isFull 
-                                    ? 'bg-rose-500/20 text-rose-300 border-rose-500/30' 
-                                    : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
-                                }`}>
-                                  {isFull ? '🔴 ARM FULL (35/35)' : `🟢 ${35 - enrolledCount} SPOTS OPEN`}
-                                </span>
+                            
+                            <div className="flex items-center gap-3 mt-3">
+                              <p className="text-xs text-slate-300 font-bold">
+                                Enrolled: <strong className="text-white text-base">{enrolledCount}</strong> / 35 Max Capacity
+                              </p>
+                              <div className="w-44 bg-slate-800 h-2.5 rounded-full overflow-hidden border border-slate-700">
+                                <div 
+                                  style={{ width: `${fillPct}%` }} 
+                                  className={`h-full rounded-full transition-all ${
+                                    isFull ? 'bg-rose-500' : isGold ? 'bg-amber-400' : isSilver ? 'bg-slate-400' : 'bg-emerald-400'
+                                  }`} 
+                                />
                               </div>
-                              
-                              {/* Capacity Bar & Counter */}
-                              <div className="flex items-center gap-3 mt-2">
-                                <p className="text-xs text-slate-300 font-bold">
-                                  Enrolled: <strong className="text-white text-sm">{enrolledCount}</strong> / 35 Max Capacity
+                              <span className="text-xs font-black text-slate-300">{fillPct}%</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Top Action Toolbar */}
+                        <div className="flex items-center gap-2.5 flex-wrap">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setNewStudent(prev => ({ ...prev, intendedClass: selectedSubgroupRoster }));
+                              setSelectedSubgroupRoster(null);
+                              setActiveTab('new-verification');
+                            }}
+                            disabled={isFull}
+                            className="px-4 py-2.5 bg-[#0f7343] hover:bg-[#0b5c34] text-white rounded-xl font-bold text-xs flex items-center gap-1.5 shadow-md transition-all cursor-pointer disabled:opacity-40"
+                          >
+                            <Plus className="w-4 h-4" />
+                            <span>Add Student to Arm</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => handleDownloadSubclassFullNames(selectedSubgroupRoster, rosterStudents)}
+                            disabled={enrolledCount === 0}
+                            className="px-4 py-2.5 bg-blue-700 hover:bg-blue-600 text-white rounded-xl font-bold text-xs flex items-center gap-2 border border-blue-600 shadow-sm transition-all cursor-pointer disabled:opacity-40"
+                            title="Download full list of student names as CSV"
+                          >
+                            <Download className="w-4 h-4 text-blue-200" />
+                            <span>Download Full Names ({enrolledCount})</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => printBulkAdmissionLetters(rosterStudents, schoolSettings.logo)}
+                            disabled={enrolledCount === 0}
+                            className="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl font-bold text-xs flex items-center gap-2 border border-slate-700 shadow-sm transition-all cursor-pointer disabled:opacity-40"
+                          >
+                            <Printer className="w-4 h-4 text-emerald-400" />
+                            <span>Bulk Print Letters ({enrolledCount})</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveAllFromSubclass(selectedSubgroupRoster, rosterStudents)}
+                            disabled={enrolledCount === 0}
+                            className="px-4 py-2.5 bg-rose-700 hover:bg-rose-600 text-white rounded-xl font-bold text-xs flex items-center gap-2 border border-rose-600 shadow-sm transition-all cursor-pointer disabled:opacity-40"
+                            title={`Remove all ${enrolledCount} students from ${selectedSubgroupRoster}`}
+                          >
+                            <Trash2 className="w-4 h-4 text-rose-200" />
+                            <span>Remove All ({enrolledCount})</span>
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Quick Metric Stat Badges */}
+                      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div className="soft-card p-4 bg-white rounded-2xl border border-slate-200 flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-xl bg-slate-100 text-slate-800 font-black flex items-center justify-center text-sm">
+                            {enrolledCount}
+                          </div>
+                          <div>
+                            <span className="block text-[10px] font-bold text-slate-400 uppercase">Enrolled Capacity</span>
+                            <span className="text-sm font-black text-slate-800">{enrolledCount} / 35 Capacity</span>
+                          </div>
+                        </div>
+
+                        <div className="soft-card p-4 bg-white rounded-2xl border border-slate-200 flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-800 font-black flex items-center justify-center text-sm border border-emerald-200">
+                            {verifiedCount}
+                          </div>
+                          <div>
+                            <span className="block text-[10px] font-bold text-emerald-600 uppercase">Verified Profiles</span>
+                            <span className="text-sm font-black text-emerald-800">{verifiedCount} Students</span>
+                          </div>
+                        </div>
+
+                        <div className="soft-card p-4 bg-white rounded-2xl border border-slate-200 flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-800 font-black flex items-center justify-center text-sm border border-blue-200">
+                            {paidCount}
+                          </div>
+                          <div>
+                            <span className="block text-[10px] font-bold text-blue-600 uppercase">Fees Paid</span>
+                            <span className="text-sm font-black text-blue-800">{paidCount} Students</span>
+                          </div>
+                        </div>
+
+                        <div className="soft-card p-4 bg-white rounded-2xl border border-slate-200 flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-800 font-black flex items-center justify-center text-sm border border-amber-200">
+                            {pendingPaidCount}
+                          </div>
+                          <div>
+                            <span className="block text-[10px] font-bold text-amber-600 uppercase">Fees Pending</span>
+                            <span className="text-sm font-black text-amber-800">{pendingPaidCount} Students</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Search Bar */}
+                      <div className="soft-card p-4 bg-white rounded-2xl border border-slate-200 flex flex-col md:flex-row items-center justify-between gap-4">
+                        <div className="relative w-full md:w-96">
+                          <Search className="w-4 h-4 absolute left-3.5 top-3.5 text-slate-400" />
+                          <input
+                            type="text"
+                            value={rosterSearch}
+                            onChange={(e) => setRosterSearch(e.target.value)}
+                            placeholder={`Search ${selectedSubgroupRoster} by name, serial no, or parent tel...`}
+                            className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:border-[#0f7343] focus:bg-white transition-all"
+                          />
+                        </div>
+
+                        <span className="text-xs font-bold text-slate-500">
+                          Showing {rosterStudents.filter(s => {
+                            if (!rosterSearch.trim()) return true;
+                            const q = rosterSearch.toLowerCase();
+                            return `${s.firstName} ${s.lastName}`.toLowerCase().includes(q) ||
+                                   s.formNumber.toLowerCase().includes(q) ||
+                                   (s.admissionNumber && s.admissionNumber.toLowerCase().includes(q)) ||
+                                   (s.phone1 && s.phone1.includes(q)) ||
+                                   (s.fatherName && s.fatherName.toLowerCase().includes(q));
+                          }).length} of {enrolledCount} students in {selectedSubgroupRoster}
+                        </span>
+                      </div>
+
+                      {/* Main Roster Body - Full Page Responsive Grid */}
+                      {(() => {
+                        const filteredRoster = rosterStudents.filter(s => {
+                          if (!rosterSearch.trim()) return true;
+                          const q = rosterSearch.toLowerCase();
+                          return `${s.firstName} ${s.lastName}`.toLowerCase().includes(q) ||
+                                 s.formNumber.toLowerCase().includes(q) ||
+                                 (s.admissionNumber && s.admissionNumber.toLowerCase().includes(q)) ||
+                                 (s.phone1 && s.phone1.includes(q)) ||
+                                 (s.fatherName && s.fatherName.toLowerCase().includes(q));
+                        });
+
+                        if (filteredRoster.length === 0) {
+                          return (
+                            <div className="py-20 px-4 text-center bg-white rounded-3xl border border-slate-200 shadow-sm max-w-lg mx-auto space-y-4 my-8">
+                              <div className="w-16 h-16 rounded-3xl bg-slate-100 text-slate-400 flex items-center justify-center mx-auto">
+                                <GraduationCap className="w-8 h-8" />
+                              </div>
+                              <div>
+                                <h3 className="text-lg font-black text-slate-800">
+                                  {rosterSearch ? 'No matching students found' : `No students in ${selectedSubgroupRoster}`}
+                                </h3>
+                                <p className="text-xs text-slate-500 font-semibold mt-1">
+                                  {rosterSearch ? `Try adjusting your search term "${rosterSearch}"` : `There are currently 0 students assigned to ${selectedSubgroupRoster}.`}
                                 </p>
-                                <div className="w-32 bg-slate-800 h-2 rounded-full overflow-hidden border border-slate-700">
-                                  <div 
-                                    style={{ width: `${fillPct}%` }} 
-                                    className={`h-full rounded-full transition-all ${
-                                      isFull ? 'bg-rose-500' : isGold ? 'bg-amber-400' : isSilver ? 'bg-slate-400' : 'bg-emerald-400'
-                                    }`} 
-                                  />
-                                </div>
-                                <span className="text-[11px] font-black text-slate-400">{fillPct}%</span>
                               </div>
+
+                              {!rosterSearch && (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setNewStudent(prev => ({ ...prev, intendedClass: selectedSubgroupRoster }));
+                                    setSelectedSubgroupRoster(null);
+                                    setActiveTab('new-verification');
+                                  }}
+                                  className="px-5 py-2.5 bg-[#0f7343] hover:bg-[#0b5c34] text-white font-bold text-xs rounded-xl shadow-md transition-all cursor-pointer inline-flex items-center gap-2"
+                                >
+                                  <Plus className="w-4 h-4" />
+                                  <span>Add First Student to {selectedSubgroupRoster}</span>
+                                </button>
+                              )}
                             </div>
-                          </div>
+                          );
+                        }
 
-                          <div className="flex items-center gap-2.5 flex-wrap sm:flex-nowrap">
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setNewStudent(prev => ({ ...prev, intendedClass: selectedSubgroupRoster }));
-                                setSelectedSubgroupRoster(null);
-                                setActiveTab('new-verification');
-                              }}
-                              disabled={isFull}
-                              className="px-4 py-2.5 bg-[#0f7343] hover:bg-[#0b5c34] text-white rounded-xl font-bold text-xs flex items-center gap-1.5 shadow-md transition-all cursor-pointer disabled:opacity-40"
-                            >
-                              <Plus className="w-4 h-4" />
-                              <span>Add Student to {selectedSubgroupRoster.split(' ')[2] || 'Class'}</span>
-                            </button>
-
-                            <button
-                              type="button"
-                              onClick={() => handleDownloadSubclassFullNames(selectedSubgroupRoster, rosterStudents)}
-                              disabled={enrolledCount === 0}
-                              className="px-4 py-2.5 bg-blue-700 hover:bg-blue-600 text-white rounded-xl font-bold text-xs flex items-center gap-2 border border-blue-600 shadow-sm transition-all cursor-pointer disabled:opacity-40"
-                              title="Download full list of student names as CSV"
-                            >
-                              <Download className="w-4 h-4 text-blue-200" />
-                              <span>Download Full Names ({enrolledCount})</span>
-                            </button>
-
-                            <button
-                              type="button"
-                              onClick={() => {
-                                printBulkAdmissionLetters(rosterStudents, schoolSettings.logo);
-                              }}
-                              disabled={enrolledCount === 0}
-                              className="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl font-bold text-xs flex items-center gap-2 border border-slate-700 shadow-sm transition-all cursor-pointer disabled:opacity-40"
-                            >
-                              <Printer className="w-4 h-4 text-emerald-400" />
-                              <span>Bulk Print Letters ({enrolledCount})</span>
-                            </button>
-
-                            <button
-                              type="button"
-                              onClick={() => handleRemoveAllFromSubclass(selectedSubgroupRoster, rosterStudents)}
-                              disabled={enrolledCount === 0}
-                              className="px-4 py-2.5 bg-rose-700 hover:bg-rose-600 text-white rounded-xl font-bold text-xs flex items-center gap-2 border border-rose-600 shadow-sm transition-all cursor-pointer disabled:opacity-40"
-                              title={`Remove all ${enrolledCount} students from ${selectedSubgroupRoster}`}
-                            >
-                              <Trash2 className="w-4 h-4 text-rose-200" />
-                              <span>Remove All ({enrolledCount})</span>
-                            </button>
-
-                            <button
-                              onClick={() => {
-                                setSelectedSubgroupRoster(null);
-                                setRosterSearch('');
-                              }}
-                              className="p-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-all cursor-pointer"
-                              aria-label="Close modal"
-                            >
-                              <X className="w-6 h-6" />
-                            </button>
-                          </div>
-                        </div>
-
-                        {/* Search Toolbar & Roster Quick Stats */}
-                        <div className="p-4 bg-slate-50 border-b border-slate-200 flex flex-col md:flex-row items-center justify-between gap-4 shrink-0">
-                          <div className="relative w-full md:w-96">
-                            <Search className="w-4 h-4 absolute left-3.5 top-3.5 text-slate-400" />
-                            <input
-                              type="text"
-                              value={rosterSearch}
-                              onChange={(e) => setRosterSearch(e.target.value)}
-                              placeholder={`Search ${selectedSubgroupRoster} by name, serial no, or parent tel...`}
-                              className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-300 rounded-xl text-xs font-semibold focus:outline-none focus:border-[#0f7343] focus:ring-2 focus:ring-[#0f7343]/20 transition-all"
-                            />
-                          </div>
-
-                          {/* Stat Pill Badges */}
-                          <div className="flex items-center gap-2.5 w-full md:w-auto overflow-x-auto text-xs font-bold">
-                            {(() => {
-                              const verifiedCount = rosterStudents.filter(s => s.verificationStatus === 'verified').length;
-                              const paidCount = rosterStudents.filter(s => s.paymentStatus === 'paid').length;
-                              const pendingPaidCount = rosterStudents.filter(s => s.paymentStatus !== 'paid').length;
+                        return (
+                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                            {filteredRoster.map((student, idx) => {
+                              const isPaid = student.paymentStatus === 'paid';
+                              const admissionNo = getStudentAdmissionNumber(student);
 
                               return (
-                                <>
-                                  <span className="bg-white border border-slate-200 px-3.5 py-2 rounded-xl text-slate-700 shrink-0 shadow-2xs">
-                                    Subclass Arm: <strong className="text-slate-900">{enrolledCount}/35</strong>
-                                  </span>
-                                  <span className="bg-emerald-50 border border-emerald-200 px-3.5 py-2 rounded-xl text-emerald-800 shrink-0 shadow-2xs">
-                                    Verified: <strong>{verifiedCount}</strong>
-                                  </span>
-                                  <span className="bg-blue-50 border border-blue-200 px-3.5 py-2 rounded-xl text-blue-800 shrink-0 shadow-2xs">
-                                    Fees Paid: <strong>{paidCount}</strong>
-                                  </span>
-                                  <span className="bg-amber-50 border border-amber-200 px-3.5 py-2 rounded-xl text-amber-800 shrink-0 shadow-2xs">
-                                    Fees Pending: <strong>{pendingPaidCount}</strong>
-                                  </span>
-                                </>
-                              );
-                            })()}
-                          </div>
-                        </div>
-
-                        {/* Main Roster Body - Responsive 2-Column Student Cards */}
-                        <div className="p-4 sm:p-6 md:p-8 overflow-y-auto flex-1 bg-slate-100/80 space-y-4">
-                          {(() => {
-                            const filteredRoster = rosterStudents.filter(s => {
-                              if (!rosterSearch.trim()) return true;
-                              const q = rosterSearch.toLowerCase();
-                              return `${s.firstName} ${s.lastName}`.toLowerCase().includes(q) ||
-                                     s.formNumber.toLowerCase().includes(q) ||
-                                     (s.admissionNumber && s.admissionNumber.toLowerCase().includes(q)) ||
-                                     (s.phone1 && s.phone1.includes(q)) ||
-                                     (s.fatherName && s.fatherName.toLowerCase().includes(q));
-                            });
-
-                            if (filteredRoster.length === 0) {
-                              return (
-                                <div className="py-20 px-4 text-center bg-white rounded-3xl border border-slate-200 shadow-sm max-w-lg mx-auto space-y-4 my-8">
-                                  <div className="w-16 h-16 rounded-3xl bg-slate-100 text-slate-400 flex items-center justify-center mx-auto">
-                                    <GraduationCap className="w-8 h-8" />
-                                  </div>
-                                  <div>
-                                    <h3 className="text-lg font-black text-slate-800">
-                                      {rosterSearch ? 'No matching students found' : `No students in ${selectedSubgroupRoster}`}
-                                    </h3>
-                                    <p className="text-xs text-slate-500 font-semibold mt-1">
-                                      {rosterSearch ? `Try adjusting your search term "${rosterSearch}"` : `There are currently 0 students assigned to ${selectedSubgroupRoster}.`}
-                                    </p>
-                                  </div>
-
-                                  {!rosterSearch && (
-                                    <button
-                                      type="button"
-                                      onClick={() => {
-                                        setNewStudent(prev => ({ ...prev, intendedClass: selectedSubgroupRoster }));
-                                        setSelectedSubgroupRoster(null);
-                                        setActiveTab('new-verification');
-                                      }}
-                                      className="px-5 py-2.5 bg-[#0f7343] hover:bg-[#0b5c34] text-white font-bold text-xs rounded-xl shadow-md transition-all cursor-pointer inline-flex items-center gap-2"
-                                    >
-                                      <Plus className="w-4 h-4" />
-                                      <span>Add First Student to {selectedSubgroupRoster}</span>
-                                    </button>
-                                  )}
-                                </div>
-                              );
-                            }
-
-                            return (
-                              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5">
-                                {filteredRoster.map((student, idx) => {
-                                  const isPaid = student.paymentStatus === 'paid';
-                                  const admissionNo = getStudentAdmissionNumber(student);
-
-                                  return (
-                                    <div 
-                                      key={student.id} 
-                                      className="p-5 bg-white border border-slate-200 hover:border-slate-300 rounded-3xl shadow-2xs hover:shadow-md transition-all flex flex-col justify-between space-y-4 relative group"
-                                    >
-                                      {/* Student Top Header */}
-                                      <div className="flex items-start justify-between gap-3">
-                                        <div className="flex items-center gap-3.5 min-w-0">
-                                          <div className="relative">
-                                            <StudentAvatar student={student} size="lg" />
-                                            <span className="absolute -top-1 -left-1 w-5 h-5 rounded-full bg-slate-900 text-white text-[10px] font-black flex items-center justify-center shadow-2xs">
-                                              {idx + 1}
-                                            </span>
-                                          </div>
-
-                                          <div className="min-w-0">
-                                            <div className="flex items-center gap-2 flex-wrap">
-                                              <h4 className="font-black text-slate-900 text-base leading-tight truncate">
-                                                {student.firstName} {student.lastName}
-                                              </h4>
-                                              {student.verificationStatus === 'verified' ? (
-                                                <span className="bg-emerald-100 text-emerald-800 text-[10px] font-black px-2 py-0.5 rounded-full flex items-center gap-1 border border-emerald-200">
-                                                  <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Verified
-                                                </span>
-                                              ) : (
-                                                <span className="bg-amber-100 text-amber-800 text-[10px] font-bold px-2 py-0.5 rounded-full border border-amber-200">
-                                                  Review Pending
-                                                </span>
-                                              )}
-                                            </div>
-
-                                            <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-                                              <span className="text-[11px] font-black font-mono bg-slate-900 text-emerald-400 px-2 py-0.5 rounded-lg">
-                                                {admissionNo}
-                                              </span>
-                                              <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-lg border border-slate-200">
-                                                Form: {student.formNumber}
-                                              </span>
-                                            </div>
-                                          </div>
-                                        </div>
-
-                                        <span className={`text-[10px] font-black px-2.5 py-1 rounded-xl border shrink-0 ${
-                                          isPaid ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : 'bg-amber-50 text-amber-800 border-amber-200'
-                                        }`}>
-                                          {isPaid ? 'FEE PAID ✓' : 'FEE PENDING'}
+                                <div 
+                                  key={student.id} 
+                                  className="p-5 bg-white border border-slate-200 hover:border-slate-300 rounded-3xl shadow-2xs hover:shadow-md transition-all flex flex-col justify-between space-y-4 relative group"
+                                >
+                                  {/* Student Top Header */}
+                                  <div className="flex items-start justify-between gap-3">
+                                    <div className="flex items-center gap-3.5 min-w-0">
+                                      <div className="relative">
+                                        <StudentAvatar student={student} size="lg" />
+                                        <span className="absolute -top-1 -left-1 w-5 h-5 rounded-full bg-slate-900 text-white text-[10px] font-black flex items-center justify-center shadow-2xs">
+                                          {idx + 1}
                                         </span>
                                       </div>
 
-                                      {/* Detailed Student & Parent Grid */}
-                                      <div className="grid grid-cols-2 gap-2.5 p-3.5 bg-slate-50/80 rounded-2xl border border-slate-100 text-xs">
-                                        <div>
-                                          <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Parent / Guardian</span>
-                                          <span className="font-extrabold text-slate-800 truncate block mt-0.5">
-                                            {student.fatherName || student.motherName || student.guardianName || 'N/A'}
-                                          </span>
+                                      <div className="min-w-0">
+                                        <div className="flex items-center gap-2 flex-wrap">
+                                          <h4 className="font-black text-slate-900 text-base leading-tight truncate">
+                                            {student.firstName} {student.lastName}
+                                          </h4>
+                                          {student.verificationStatus === 'verified' ? (
+                                            <span className="bg-emerald-100 text-emerald-800 text-[10px] font-black px-2 py-0.5 rounded-full flex items-center gap-1 border border-emerald-200">
+                                              <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Verified
+                                            </span>
+                                          ) : (
+                                            <span className="bg-amber-100 text-amber-800 text-[10px] font-bold px-2 py-0.5 rounded-full border border-amber-200">
+                                              Review Pending
+                                            </span>
+                                          )}
                                         </div>
 
-                                        <div>
-                                          <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Contact Phone</span>
-                                          <span className="font-extrabold text-slate-800 truncate block mt-0.5">
-                                            {student.phone1 || 'No Phone Registered'}
+                                        <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                                          <span className="text-[11px] font-black font-mono bg-slate-900 text-emerald-400 px-2 py-0.5 rounded-lg">
+                                            {admissionNo}
+                                          </span>
+                                          <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-lg border border-slate-200">
+                                            Form: {student.formNumber}
                                           </span>
                                         </div>
-
-                                        <div>
-                                          <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Gender & DoB</span>
-                                          <span className="font-bold text-slate-700 truncate block mt-0.5">
-                                            {student.gender} • {student.dateOfBirth || 'N/A'}
-                                          </span>
-                                        </div>
-
-                                        <div>
-                                          <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Subclass Arm</span>
-                                          <span className="font-black text-[#0f7343] truncate block mt-0.5">
-                                            {selectedSubgroupRoster}
-                                          </span>
-                                        </div>
-
-                                        <div className="col-span-2 pt-1 border-t border-slate-200/60">
-                                          <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Residential Address</span>
-                                          <span className="font-semibold text-slate-700 truncate block mt-0.5">
-                                            {student.residentialAddress || 'Behind Buben Ta\'Ololo\'s Residence, Tudun Wada, Argungu'}
-                                          </span>
-                                        </div>
-                                      </div>
-
-                                      {/* Action Controls for this Student */}
-                                      <div className="flex items-center gap-2 pt-1">
-                                        <button
-                                          type="button"
-                                          onClick={() => handleTogglePaymentStatus(student.id, student.paymentStatus || 'pending')}
-                                          disabled={isTogglingFee === student.id}
-                                          className={`flex-1 py-2 px-3 rounded-xl font-extrabold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-2xs ${
-                                            isPaid 
-                                              ? 'bg-emerald-600 hover:bg-emerald-700 text-white' 
-                                              : 'bg-amber-500 hover:bg-amber-600 text-white'
-                                          }`}
-                                        >
-                                          <CreditCard className="w-3.5 h-3.5" />
-                                          <span>{isPaid ? 'Fee Paid ✓' : 'Fee Pending'}</span>
-                                        </button>
-
-                                        <button
-                                          type="button"
-                                          onClick={() => {
-                                            setLetterModalStudent(student);
-                                          }}
-                                          className="py-2 px-3.5 bg-emerald-50 hover:bg-emerald-100 text-[#0f7343] border border-emerald-200 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-2xs"
-                                          title="Print individual admission letter"
-                                        >
-                                          <Printer className="w-3.5 h-3.5 text-[#0f7343]" />
-                                          <span>Print Admission</span>
-                                        </button>
-
-                                        <button
-                                          type="button"
-                                          onClick={() => {
-                                            setSelectedSubgroupRoster(null);
-                                            startEditStudent(student);
-                                          }}
-                                          className="py-2 px-3 bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 rounded-xl font-bold text-xs flex items-center justify-center gap-1 transition-all cursor-pointer shadow-2xs"
-                                          title="Edit student details"
-                                        >
-                                          <Edit3 className="w-3.5 h-3.5 text-slate-600" />
-                                          <span>Edit</span>
-                                        </button>
-
-                                        <button
-                                          type="button"
-                                          onClick={() => {
-                                            if (window.confirm(`Are you sure you want to remove ${student.firstName} ${student.lastName} from ${selectedSubgroupRoster}?`)) {
-                                              handleRemoveStudentFromSubclass(student, selectedSubgroupRoster);
-                                            }
-                                          }}
-                                          className="py-2 px-3 bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-700 rounded-xl font-bold text-xs flex items-center justify-center gap-1 transition-all cursor-pointer shadow-2xs"
-                                          title={`Remove ${student.firstName} from ${selectedSubgroupRoster}`}
-                                        >
-                                          <Trash2 className="w-3.5 h-3.5 text-rose-600" />
-                                          <span>Remove</span>
-                                        </button>
                                       </div>
                                     </div>
-                                  );
-                                })}
-                              </div>
-                            );
-                          })()}
-                        </div>
 
-                        {/* Modal Footer */}
-                        <div className="p-4 bg-slate-50 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3 shrink-0">
-                          <span className="text-xs font-bold text-slate-600">
-                            Viewing Subclass Arm Roster: <strong className="text-slate-900 font-black">{selectedSubgroupRoster}</strong> ({rosterStudents.length}/35 Enrolled)
-                          </span>
+                                    <span className={`text-[10px] font-black px-2.5 py-1 rounded-xl border shrink-0 ${
+                                      isPaid ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : 'bg-amber-50 text-amber-800 border-amber-200'
+                                    }`}>
+                                      {isPaid ? 'FEE PAID ✓' : 'FEE PENDING'}
+                                    </span>
+                                  </div>
 
-                          <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
-                            <button
-                              type="button"
-                              onClick={() => handleDownloadSubclassFullNames(selectedSubgroupRoster, rosterStudents)}
-                              disabled={enrolledCount === 0}
-                              className="px-4 py-2 bg-blue-700 hover:bg-blue-800 text-white rounded-xl font-bold text-xs flex items-center gap-1.5 cursor-pointer shadow-2xs disabled:opacity-40"
-                              title="Download full names CSV for this subclass"
-                            >
-                              <Download className="w-3.5 h-3.5" />
-                              <span>Download Full Names (CSV)</span>
-                            </button>
+                                  {/* Detailed Student & Parent Grid */}
+                                  <div className="grid grid-cols-2 gap-2.5 p-3.5 bg-slate-50/80 rounded-2xl border border-slate-100 text-xs">
+                                    <div>
+                                      <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Parent / Guardian</span>
+                                      <span className="font-extrabold text-slate-800 truncate block mt-0.5">
+                                        {student.fatherName || student.motherName || student.guardianName || 'N/A'}
+                                      </span>
+                                    </div>
 
-                            <button
-                              type="button"
-                              onClick={() => {
-                                printBulkAdmissionLetters(rosterStudents, schoolSettings.logo);
-                              }}
-                              disabled={enrolledCount === 0}
-                              className="px-4 py-2 bg-[#0f7343] hover:bg-[#0b5c34] text-white rounded-xl font-bold text-xs flex items-center gap-1.5 cursor-pointer shadow-2xs disabled:opacity-40"
-                            >
-                              <Printer className="w-3.5 h-3.5" />
-                              <span>Bulk Print Admission Letters</span>
-                            </button>
+                                    <div>
+                                      <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Contact Phone</span>
+                                      <span className="font-extrabold text-slate-800 truncate block mt-0.5">
+                                        {student.phone1 || 'No Phone Registered'}
+                                      </span>
+                                    </div>
 
-                            <button
-                              type="button"
-                              onClick={() => handleRemoveAllFromSubclass(selectedSubgroupRoster, rosterStudents)}
-                              disabled={enrolledCount === 0}
-                              className="px-4 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-xl font-bold text-xs flex items-center gap-1.5 cursor-pointer shadow-2xs disabled:opacity-40"
-                              title="Remove all students from this subclass arm"
-                            >
-                              <Trash2 className="w-3.5 h-3.5 text-rose-600" />
-                              <span>Remove All</span>
-                            </button>
+                                    <div>
+                                      <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Gender & DoB</span>
+                                      <span className="font-bold text-slate-700 truncate block mt-0.5">
+                                        {student.gender} • {student.dateOfBirth || 'N/A'}
+                                      </span>
+                                    </div>
 
-                            <button
-                              onClick={() => {
-                                setSelectedSubgroupRoster(null);
-                                setRosterSearch('');
-                              }}
-                              className="px-5 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-xl font-bold text-xs cursor-pointer transition-all"
-                            >
-                              Close Roster
-                            </button>
+                                    <div>
+                                      <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Subclass Arm</span>
+                                      <span className="font-black text-[#0f7343] truncate block mt-0.5">
+                                        {selectedSubgroupRoster}
+                                      </span>
+                                    </div>
+
+                                    <div className="col-span-2 pt-1 border-t border-slate-200/60">
+                                      <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Residential Address</span>
+                                      <span className="font-semibold text-slate-700 truncate block mt-0.5">
+                                        {student.residentialAddress || 'Behind Buben Ta\'Ololo\'s Residence, Tudun Wada, Argungu'}
+                                      </span>
+                                    </div>
+                                  </div>
+
+                                  {/* Action Controls for this Student */}
+                                  <div className="flex items-center gap-2 pt-1">
+                                    <button
+                                      type="button"
+                                      onClick={() => handleTogglePaymentStatus(student.id, student.paymentStatus || 'pending')}
+                                      disabled={isTogglingFee === student.id}
+                                      className={`flex-1 py-2 px-3 rounded-xl font-extrabold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-2xs ${
+                                        isPaid 
+                                          ? 'bg-emerald-600 hover:bg-emerald-700 text-white' 
+                                          : 'bg-amber-500 hover:bg-amber-600 text-white'
+                                      }`}
+                                    >
+                                      <CreditCard className="w-3.5 h-3.5" />
+                                      <span>{isPaid ? 'Fee Paid ✓' : 'Fee Pending'}</span>
+                                    </button>
+
+                                    <button
+                                      type="button"
+                                      onClick={() => setLetterModalStudent(student)}
+                                      className="py-2 px-3 bg-emerald-50 hover:bg-emerald-100 text-[#0f7343] border border-emerald-200 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-2xs"
+                                      title="Print individual admission letter"
+                                    >
+                                      <Printer className="w-3.5 h-3.5 text-[#0f7343]" />
+                                      <span>Letter</span>
+                                    </button>
+
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setSelectedSubgroupRoster(null);
+                                        startEditStudent(student);
+                                      }}
+                                      className="py-2 px-3 bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 rounded-xl font-bold text-xs flex items-center justify-center gap-1 transition-all cursor-pointer shadow-2xs"
+                                      title="Edit student details"
+                                    >
+                                      <Edit3 className="w-3.5 h-3.5 text-slate-600" />
+                                      <span>Edit</span>
+                                    </button>
+
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        if (window.confirm(`Are you sure you want to remove ${student.firstName} ${student.lastName} from ${selectedSubgroupRoster}?`)) {
+                                          handleRemoveStudentFromSubclass(student, selectedSubgroupRoster);
+                                        }
+                                      }}
+                                      className="py-2 px-3 bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-700 rounded-xl font-bold text-xs flex items-center justify-center gap-1 transition-all cursor-pointer shadow-2xs"
+                                      title={`Remove ${student.firstName} from ${selectedSubgroupRoster}`}
+                                    >
+                                      <Trash2 className="w-3.5 h-3.5 text-rose-600" />
+                                      <span>Remove</span>
+                                    </button>
+                                  </div>
+                                </div>
+                              );
+                            })}
                           </div>
-                        </div>
-                      </>
-                    );
-                  })()}
-                </div>
+                        );
+                      })()}
+                    </div>
+                  );
+                })()}
               </div>
             )}
           </div>
