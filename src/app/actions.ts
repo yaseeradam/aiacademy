@@ -322,19 +322,19 @@ export async function unassignStudentFromSubclassAction(studentId: string): Prom
   const student = await getStudentById(studentId);
   if (!student) return { success: false, error: 'Student not found.' };
 
-  let baseClass = student.intendedClass.replace(/\s+(Gold|Silver|Green)(\s+\d+)?/gi, '').trim();
+  let baseClass = student.intendedClass.replace(/\s+(Gold|Silver|Green)(\s+\d+)?/gi, '').replace(/\(Unassigned\)/gi, '').trim();
   if (!baseClass) baseClass = 'Nursery 1';
 
   await addOrUpdateStudent({
     ...student,
-    intendedClass: baseClass,
+    intendedClass: `${baseClass} (Unassigned)`,
   });
 
   const studentName = `${student.firstName} ${student.lastName}`;
   await addAuditLog({
     action: 'UPDATE',
     actor: 'School Administrator',
-    details: `Admin unassigned student from subclass arm back to base class ${baseClass}`,
+    details: `Admin unassigned student from subclass arm back to base class ${baseClass} (Unassigned)`,
     studentId,
     studentName,
   });
@@ -348,11 +348,11 @@ export async function unassignMultipleStudentsFromSubclassAction(studentIds: str
     for (const id of studentIds) {
       const student = await getStudentById(id);
       if (student) {
-        let baseClass = student.intendedClass.replace(/\s+(Gold|Silver|Green)(\s+\d+)?/gi, '').trim();
+        let baseClass = student.intendedClass.replace(/\s+(Gold|Silver|Green)(\s+\d+)?/gi, '').replace(/\(Unassigned\)/gi, '').trim();
         if (!baseClass) baseClass = 'Nursery 1';
         await addOrUpdateStudent({
           ...student,
-          intendedClass: baseClass,
+          intendedClass: `${baseClass} (Unassigned)`,
         });
         count++;
       }

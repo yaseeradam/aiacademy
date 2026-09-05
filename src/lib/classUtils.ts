@@ -4,6 +4,11 @@ export function getStudentClassArm(cls: string | undefined, studentId?: string, 
   if (!cls) return 'Nursery 1 Gold';
   const trimmed = cls.trim();
 
+  // If explicitly unassigned to a subclass arm
+  if (trimmed.includes('Unassigned')) {
+    return trimmed;
+  }
+
   // If already assigned to an explicit arm (e.g. "Nursery 1 Gold", "Basic 1 Silver 2", etc.)
   if (trimmed.includes('Gold') || trimmed.includes('Silver') || trimmed.includes('Green') || trimmed.includes('Blue') || trimmed.includes('Diamond')) {
     return trimmed;
@@ -41,7 +46,7 @@ export function getStudentClassArm(cls: string | undefined, studentId?: string, 
       .filter(s => {
         if (!s.intendedClass) return baseClass === 'Nursery 1';
         const sTrim = s.intendedClass.trim();
-        if (sTrim.includes('Gold') || sTrim.includes('Silver') || sTrim.includes('Green')) return false;
+        if (sTrim.includes('Unassigned') || sTrim.includes('Gold') || sTrim.includes('Silver') || sTrim.includes('Green')) return false;
         let sBase = 'Nursery 1';
         if (/Basic 2|Primary 2/i.test(sTrim)) sBase = 'Basic 2';
         else if (/Basic 1|Primary 1/i.test(sTrim)) sBase = 'Basic 1';

@@ -128,7 +128,7 @@ export default function AdminControl({ students }: AdminControlProps) {
   const classList = useMemo(() => {
     const set = new Set([
       ...defaultSubgroups,
-      ...students.map(s => getStudentClassArm(s.intendedClass, s.id, students)).filter(Boolean)
+      ...students.map(s => getStudentClassArm(s.intendedClass, s.id, students)).filter(arm => arm && !arm.includes('Unassigned'))
     ]);
     const list = Array.from(set);
 
