@@ -344,6 +344,131 @@ export default function AdminControl({ students }: AdminControlProps) {
     }
   };
 
+  const handleRemoveAllDuplicates = async () => {
+    if (!duplicateModal.groups || duplicateModal.groups.length === 0) return;
+
+    const idsToDelete: string[] = [];
+    duplicateModal.groups.forEach(group => {
+      if (group.students.length > 1) {
+        // Keep 1st student (index 0) as primary, delete the rest
+        const extras = group.students.slice(1);
+        extras.forEach(s => {
+          if (!idsToDelete.includes(s.id)) {
+            idsToDelete.push(s.id);
+          }
+        });
+      }
+    });
+
+    if (idsToDelete.length === 0) {
+      alert('No extra duplicate records found to remove.');
+      return;
+    }
+
+    const confirmMsg = `Remove ALL ${idsToDelete.length} extra duplicate record(s)?\n\nThis will keep the 1st primary student profile in each group and permanently delete all redundant duplicate copies.`;
+    if (!window.confirm(confirmMsg)) return;
+
+    setFeedbackModal({
+      isOpen: true,
+      type: 'loading',
+      title: 'Removing All Duplicates...',
+      message: `Deleting ${idsToDelete.length} extra duplicate student records...`,
+    });
+
+    try {
+      const res = await adminDeleteMultipleStudentsAction(idsToDelete);
+      if (res.success) {
+        setDuplicateModal({ isOpen: false, isLoading: false, groups: [] });
+        router.refresh();
+        setFeedbackModal({
+          isOpen: true,
+          type: 'success',
+          title: 'All Duplicates Removed!',
+          message: `Successfully deleted ${res.count} duplicate student record(s). Database is clean!`,
+        });
+      } else {
+        setFeedbackModal({
+          isOpen: true,
+          type: 'error',
+          title: 'Bulk Deletion Failed',
+          message: res.error || 'Failed to remove duplicate records.',
+        });
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Error removing duplicates.';
+      setFeedbackModal({
+        isOpen: true,
+        type: 'error',
+        title: 'Error',
+        message: msg,
+      });
+    }
+  };
+
+  const handleRemoveGroupDuplicates = async (group: DuplicateGroup) => {
+    if (group.students.length <= 1) return;
+
+    const extras = group.students.slice(1);
+    const idsToDelete = extras.map(s => s.id);
+
+    const confirmMsg = `Remove ${idsToDelete.length} duplicate copy(ies) in this group?\n\nThis will keep "${group.students[0].firstName} ${group.students[0].lastName}" and delete the redundant duplicate record(s).`;
+    if (!window.confirm(confirmMsg)) return;
+
+    setFeedbackModal({
+      isOpen: true,
+      type: 'loading',
+      title: 'Cleaning Group Duplicates...',
+      message: `Deleting ${idsToDelete.length} duplicate record(s)...`,
+    });
+
+    try {
+      const res = await adminDeleteMultipleStudentsAction(idsToDelete);
+      if (res.success) {
+        setDuplicateModal(prev => {
+          const newGroups = prev.groups
+            .map(g => {
+              if (g.key === group.key) {
+                return {
+                  ...g,
+                  students: [g.students[0]]
+                };
+              }
+              return g;
+            })
+            .filter(g => g.students.length > 1);
+
+          return {
+            ...prev,
+            groups: newGroups
+          };
+        });
+
+        router.refresh();
+        setFeedbackModal({
+          isOpen: true,
+          type: 'success',
+          title: 'Group Duplicates Removed!',
+          message: `Successfully deleted ${res.count} duplicate record(s) from this group.`,
+        });
+      } else {
+        setFeedbackModal({
+          isOpen: true,
+          type: 'error',
+          title: 'Deletion Failed',
+          message: res.error || 'Failed to remove duplicates.',
+        });
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Error removing group duplicates.';
+      setFeedbackModal({
+        isOpen: true,
+        type: 'error',
+        title: 'Error',
+        message: msg,
+      });
+    }
+  };
+
   const handleRemoveStudentFromSubclass = async (student: Student, subgroupName: string) => {
     const studentName = `${student.firstName} ${student.lastName}`;
     setFeedbackModal({
@@ -4016,12 +4141,24 @@ export default function AdminControl({ students }: AdminControlProps) {
                 </div>
               </div>
 
-              <button
-                onClick={() => setDuplicateModal({ isOpen: false, isLoading: false, groups: [] })}
-                className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-all cursor-pointer"
-              >
-                <X className="w-6 h-6" />
-              </button>
+              <div className="flex items-center gap-3">
+                {duplicateModal.groups.length > 0 && !duplicateModal.isLoading && (
+                  <button
+                    onClick={handleRemoveAllDuplicates}
+                    className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white font-extrabold text-xs rounded-xl flex items-center gap-1.5 shadow-md transition-all cursor-pointer shrink-0"
+                    title="Keep 1st student per group and bulk-delete all extra duplicate copies"
+                  >
+                    <Trash2 className="w-4 h-4 text-white" />
+                    <span>Remove All Duplicates ({duplicateModal.groups.reduce((acc, g) => acc + Math.max(0, g.students.length - 1), 0)})</span>
+                  </button>
+                )}
+                <button
+                  onClick={() => setDuplicateModal({ isOpen: false, isLoading: false, groups: [] })}
+                  className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-all cursor-pointer"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
             </div>
 
             {/* Modal Body */}
@@ -4053,7 +4190,7 @@ export default function AdminControl({ students }: AdminControlProps) {
                 <div className="space-y-6">
                   {duplicateModal.groups.map((group, groupIdx) => (
                     <div key={groupIdx} className="bg-white rounded-3xl border border-amber-200 overflow-hidden shadow-xs">
-                      <div className="p-4 bg-amber-50 border-b border-amber-100 flex items-center justify-between gap-3">
+                      <div className="p-4 bg-amber-50 border-b border-amber-100 flex items-center justify-between gap-3 flex-wrap">
                         <div className="flex items-center gap-2">
                           <span className="bg-amber-500 text-white text-[10px] font-black px-2.5 py-1 rounded-lg uppercase tracking-wider">
                             Group #{groupIdx + 1}
@@ -4062,9 +4199,21 @@ export default function AdminControl({ students }: AdminControlProps) {
                             {group.reason}: <strong className="text-slate-900 font-mono">{group.key}</strong>
                           </h4>
                         </div>
-                        <span className="text-xs font-bold text-amber-800">
-                          {group.students.length} matching students
-                        </span>
+                        <div className="flex items-center gap-3">
+                          <span className="text-xs font-bold text-amber-800">
+                            {group.students.length} matching students
+                          </span>
+                          {group.students.length > 1 && (
+                            <button
+                              onClick={() => handleRemoveGroupDuplicates(group)}
+                              className="px-3 py-1.5 bg-rose-100 hover:bg-rose-200 text-rose-800 font-bold text-xs rounded-lg border border-rose-200 flex items-center gap-1 cursor-pointer transition-all shrink-0"
+                              title="Keep 1st student in this group and delete extra duplicate copies"
+                            >
+                              <Trash2 className="w-3.5 h-3.5 text-rose-700" />
+                              <span>Remove Extra Duplicates ({group.students.length - 1})</span>
+                            </button>
+                          )}
+                        </div>
                       </div>
 
                       <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -4125,16 +4274,27 @@ export default function AdminControl({ students }: AdminControlProps) {
             </div>
 
             {/* Modal Footer */}
-            <div className="p-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between gap-3 shrink-0">
+            <div className="p-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between gap-3 shrink-0 flex-wrap">
               <span className="text-xs font-bold text-slate-500">
                 Found {duplicateModal.groups.length} duplicate group(s)
               </span>
-              <button
-                onClick={() => setDuplicateModal({ isOpen: false, isLoading: false, groups: [] })}
-                className="px-5 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-bold text-xs cursor-pointer transition-all"
-              >
-                Close Detector
-              </button>
+              <div className="flex items-center gap-2">
+                {duplicateModal.groups.length > 0 && !duplicateModal.isLoading && (
+                  <button
+                    onClick={handleRemoveAllDuplicates}
+                    className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl font-extrabold text-xs cursor-pointer transition-all flex items-center gap-1.5 shadow-sm"
+                  >
+                    <Trash2 className="w-4 h-4 text-white" />
+                    <span>Remove All Duplicates</span>
+                  </button>
+                )}
+                <button
+                  onClick={() => setDuplicateModal({ isOpen: false, isLoading: false, groups: [] })}
+                  className="px-5 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-bold text-xs cursor-pointer transition-all"
+                >
+                  Close Detector
+                </button>
+              </div>
             </div>
           </div>
         </div>
