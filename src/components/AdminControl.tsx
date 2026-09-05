@@ -111,11 +111,21 @@ export default function AdminControl({ students }: AdminControlProps) {
     'Basic 2 Green',
   ], []);
 
+  // Helper to normalize bare classes (e.g. "Nursery 1" -> "Nursery 1 Gold")
+  const getStudentClassArm = (cls: string | undefined): string => {
+    if (!cls) return 'Nursery 1 Gold';
+    const trimmed = cls.trim();
+    if (trimmed === 'Nursery 1' || trimmed === 'Nursery') return 'Nursery 1 Gold';
+    if (trimmed === 'Basic 1' || trimmed === 'Primary 1') return 'Basic 1 Gold';
+    if (trimmed === 'Basic 2' || trimmed === 'Primary 2') return 'Basic 2 Gold';
+    return trimmed;
+  };
+
   // Class list and student mapping
   const classList = useMemo(() => {
     const set = new Set([
       ...defaultSubgroups,
-      ...students.map(s => s.intendedClass).filter(Boolean)
+      ...students.map(s => getStudentClassArm(s.intendedClass)).filter(Boolean)
     ]);
     return Array.from(set);
   }, [students, defaultSubgroups]);
@@ -123,7 +133,7 @@ export default function AdminControl({ students }: AdminControlProps) {
   const classStudentMap = useMemo(() => {
     const map: Record<string, Student[]> = {};
     students.forEach(student => {
-      const cls = student.intendedClass || 'Nursery 1 Gold';
+      const cls = getStudentClassArm(student.intendedClass);
       if (!map[cls]) map[cls] = [];
       map[cls].push(student);
     });
@@ -1335,10 +1345,10 @@ export default function AdminControl({ students }: AdminControlProps) {
             {/* Comprehensive Top Class Stat Cards */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               {['Nursery 1', 'Basic 1', 'Basic 2'].map((mainClass) => {
-                const classStudents = students.filter(s => (s.intendedClass || '').startsWith(mainClass));
-                const goldCount = students.filter(s => (s.intendedClass || '') === `${mainClass} Gold`).length;
-                const silverCount = students.filter(s => (s.intendedClass || '') === `${mainClass} Silver`).length;
-                const greenCount = students.filter(s => (s.intendedClass || '') === `${mainClass} Green`).length;
+                const classStudents = students.filter(s => getStudentClassArm(s.intendedClass).startsWith(mainClass));
+                const goldCount = students.filter(s => getStudentClassArm(s.intendedClass) === `${mainClass} Gold`).length;
+                const silverCount = students.filter(s => getStudentClassArm(s.intendedClass) === `${mainClass} Silver`).length;
+                const greenCount = students.filter(s => getStudentClassArm(s.intendedClass) === `${mainClass} Green`).length;
 
                 const verified = classStudents.filter(s => s.verificationStatus === 'verified').length;
                 const paid = classStudents.filter(s => s.paymentStatus === 'paid').length;
@@ -1498,7 +1508,7 @@ export default function AdminControl({ students }: AdminControlProps) {
                         : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                     }`}
                   >
-                    {mainCls} ({students.filter(s => (s.intendedClass || '').startsWith(mainCls)).length})
+                    {mainCls} ({students.filter(s => getStudentClassArm(s.intendedClass).startsWith(mainCls)).length})
                   </button>
                 ))}
               </div>
@@ -1523,7 +1533,7 @@ export default function AdminControl({ students }: AdminControlProps) {
                   return subgroupName.startsWith(classTabFilter);
                 })
                 .map(subgroupName => {
-                  const classStudents = students.filter(s => (s.intendedClass || 'Nursery 1 Gold') === subgroupName);
+                  const classStudents = students.filter(s => getStudentClassArm(s.intendedClass) === subgroupName);
                   const count = classStudents.length;
                   const isFull = count >= 30;
                   const pct = Math.min(100, Math.round((count / 30) * 100));
@@ -1677,7 +1687,7 @@ export default function AdminControl({ students }: AdminControlProps) {
                           </span>
                         </div>
                         <p className="text-xs text-slate-300 font-semibold mt-1">
-                          Enrolled: <strong className="text-white">{students.filter(s => (s.intendedClass || 'Nursery 1 Gold') === selectedSubgroupRoster).length}</strong> / 30 Capacity • AI Integrated Academy Argungu
+                          Enrolled: <strong className="text-white">{students.filter(s => getStudentClassArm(s.intendedClass) === selectedSubgroupRoster).length}</strong> / 30 Capacity • AI Integrated Academy Argungu
                         </p>
                       </div>
                     </div>
@@ -1686,7 +1696,7 @@ export default function AdminControl({ students }: AdminControlProps) {
                       <button
                         type="button"
                         onClick={() => {
-                          const rosterSts = students.filter(s => (s.intendedClass || 'Nursery 1 Gold') === selectedSubgroupRoster);
+                          const rosterSts = students.filter(s => getStudentClassArm(s.intendedClass) === selectedSubgroupRoster);
                           printBulkAdmissionLetters(rosterSts, schoolSettings.logo);
                         }}
                         className="px-4 py-2.5 bg-[#0f7343] hover:bg-[#0b5c34] text-white rounded-xl font-bold text-xs flex items-center gap-2 shadow-sm transition-all cursor-pointer shrink-0"
@@ -1724,7 +1734,7 @@ export default function AdminControl({ students }: AdminControlProps) {
                     {/* Stats Pill Badges */}
                     <div className="flex items-center gap-2.5 w-full sm:w-auto overflow-x-auto text-xs font-bold">
                       {(() => {
-                        const classSts = students.filter(s => (s.intendedClass || 'Nursery 1 Gold') === selectedSubgroupRoster);
+                        const classSts = students.filter(s => getStudentClassArm(s.intendedClass) === selectedSubgroupRoster);
                         const verifiedCount = classSts.filter(s => s.verificationStatus === 'verified').length;
                         const paidCount = classSts.filter(s => s.paymentStatus === 'paid').length;
 
@@ -1749,7 +1759,7 @@ export default function AdminControl({ students }: AdminControlProps) {
                           setSelectedSubgroupRoster(null);
                           setActiveTab('new-verification');
                         }}
-                        disabled={students.filter(s => (s.intendedClass || 'Nursery 1 Gold') === selectedSubgroupRoster).length >= 30}
+                        disabled={students.filter(s => getStudentClassArm(s.intendedClass) === selectedSubgroupRoster).length >= 30}
                         className="px-3.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-extrabold flex items-center gap-1 transition-all cursor-pointer shrink-0 disabled:opacity-40"
                       >
                         <Plus className="w-3.5 h-3.5" />
@@ -1762,7 +1772,7 @@ export default function AdminControl({ students }: AdminControlProps) {
                   <div className="p-6 overflow-y-auto flex-1 space-y-3">
                     {(() => {
                       const rosterStudents = students.filter(s => {
-                        const matchesSubgroup = (s.intendedClass || 'Nursery 1 Gold') === selectedSubgroupRoster;
+                        const matchesSubgroup = getStudentClassArm(s.intendedClass) === selectedSubgroupRoster;
                         if (!matchesSubgroup) return false;
                         if (!rosterSearch.trim()) return true;
                         const q = rosterSearch.toLowerCase();
