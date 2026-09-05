@@ -19,6 +19,7 @@ import {
   getStudentByFormNumber,
   getSchoolSettings,
   updateSchoolSettings,
+  restoreMissingSeedStudents,
 } from '@/lib/db';
 import { Student, Parent, SchoolSettings } from '@/types';
 import { getStudentClassArm } from '@/lib/classUtils';
@@ -314,6 +315,67 @@ export async function adminDeleteMultipleStudentsAction(studentIds: string[]): P
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : 'Failed to delete students.';
     return { success: false, count: 0, error: msg };
+  }
+}
+
+export async function unassignStudentFromSubclassAction(studentId: string): Promise<{ success: boolean; error?: string }> {
+  const student = await getStudentById(studentId);
+  if (!student) return { success: false, error: 'Student not found.' };
+
+  let baseClass = student.intendedClass.replace(/\s+(Gold|Silver|Green)(\s+\d+)?/gi, '').trim();
+  if (!baseClass) baseClass = 'Nursery 1';
+
+  await addOrUpdateStudent({
+    ...student,
+    intendedClass: baseClass,
+  });
+
+  const studentName = `${student.firstName} ${student.lastName}`;
+  await addAuditLog({
+    action: 'UPDATE',
+    actor: 'School Administrator',
+    details: `Admin unassigned student from subclass arm back to base class ${baseClass}`,
+    studentId,
+    studentName,
+  });
+
+  return { success: true };
+}
+
+export async function unassignMultipleStudentsFromSubclassAction(studentIds: string[]): Promise<{ success: boolean; count: number; error?: string }> {
+  try {
+    let count = 0;
+    for (const id of studentIds) {
+      const student = await getStudentById(id);
+      if (student) {
+        let baseClass = student.intendedClass.replace(/\s+(Gold|Silver|Green)(\s+\d+)?/gi, '').trim();
+        if (!baseClass) baseClass = 'Nursery 1';
+        await addOrUpdateStudent({
+          ...student,
+          intendedClass: baseClass,
+        });
+        count++;
+      }
+    }
+    return { success: true, count };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : 'Failed to unassign students.';
+    return { success: false, count: 0, error: msg };
+  }
+}
+
+export async function restoreMissingSeedStudentsAction(): Promise<{ success: boolean; restoredCount: number; error?: string }> {
+  try {
+    const count = await restoreMissingSeedStudents();
+    await addAuditLog({
+      action: 'UPDATE',
+      actor: 'School Administrator',
+      details: `Admin restored ${count} missing initial student records`,
+    });
+    return { success: true, restoredCount: count };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : 'Failed to restore seed data.';
+    return { success: false, restoredCount: 0, error: msg };
   }
 }
 

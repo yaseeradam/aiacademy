@@ -13,7 +13,7 @@ import {
   Loader2, Scan, History, MessageSquare, Camera, FileText, CheckCircle2, CreditCard, Printer,
   GraduationCap, Folder, FolderOpen, Edit3
 } from 'lucide-react';
-import { logoutAction, adminUpdateStudentAction, adminDeleteStudentAction, adminDeleteMultipleStudentsAction, adminCreateStudentAction, adminVerifyAction, adminTogglePaymentStatusAction, getAuditLogsAction, scanAdmissionFormOCRAction, getSchoolSettingsAction, updateSchoolSettingsAction, findDuplicateStudentsAction, DuplicateGroup } from '@/app/actions';
+import { logoutAction, adminUpdateStudentAction, adminDeleteStudentAction, adminDeleteMultipleStudentsAction, unassignStudentFromSubclassAction, unassignMultipleStudentsFromSubclassAction, restoreMissingSeedStudentsAction, adminCreateStudentAction, adminVerifyAction, adminTogglePaymentStatusAction, getAuditLogsAction, scanAdmissionFormOCRAction, getSchoolSettingsAction, updateSchoolSettingsAction, findDuplicateStudentsAction, DuplicateGroup } from '@/app/actions';
 import AdmissionLetterModal, { printBulkAdmissionLetters, getStudentClassArm, getStudentAdmissionNumber } from './AdmissionLetterModal';
 
 interface AdminControlProps {
@@ -294,34 +294,34 @@ export default function AdminControl({ students }: AdminControlProps) {
     setFeedbackModal({
       isOpen: true,
       type: 'loading',
-      title: `Removing ${studentName}...`,
-      message: `Removing student from ${subgroupName} and updating subclass arm capacity...`,
+      title: `Unassigning ${studentName}...`,
+      message: `Removing student from ${subgroupName} subclass arm (student profile remains saved in database)...`,
     });
 
     try {
-      const res = await adminDeleteStudentAction(student.id);
+      const res = await unassignStudentFromSubclassAction(student.id);
       if (res.success) {
         router.refresh();
         setFeedbackModal({
           isOpen: true,
           type: 'success',
-          title: 'Student Removed from Subclass!',
-          message: `"${studentName}" has been removed from ${subgroupName}. Subclass capacity updated automatically.`,
+          title: 'Student Unassigned from Subclass!',
+          message: `"${studentName}" has been unassigned from ${subgroupName}. Subclass capacity updated automatically. The student record remains saved in the school directory.`,
         });
       } else {
         setFeedbackModal({
           isOpen: true,
           type: 'error',
-          title: 'Removal Failed',
-          message: res.error || 'Failed to remove student from subclass.',
+          title: 'Unassign Failed',
+          message: res.error || 'Failed to unassign student from subclass.',
         });
       }
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'An error occurred during removal.';
+      const msg = err instanceof Error ? err.message : 'An error occurred.';
       setFeedbackModal({
         isOpen: true,
         type: 'error',
-        title: 'Removal Error',
+        title: 'Error',
         message: msg,
       });
     }
@@ -334,47 +334,81 @@ export default function AdminControl({ students }: AdminControlProps) {
     }
 
     const confirm1 = window.confirm(
-      `⚠️ ARE YOU SURE?\n\nYou are about to remove ALL ${studentsToRemove.length} students from "${subgroupName}".\n\nThis will permanently delete/unassign their student records from this subclass arm. Continue?`
+      `Unassign ALL ${studentsToRemove.length} students from "${subgroupName}"?\n\nNote: Student records will NOT be deleted from the system. They will simply be unassigned from this subclass arm.`
     );
     if (!confirm1) return;
-
-    const confirm2 = window.confirm(
-      `🚨 FINAL CONFIRMATION:\n\nClick OK to confirm removing ALL ${studentsToRemove.length} students from ${subgroupName}.`
-    );
-    if (!confirm2) return;
 
     setFeedbackModal({
       isOpen: true,
       type: 'loading',
-      title: `Removing ${studentsToRemove.length} Students...`,
-      message: `Clearing all student records assigned to ${subgroupName}...`,
+      title: `Unassigning ${studentsToRemove.length} Students...`,
+      message: `Clearing subclass arm roster for ${subgroupName}...`,
     });
 
     try {
       const ids = studentsToRemove.map(s => s.id);
-      const res = await adminDeleteMultipleStudentsAction(ids);
+      const res = await unassignMultipleStudentsFromSubclassAction(ids);
       if (res.success) {
         router.refresh();
         setFeedbackModal({
           isOpen: true,
           type: 'success',
-          title: 'Subclass Cleared!',
-          message: `Successfully removed all ${res.count} students from ${subgroupName}. Capacity is now 0/35.`,
+          title: 'Subclass Roster Cleared!',
+          message: `Successfully unassigned all ${res.count} students from ${subgroupName}. All student profiles remain safely preserved in the student directory. Subclass capacity is now 0/35.`,
         });
       } else {
         setFeedbackModal({
           isOpen: true,
           type: 'error',
-          title: 'Bulk Removal Failed',
-          message: res.error || 'Failed to remove students.',
+          title: 'Unassign Failed',
+          message: res.error || 'Failed to unassign students.',
         });
       }
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'An error occurred during bulk removal.';
+      const msg = err instanceof Error ? err.message : 'An error occurred during bulk unassign.';
       setFeedbackModal({
         isOpen: true,
         type: 'error',
-        title: 'Removal Error',
+        title: 'Error',
+        message: msg,
+      });
+    }
+  };
+
+  const handleRestoreMissingData = async () => {
+    setFeedbackModal({
+      isOpen: true,
+      type: 'loading',
+      title: 'Restoring Student Records...',
+      message: 'Checking and restoring missing default student profiles...',
+    });
+
+    try {
+      const res = await restoreMissingSeedStudentsAction();
+      if (res.success) {
+        router.refresh();
+        setFeedbackModal({
+          isOpen: true,
+          type: 'success',
+          title: 'Data Restored Successfully!',
+          message: res.restoredCount > 0 
+            ? `Successfully restored ${res.restoredCount} deleted student records back into the database!`
+            : 'All initial student records are already present in the database.',
+        });
+      } else {
+        setFeedbackModal({
+          isOpen: true,
+          type: 'error',
+          title: 'Restore Failed',
+          message: res.error || 'Failed to restore student records.',
+        });
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Error restoring data.';
+      setFeedbackModal({
+        isOpen: true,
+        type: 'error',
+        title: 'Restore Error',
         message: msg,
       });
     }
@@ -1773,6 +1807,15 @@ export default function AdminControl({ students }: AdminControlProps) {
                 >
                   <Download className="w-4 h-4 text-emerald-400" />
                   <span>Download All Subclasses (CSV)</span>
+                </button>
+
+                <button
+                  onClick={handleRestoreMissingData}
+                  className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-extrabold transition-all cursor-pointer flex items-center gap-1.5 shadow-2xs shrink-0"
+                  title="Restore missing default student records if any were accidentally deleted"
+                >
+                  <RefreshCw className="w-4 h-4 text-white" />
+                  <span>Restore Missing Data</span>
                 </button>
 
                 <div className="flex items-center gap-2 text-xs font-extrabold text-slate-500 shrink-0">

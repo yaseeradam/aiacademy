@@ -289,22 +289,39 @@ async function ensureSeeded() {
         /* ignore index conflict if already exists */
       }
 
-      const parentsCount = await db.collection(PARENTS_COL).countDocuments();
-      if (parentsCount === 0) {
-        await db.collection<Parent>(PARENTS_COL).insertMany(INITIAL_PARENTS);
-        await db.collection<Student>(STUDENTS_COL).insertMany(INITIAL_STUDENTS);
-      } else {
-        await db.collection<Student>(STUDENTS_COL).updateMany(
-          { intendedClass: { $regex: /Primary/i } },
-          { $set: { intendedClass: 'Basic 1' } }
-        );
+      // Ensure initial parents and students exist without overwriting modified data
+      for (const p of INITIAL_PARENTS) {
+        await db.collection<Parent>(PARENTS_COL).updateOne({ id: p.id }, { $setOnInsert: p }, { upsert: true });
       }
+      for (const s of INITIAL_STUDENTS) {
+        await db.collection<Student>(STUDENTS_COL).updateOne({ id: s.id }, { $setOnInsert: s }, { upsert: true });
+      }
+
+      await db.collection<Student>(STUDENTS_COL).updateMany(
+        { intendedClass: { $regex: /Primary/i } },
+        { $set: { intendedClass: 'Basic 1' } }
+      );
     })().catch(err => {
       console.error('DB seed/index error:', err);
       seedPromise = null;
     });
   }
   return seedPromise;
+}
+
+export async function restoreMissingSeedStudents(): Promise<number> {
+  const db = await getDB();
+  let count = 0;
+  for (const p of INITIAL_PARENTS) {
+    await db.collection<Parent>(PARENTS_COL).updateOne({ id: p.id }, { $setOnInsert: p }, { upsert: true });
+  }
+  for (const s of INITIAL_STUDENTS) {
+    const res = await db.collection<Student>(STUDENTS_COL).updateOne({ id: s.id }, { $setOnInsert: s }, { upsert: true });
+    if (res.upsertedCount > 0) {
+      count += res.upsertedCount;
+    }
+  }
+  return count;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
