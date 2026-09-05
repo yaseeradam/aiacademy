@@ -1596,416 +1596,420 @@ export default function AdminControl({ students }: AdminControlProps) {
         {/* TAB: CLASSES & STUDENTS EXPLORER PAGE */}
         {activeTab === 'classes' && (
           <div className="space-y-8 animate-slide-down">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div>
-                <h1 className="text-3xl font-black text-slate-800 tracking-tight leading-none flex items-center gap-3">
-                  <GraduationCap className="w-8 h-8 text-[#0f7343]" />
-                  <span>Classes & Subgroups Roster</span>
-                </h1>
-                <p className="text-slate-500 text-sm font-semibold mt-2.5">
-                  Class arms with 35-student capacity tracking (Gold, Silver, Green) with automatic overflow and instant admission letter printing.
-                </p>
-              </div>
+            {!selectedSubgroupRoster && (
+              <>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div>
+                    <h1 className="text-3xl font-black text-slate-800 tracking-tight leading-none flex items-center gap-3">
+                      <GraduationCap className="w-8 h-8 text-[#0f7343]" />
+                      <span>Classes & Subgroups Roster</span>
+                    </h1>
+                    <p className="text-slate-500 text-sm font-semibold mt-2.5">
+                      Class arms with 35-student capacity tracking (Gold, Silver, Green) with automatic overflow and instant admission letter printing.
+                    </p>
+                  </div>
 
-              <div className="flex flex-wrap items-center gap-3">
-                <button
-                  type="button"
-                  onClick={() => printBulkAdmissionLetters(students, schoolSettings.logo)}
-                  className="flex items-center gap-2 px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl shadow-sm transition-all cursor-pointer"
-                >
-                  <Printer className="w-4 h-4 text-emerald-400" />
-                  <span>Bulk Print All Letters ({students.length})</span>
-                </button>
+                  <div className="flex flex-wrap items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => printBulkAdmissionLetters(students, schoolSettings.logo)}
+                      className="flex items-center gap-2 px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl shadow-sm transition-all cursor-pointer"
+                    >
+                      <Printer className="w-4 h-4 text-emerald-400" />
+                      <span>Bulk Print All Letters ({students.length})</span>
+                    </button>
 
-                <button
-                  onClick={() => setActiveTab('new-verification')}
-                  className="flex items-center gap-2 px-4 py-2.5 bg-[#0f7343] hover:bg-[#0b5c34] text-white font-bold text-xs rounded-xl shadow-sm transition-all cursor-pointer"
-                >
-                  <Plus className="w-4 h-4" />
-                  <span>Add Student to Class</span>
-                </button>
-              </div>
-            </div>
+                    <button
+                      onClick={() => setActiveTab('new-verification')}
+                      className="flex items-center gap-2 px-4 py-2.5 bg-[#0f7343] hover:bg-[#0b5c34] text-white font-bold text-xs rounded-xl shadow-sm transition-all cursor-pointer"
+                    >
+                      <Plus className="w-4 h-4" />
+                      <span>Add Student to Class</span>
+                    </button>
+                  </div>
+                </div>
 
-            {/* Comprehensive Top Class Stat Cards */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {sortedMainClasses.map((mainClass) => {
-                const classStudents = students.filter(s => getStudentClassArm(s.intendedClass, s.id, students).startsWith(mainClass));
-                const goldCount = students.filter(s => getStudentClassArm(s.intendedClass, s.id, students) === `${mainClass} Gold`).length;
-                const silverCount = students.filter(s => getStudentClassArm(s.intendedClass, s.id, students) === `${mainClass} Silver`).length;
-                const greenCount = students.filter(s => getStudentClassArm(s.intendedClass, s.id, students) === `${mainClass} Green`).length;
+                {/* Comprehensive Top Class Stat Cards */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                  {sortedMainClasses.map((mainClass) => {
+                    const classStudents = students.filter(s => getStudentClassArm(s.intendedClass, s.id, students).startsWith(mainClass));
+                    const goldCount = students.filter(s => getStudentClassArm(s.intendedClass, s.id, students) === `${mainClass} Gold`).length;
+                    const silverCount = students.filter(s => getStudentClassArm(s.intendedClass, s.id, students) === `${mainClass} Silver`).length;
+                    const greenCount = students.filter(s => getStudentClassArm(s.intendedClass, s.id, students) === `${mainClass} Green`).length;
 
-                const verified = classStudents.filter(s => s.verificationStatus === 'verified').length;
-                const paid = classStudents.filter(s => s.paymentStatus === 'paid').length;
-                const pendingPaid = classStudents.filter(s => s.paymentStatus !== 'paid').length;
-                const totalCapacity = 105; // 3 arms x 35 capacity
-                const mainPct = Math.min(100, Math.round((classStudents.length / totalCapacity) * 100));
+                    const verified = classStudents.filter(s => s.verificationStatus === 'verified').length;
+                    const paid = classStudents.filter(s => s.paymentStatus === 'paid').length;
+                    const pendingPaid = classStudents.filter(s => s.paymentStatus !== 'paid').length;
+                    const totalCapacity = 105; // 3 arms x 35 capacity
+                    const mainPct = Math.min(100, Math.round((classStudents.length / totalCapacity) * 100));
 
-                const isSelected = classTabFilter === mainClass;
+                    const isSelected = classTabFilter === mainClass;
 
-                return (
-                  <div 
-                    key={mainClass} 
-                    className={`soft-card bg-white rounded-3xl border flex flex-col justify-between overflow-hidden transition-all shadow-xs ${
-                      isSelected 
-                        ? 'border-[#0f7343] ring-2 ring-[#0f7343]/20 shadow-md' 
-                        : 'border-slate-200 hover:border-slate-300'
-                    }`}
-                  >
-                    {/* Top Card Header */}
-                    <div className="p-5 border-b border-slate-100 bg-slate-50/60">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <div className="w-12 h-12 rounded-2xl bg-emerald-100/80 text-[#0f7343] flex items-center justify-center font-black border border-emerald-200 shadow-xs">
-                            <GraduationCap className="w-6 h-6" />
-                          </div>
-                          <div>
-                            <h3 className="text-xl font-black text-slate-900 tracking-tight">{mainClass}</h3>
-                            <span className="text-[11px] font-bold text-slate-500">
-                              3 Subclasses (Gold, Silver, Green)
+                    return (
+                      <div 
+                        key={mainClass} 
+                        className={`soft-card bg-white rounded-3xl border flex flex-col justify-between overflow-hidden transition-all shadow-xs ${
+                          isSelected 
+                            ? 'border-[#0f7343] ring-2 ring-[#0f7343]/20 shadow-md' 
+                            : 'border-slate-200 hover:border-slate-300'
+                        }`}
+                      >
+                        {/* Top Card Header */}
+                        <div className="p-5 border-b border-slate-100 bg-slate-50/60">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <div className="w-12 h-12 rounded-2xl bg-emerald-100/80 text-[#0f7343] flex items-center justify-center font-black border border-emerald-200 shadow-xs">
+                                <GraduationCap className="w-6 h-6" />
+                              </div>
+                              <div>
+                                <h3 className="text-xl font-black text-slate-900 tracking-tight">{mainClass}</h3>
+                                <span className="text-[11px] font-bold text-slate-500">
+                                  3 Subclasses (Gold, Silver, Green)
+                                </span>
+                              </div>
+                            </div>
+
+                            <span className="text-xs font-black bg-emerald-100 text-emerald-800 px-3 py-1 rounded-full border border-emerald-200">
+                              {classStudents.length} / 105 Enrolled
                             </span>
                           </div>
                         </div>
 
-                        <span className="text-xs font-black bg-emerald-100 text-emerald-800 px-3 py-1 rounded-full border border-emerald-200">
-                          {classStudents.length} / 105 Enrolled
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Top Card Detailed Breakdown */}
-                    <div className="p-5 space-y-4 flex-1">
-                      {/* Main Class Stats Grid */}
-                      <div className="grid grid-cols-3 gap-2.5 text-center text-xs">
-                        <div className="p-2.5 bg-emerald-50/60 rounded-xl border border-emerald-100/60">
-                          <span className="block text-[10px] font-bold text-emerald-700 uppercase tracking-wider">Verified</span>
-                          <span className="text-sm font-black text-emerald-900 mt-0.5 block">{verified}</span>
-                        </div>
-                        <div className="p-2.5 bg-blue-50/60 rounded-xl border border-blue-100/60">
-                          <span className="block text-[10px] font-bold text-blue-700 uppercase tracking-wider">Fees Paid</span>
-                          <span className="text-sm font-black text-blue-900 mt-0.5 block">{paid}</span>
-                        </div>
-                        <div className="p-2.5 bg-amber-50/60 rounded-xl border border-amber-100/60">
-                          <span className="block text-[10px] font-bold text-amber-700 uppercase tracking-wider">Unpaid</span>
-                          <span className="text-sm font-black text-amber-900 mt-0.5 block">{pendingPaid}</span>
-                        </div>
-                      </div>
-
-                      {/* Main Capacity Meter */}
-                      <div className="space-y-1">
-                        <div className="flex justify-between text-xs font-extrabold text-slate-700">
-                          <span>Total Class Capacity</span>
-                          <span className="text-[#0f7343] font-black">{mainPct}% Filled</span>
-                        </div>
-                        <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-                          <div style={{ width: `${mainPct}%` }} className="bg-[#0f7343] h-full rounded-full transition-all" />
-                        </div>
-                      </div>
-
-                      {/* Subclass Arm Rows Breakdown */}
-                      <div className="pt-2 space-y-2 border-t border-slate-100">
-                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">Subclass Arms (35 Max Each):</span>
-                        
-                        {/* Gold */}
-                        <div className="flex items-center justify-between p-2 rounded-xl bg-amber-50/50 border border-amber-100 text-xs">
-                          <div className="flex items-center gap-2 font-bold text-amber-900">
-                            <span className="w-2.5 h-2.5 rounded-full bg-amber-500 shrink-0" />
-                            <span>Gold Arm</span>
-                          </div>
-                          <span className={`font-black ${goldCount >= 35 ? 'text-rose-600' : 'text-slate-800'}`}>
-                            {goldCount} / 35 {goldCount >= 35 && '🔴 FULL'}
-                          </span>
-                        </div>
-
-                        {/* Silver */}
-                        <div className="flex items-center justify-between p-2 rounded-xl bg-slate-50 border border-slate-200 text-xs">
-                          <div className="flex items-center gap-2 font-bold text-slate-700">
-                            <span className="w-2.5 h-2.5 rounded-full bg-slate-500 shrink-0" />
-                            <span>Silver Arm</span>
-                          </div>
-                          <span className={`font-black ${silverCount >= 35 ? 'text-rose-600' : 'text-slate-800'}`}>
-                            {silverCount} / 35 {silverCount >= 35 && '🔴 FULL'}
-                          </span>
-                        </div>
-
-                        {/* Green */}
-                        <div className="flex items-center justify-between p-2 rounded-xl bg-emerald-50/50 border border-emerald-100 text-xs">
-                          <div className="flex items-center gap-2 font-bold text-emerald-900">
-                            <span className="w-2.5 h-2.5 rounded-full bg-emerald-600 shrink-0" />
-                            <span>Green Arm</span>
-                          </div>
-                          <span className={`font-black ${greenCount >= 35 ? 'text-rose-600' : 'text-slate-800'}`}>
-                            {greenCount} / 35 {greenCount >= 35 && '🔴 FULL'}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Top Card Actions */}
-                    <div className="p-4 border-t border-slate-100 bg-slate-50/50 flex items-center justify-between gap-2">
-                      <button
-                        type="button"
-                        onClick={() => printBulkAdmissionLetters(classStudents, schoolSettings.logo)}
-                        disabled={classStudents.length === 0}
-                        className="flex-1 py-2 px-3 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-40"
-                      >
-                        <Printer className="w-3.5 h-3.5 text-emerald-400" />
-                        <span>Print All {mainClass} Letters</span>
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => setClassTabFilter(mainClass)}
-                        className={`py-2 px-3 rounded-xl font-extrabold text-xs transition-all cursor-pointer ${
-                          isSelected 
-                            ? 'bg-[#0f7343] text-white' 
-                            : 'bg-slate-200 hover:bg-slate-300 text-slate-700'
-                        }`}
-                      >
-                        {isSelected ? 'Filtered ✓' : 'Filter'}
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* Filter Tabs & Search Bar */}
-            <div className="soft-card p-4 bg-white rounded-2xl border border-slate-200 flex flex-col md:flex-row items-center justify-between gap-4 shadow-2xs">
-              <div className="flex flex-wrap gap-2 w-full md:w-auto">
-                <button
-                  onClick={() => setClassTabFilter('all')}
-                  className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                    classTabFilter === 'all'
-                      ? 'bg-slate-900 text-white shadow-xs'
-                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                  }`}
-                >
-                  All Subgroups ({students.length})
-                </button>
-                {['Nursery 1', 'Basic 1', 'Basic 2'].map(mainCls => (
-                  <button
-                    key={mainCls}
-                    onClick={() => setClassTabFilter(mainCls)}
-                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                      classTabFilter === mainCls
-                        ? 'bg-[#0f7343] text-white shadow-xs'
-                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                    }`}
-                  >
-                    {mainCls} ({students.filter(s => getStudentClassArm(s.intendedClass, s.id, students).startsWith(mainCls)).length})
-                  </button>
-                ))}
-              </div>
-
-              <div className="flex items-center gap-3 w-full md:w-auto flex-wrap sm:flex-nowrap">
-                <button
-                  onClick={handleDownloadAllSubclassesFullNames}
-                  disabled={students.length === 0}
-                  className="px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-extrabold transition-all cursor-pointer flex items-center gap-1.5 shadow-2xs shrink-0 disabled:opacity-40"
-                  title="Download CSV file of full names for all subclasses"
-                >
-                  <Download className="w-4 h-4 text-emerald-400" />
-                  <span>Download All Subclasses (CSV)</span>
-                </button>
-
-                <button
-                  onClick={handleRestoreMissingData}
-                  className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-extrabold transition-all cursor-pointer flex items-center gap-1.5 shadow-2xs shrink-0"
-                  title="Restore missing default student records if any were accidentally deleted"
-                >
-                  <RefreshCw className="w-4 h-4 text-white" />
-                  <span>Restore Missing Data</span>
-                </button>
-
-                <div className="flex items-center gap-2 text-xs font-extrabold text-slate-500 shrink-0">
-                  <span>Priority:</span>
-                  <select
-                    value={subgroupSortOrder}
-                    onChange={(e) => setSubgroupSortOrder(e.target.value as 'most_populated' | 'alphabetical' | 'capacity')}
-                    className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 focus:outline-none focus:border-[#0f7343] cursor-pointer"
-                  >
-                    <option value="most_populated">🔥 Highest Students First</option>
-                    <option value="capacity">🔴 Full Capacity First</option>
-                    <option value="alphabetical">🔤 Name (A-Z)</option>
-                  </select>
-                </div>
-
-                <div className="relative flex-1 md:w-64">
-                  <Search className="w-4 h-4 absolute left-3.5 top-3 text-slate-400" />
-                  <input
-                    type="text"
-                    value={classPageSearch}
-                    onChange={(e) => setClassPageSearch(e.target.value)}
-                    placeholder="Search student, form no..."
-                    className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:border-[#0f7343] focus:bg-white transition-all"
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Subgroup Roster Grid Layout */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {classList
-                .filter(subgroupName => {
-                  if (classTabFilter === 'all') return true;
-                  return subgroupName.startsWith(classTabFilter);
-                })
-                .map(subgroupName => {
-                  const classStudents = students.filter(s => getStudentClassArm(s.intendedClass, s.id, students) === subgroupName);
-                  const count = classStudents.length;
-                  const isFull = count >= 35;
-                  const pct = Math.min(100, Math.round((count / 35) * 100));
-
-                  const verifiedCount = classStudents.filter(s => s.verificationStatus === 'verified').length;
-                  const paidCount = classStudents.filter(s => s.paymentStatus === 'paid').length;
-                  const pendingPaidCount = classStudents.filter(s => s.paymentStatus !== 'paid').length;
-
-                  const isGold = subgroupName.includes('Gold');
-                  const isSilver = subgroupName.includes('Silver');
-                  const isGreen = subgroupName.includes('Green');
-
-                  return (
-                    <div 
-                      key={subgroupName} 
-                      onClick={() => setSelectedSubgroupRoster(subgroupName)}
-                      className={`soft-card bg-white rounded-3xl border flex flex-col justify-between overflow-hidden shadow-xs transition-all hover:shadow-lg hover:-translate-y-0.5 cursor-pointer group ${
-                        isGold 
-                          ? 'border-amber-200 hover:border-amber-400 hover:ring-2 hover:ring-amber-400/20' 
-                          : isSilver 
-                          ? 'border-slate-300 hover:border-slate-400 hover:ring-2 hover:ring-slate-400/20' 
-                          : isGreen 
-                          ? 'border-emerald-200 hover:border-emerald-400 hover:ring-2 hover:ring-emerald-400/20' 
-                          : 'border-slate-200 hover:border-slate-300'
-                      }`}
-                    >
-                      {/* Subgroup Banner Header */}
-                      <div className={`p-5 border-b border-slate-100 ${
-                        isGold 
-                          ? 'bg-amber-50/60' 
-                          : isSilver 
-                          ? 'bg-slate-50' 
-                          : isGreen 
-                          ? 'bg-emerald-50/60' 
-                          : 'bg-slate-50'
-                      }`}>
-                        <div className="flex items-center justify-between gap-3">
-                          <div className="flex items-center gap-3">
-                            <div className={`w-11 h-11 rounded-2xl text-white flex items-center justify-center font-black shadow-xs ${
-                              isGold ? 'bg-amber-500' : isSilver ? 'bg-slate-600' : isGreen ? 'bg-emerald-600' : 'bg-[#0f7343]'
-                            }`}>
-                              <GraduationCap className="w-6 h-6" />
+                        {/* Top Card Detailed Breakdown */}
+                        <div className="p-5 space-y-4 flex-1">
+                          {/* Main Class Stats Grid */}
+                          <div className="grid grid-cols-3 gap-2.5 text-center text-xs">
+                            <div className="p-2.5 bg-emerald-50/60 rounded-xl border border-emerald-100/60">
+                              <span className="block text-[10px] font-bold text-emerald-700 uppercase tracking-wider">Verified</span>
+                              <span className="text-sm font-black text-emerald-900 mt-0.5 block">{verified}</span>
                             </div>
-                            <div>
-                              <h2 className="text-lg font-black text-slate-800 tracking-tight group-hover:text-[#0f7343] transition-colors">
-                                {subgroupName}
-                              </h2>
-                              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
-                                Max Capacity: 35
+                            <div className="p-2.5 bg-blue-50/60 rounded-xl border border-blue-100/60">
+                              <span className="block text-[10px] font-bold text-blue-700 uppercase tracking-wider">Fees Paid</span>
+                              <span className="text-sm font-black text-blue-900 mt-0.5 block">{paid}</span>
+                            </div>
+                            <div className="p-2.5 bg-amber-50/60 rounded-xl border border-amber-100/60">
+                              <span className="block text-[10px] font-bold text-amber-700 uppercase tracking-wider">Unpaid</span>
+                              <span className="text-sm font-black text-amber-900 mt-0.5 block">{pendingPaid}</span>
+                            </div>
+                          </div>
+
+                          {/* Main Capacity Meter */}
+                          <div className="space-y-1">
+                            <div className="flex justify-between text-xs font-extrabold text-slate-700">
+                              <span>Total Class Capacity</span>
+                              <span className="text-[#0f7343] font-black">{mainPct}% Filled</span>
+                            </div>
+                            <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                              <div style={{ width: `${mainPct}%` }} className="bg-[#0f7343] h-full rounded-full transition-all" />
+                            </div>
+                          </div>
+
+                          {/* Subclass Arm Rows Breakdown */}
+                          <div className="pt-2 space-y-2 border-t border-slate-100">
+                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">Subclass Arms (35 Max Each):</span>
+                            
+                            {/* Gold */}
+                            <div className="flex items-center justify-between p-2 rounded-xl bg-amber-50/50 border border-amber-100 text-xs">
+                              <div className="flex items-center gap-2 font-bold text-amber-900">
+                                <span className="w-2.5 h-2.5 rounded-full bg-amber-500 shrink-0" />
+                                <span>Gold Arm</span>
+                              </div>
+                              <span className={`font-black ${goldCount >= 35 ? 'text-rose-600' : 'text-slate-800'}`}>
+                                {goldCount} / 35 {goldCount >= 35 && '🔴 FULL'}
+                              </span>
+                            </div>
+
+                            {/* Silver */}
+                            <div className="flex items-center justify-between p-2 rounded-xl bg-slate-50 border border-slate-200 text-xs">
+                              <div className="flex items-center gap-2 font-bold text-slate-700">
+                                <span className="w-2.5 h-2.5 rounded-full bg-slate-500 shrink-0" />
+                                <span>Silver Arm</span>
+                              </div>
+                              <span className={`font-black ${silverCount >= 35 ? 'text-rose-600' : 'text-slate-800'}`}>
+                                {silverCount} / 35 {silverCount >= 35 && '🔴 FULL'}
+                              </span>
+                            </div>
+
+                            {/* Green */}
+                            <div className="flex items-center justify-between p-2 rounded-xl bg-emerald-50/50 border border-emerald-100 text-xs">
+                              <div className="flex items-center gap-2 font-bold text-emerald-900">
+                                <span className="w-2.5 h-2.5 rounded-full bg-emerald-600 shrink-0" />
+                                <span>Green Arm</span>
+                              </div>
+                              <span className={`font-black ${greenCount >= 35 ? 'text-rose-600' : 'text-slate-800'}`}>
+                                {greenCount} / 35 {greenCount >= 35 && '🔴 FULL'}
                               </span>
                             </div>
                           </div>
-
-                          {isFull ? (
-                            <span className="bg-rose-100 text-rose-800 text-[10px] font-black px-2.5 py-1 rounded-full border border-rose-200 shrink-0">
-                              🔴 FULL (35/35)
-                            </span>
-                          ) : (
-                            <span className="bg-emerald-100 text-emerald-800 text-[10px] font-black px-2.5 py-1 rounded-full border border-emerald-200 shrink-0">
-                              🟢 {35 - count} Available
-                            </span>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Card Content - Subclass Details Grid */}
-                      <div className="p-5 space-y-4 flex-1">
-                        {/* Subclass Metrics Grid */}
-                        <div className="grid grid-cols-2 gap-3 text-xs">
-                          <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100/80">
-                            <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Enrolled</span>
-                            <span className="text-base font-black text-slate-800 mt-0.5 block">{count} / 35</span>
-                          </div>
-                          <div className="p-3 bg-emerald-50/50 rounded-2xl border border-emerald-100/60">
-                            <span className="block text-[10px] font-bold text-emerald-600 uppercase tracking-wider">Verified</span>
-                            <span className="text-base font-black text-emerald-800 mt-0.5 block">{verifiedCount}</span>
-                          </div>
-                          <div className="p-3 bg-blue-50/50 rounded-2xl border border-blue-100/60">
-                            <span className="block text-[10px] font-bold text-blue-600 uppercase tracking-wider">Fees Paid</span>
-                            <span className="text-base font-black text-blue-800 mt-0.5 block">{paidCount}</span>
-                          </div>
-                          <div className="p-3 bg-amber-50/50 rounded-2xl border border-amber-100/60">
-                            <span className="block text-[10px] font-bold text-amber-600 uppercase tracking-wider">Fees Pending</span>
-                            <span className="text-base font-black text-amber-800 mt-0.5 block">{pendingPaidCount}</span>
-                          </div>
                         </div>
 
-                        {/* Capacity Progress Bar */}
-                        <div className="space-y-1.5 pt-1">
-                          <div className="flex justify-between items-center text-xs font-extrabold text-slate-700">
-                            <span>Capacity Gauge</span>
-                            <span className={isFull ? 'text-rose-600 font-black' : 'text-emerald-700'}>{pct}% Filled</span>
-                          </div>
-                          <div className="w-full bg-slate-200/80 h-2.5 rounded-full overflow-hidden">
-                            <div 
-                              style={{ width: `${pct}%` }} 
-                              className={`h-full transition-all rounded-full ${isFull ? 'bg-rose-500' : isGold ? 'bg-amber-500' : isSilver ? 'bg-slate-600' : 'bg-emerald-600'}`} 
-                            />
-                          </div>
+                        {/* Top Card Actions */}
+                        <div className="p-4 border-t border-slate-100 bg-slate-50/50 flex items-center justify-between gap-2">
+                          <button
+                            type="button"
+                            onClick={() => printBulkAdmissionLetters(classStudents, schoolSettings.logo)}
+                            disabled={classStudents.length === 0}
+                            className="flex-1 py-2 px-3 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-40"
+                          >
+                            <Printer className="w-3.5 h-3.5 text-emerald-400" />
+                            <span>Print All {mainClass} Letters</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => setClassTabFilter(mainClass)}
+                            className={`py-2 px-3 rounded-xl font-extrabold text-xs transition-all cursor-pointer ${
+                              isSelected 
+                                ? 'bg-[#0f7343] text-white' 
+                                : 'bg-slate-200 hover:bg-slate-300 text-slate-700'
+                            }`}
+                          >
+                            {isSelected ? 'Filtered ✓' : 'Filter'}
+                          </button>
                         </div>
                       </div>
+                    );
+                  })}
+                </div>
 
-                      {/* Subgroup Card Footer Actions */}
-                      <div className="p-4 border-t border-slate-100 bg-slate-50/50 flex items-center justify-between gap-2" onClick={(e) => e.stopPropagation()}>
-                        <button
-                          onClick={() => setSelectedSubgroupRoster(subgroupName)}
-                          className="flex-1 py-2.5 px-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-extrabold text-xs transition-all flex items-center justify-center gap-1.5 shadow-2xs cursor-pointer"
-                        >
-                          <Users className="w-4 h-4 text-emerald-400" />
-                          <span>View Roster ({count})</span>
-                        </button>
-                        
-                        <button
-                          onClick={() => handleDownloadSubclassFullNames(subgroupName, classStudents)}
-                          disabled={count === 0}
-                          className="py-2.5 px-3 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-800 border border-blue-200 font-extrabold text-xs transition-all flex items-center justify-center gap-1 cursor-pointer disabled:opacity-40"
-                          title="Download student full names CSV for this arm"
-                        >
-                          <Download className="w-4 h-4 text-blue-600" />
-                          <span className="hidden sm:inline">Download</span>
-                        </button>
+                {/* Filter Tabs & Search Bar */}
+                <div className="soft-card p-4 bg-white rounded-2xl border border-slate-200 flex flex-col md:flex-row items-center justify-between gap-4 shadow-2xs">
+                  <div className="flex flex-wrap gap-2 w-full md:w-auto">
+                    <button
+                      onClick={() => setClassTabFilter('all')}
+                      className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                        classTabFilter === 'all'
+                          ? 'bg-slate-900 text-white shadow-xs'
+                          : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                      }`}
+                    >
+                      All Subgroups ({students.length})
+                    </button>
+                    {['Nursery 1', 'Basic 1', 'Basic 2'].map(mainCls => (
+                      <button
+                        key={mainCls}
+                        onClick={() => setClassTabFilter(mainCls)}
+                        className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                          classTabFilter === mainCls
+                            ? 'bg-[#0f7343] text-white shadow-xs'
+                            : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                        }`}
+                      >
+                        {mainCls} ({students.filter(s => getStudentClassArm(s.intendedClass, s.id, students).startsWith(mainCls)).length})
+                      </button>
+                    ))}
+                  </div>
 
-                        <button
-                          onClick={() => handleRemoveAllFromSubclass(subgroupName, classStudents)}
-                          disabled={count === 0}
-                          className="py-2.5 px-3 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-extrabold text-xs transition-all flex items-center justify-center gap-1 cursor-pointer disabled:opacity-40"
-                          title={`Remove all ${count} students from ${subgroupName}`}
-                        >
-                          <Trash2 className="w-4 h-4 text-rose-600" />
-                          <span className="hidden sm:inline">Clear</span>
-                        </button>
+                  <div className="flex items-center gap-3 w-full md:w-auto flex-wrap sm:flex-nowrap">
+                    <button
+                      onClick={handleDownloadAllSubclassesFullNames}
+                      disabled={students.length === 0}
+                      className="px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-extrabold transition-all cursor-pointer flex items-center gap-1.5 shadow-2xs shrink-0 disabled:opacity-40"
+                      title="Download CSV file of full names for all subclasses"
+                    >
+                      <Download className="w-4 h-4 text-emerald-400" />
+                      <span>Download All Subclasses (CSV)</span>
+                    </button>
 
-                        <button
-                          onClick={() => {
-                            setNewStudent(prev => ({ ...prev, intendedClass: subgroupName }));
-                            setActiveTab('new-verification');
-                          }}
-                          disabled={isFull}
-                          className={`py-2.5 px-3 rounded-xl font-extrabold text-xs transition-all flex items-center justify-center gap-1 cursor-pointer ${
-                            isFull 
-                              ? 'bg-slate-200 text-slate-400 cursor-not-allowed' 
-                              : 'bg-[#0f7343] hover:bg-[#0b5c34] text-white shadow-2xs'
-                          }`}
-                          title={isFull ? 'Subclass arm is full (35/35)' : 'Add student to this arm'}
-                        >
-                          <Plus className="w-4 h-4" />
-                          <span>{isFull ? 'Full' : 'Add'}</span>
-                        </button>
-                      </div>
+                    <button
+                      onClick={handleRestoreMissingData}
+                      className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-extrabold transition-all cursor-pointer flex items-center gap-1.5 shadow-2xs shrink-0"
+                      title="Restore missing default student records if any were accidentally deleted"
+                    >
+                      <RefreshCw className="w-4 h-4 text-white" />
+                      <span>Restore Missing Data</span>
+                    </button>
+
+                    <div className="flex items-center gap-2 text-xs font-extrabold text-slate-500 shrink-0">
+                      <span>Priority:</span>
+                      <select
+                        value={subgroupSortOrder}
+                        onChange={(e) => setSubgroupSortOrder(e.target.value as 'most_populated' | 'alphabetical' | 'capacity')}
+                        className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 focus:outline-none focus:border-[#0f7343] cursor-pointer"
+                      >
+                        <option value="most_populated">🔥 Highest Students First</option>
+                        <option value="capacity">🔴 Full Capacity First</option>
+                        <option value="alphabetical">🔤 Name (A-Z)</option>
+                      </select>
                     </div>
-                  );
-                })}
-            </div>
+
+                    <div className="relative flex-1 md:w-64">
+                      <Search className="w-4 h-4 absolute left-3.5 top-3 text-slate-400" />
+                      <input
+                        type="text"
+                        value={classPageSearch}
+                        onChange={(e) => setClassPageSearch(e.target.value)}
+                        placeholder="Search student, form no..."
+                        className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:border-[#0f7343] focus:bg-white transition-all"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Subgroup Roster Grid Layout */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {classList
+                    .filter(subgroupName => {
+                      if (classTabFilter === 'all') return true;
+                      return subgroupName.startsWith(classTabFilter);
+                    })
+                    .map(subgroupName => {
+                      const classStudents = students.filter(s => getStudentClassArm(s.intendedClass, s.id, students) === subgroupName);
+                      const count = classStudents.length;
+                      const isFull = count >= 35;
+                      const pct = Math.min(100, Math.round((count / 35) * 100));
+
+                      const verifiedCount = classStudents.filter(s => s.verificationStatus === 'verified').length;
+                      const paidCount = classStudents.filter(s => s.paymentStatus === 'paid').length;
+                      const pendingPaidCount = classStudents.filter(s => s.paymentStatus !== 'paid').length;
+
+                      const isGold = subgroupName.includes('Gold');
+                      const isSilver = subgroupName.includes('Silver');
+                      const isGreen = subgroupName.includes('Green');
+
+                      return (
+                        <div 
+                          key={subgroupName} 
+                          onClick={() => setSelectedSubgroupRoster(subgroupName)}
+                          className={`soft-card bg-white rounded-3xl border flex flex-col justify-between overflow-hidden shadow-xs transition-all hover:shadow-lg hover:-translate-y-0.5 cursor-pointer group ${
+                            isGold 
+                              ? 'border-amber-200 hover:border-amber-400 hover:ring-2 hover:ring-amber-400/20' 
+                              : isSilver 
+                              ? 'border-slate-300 hover:border-slate-400 hover:ring-2 hover:ring-slate-400/20' 
+                              : isGreen 
+                              ? 'border-emerald-200 hover:border-emerald-400 hover:ring-2 hover:ring-emerald-400/20' 
+                              : 'border-slate-200 hover:border-slate-300'
+                          }`}
+                        >
+                          {/* Subgroup Banner Header */}
+                          <div className={`p-5 border-b border-slate-100 ${
+                            isGold 
+                              ? 'bg-amber-50/60' 
+                              : isSilver 
+                              ? 'bg-slate-50' 
+                              : isGreen 
+                              ? 'bg-emerald-50/60' 
+                              : 'bg-slate-50'
+                          }`}>
+                            <div className="flex items-center justify-between gap-3">
+                              <div className="flex items-center gap-3">
+                                <div className={`w-11 h-11 rounded-2xl text-white flex items-center justify-center font-black shadow-xs ${
+                                  isGold ? 'bg-amber-500' : isSilver ? 'bg-slate-600' : isGreen ? 'bg-emerald-600' : 'bg-[#0f7343]'
+                                }`}>
+                                  <GraduationCap className="w-6 h-6" />
+                                </div>
+                                <div>
+                                  <h2 className="text-lg font-black text-slate-800 tracking-tight group-hover:text-[#0f7343] transition-colors">
+                                    {subgroupName}
+                                  </h2>
+                                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
+                                    Max Capacity: 35
+                                  </span>
+                                </div>
+                              </div>
+
+                              {isFull ? (
+                                <span className="bg-rose-100 text-rose-800 text-[10px] font-black px-2.5 py-1 rounded-full border border-rose-200 shrink-0">
+                                  🔴 FULL (35/35)
+                                </span>
+                              ) : (
+                                <span className="bg-emerald-100 text-emerald-800 text-[10px] font-black px-2.5 py-1 rounded-full border border-emerald-200 shrink-0">
+                                  🟢 {35 - count} Available
+                                </span>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Card Content - Subclass Details Grid */}
+                          <div className="p-5 space-y-4 flex-1">
+                            {/* Subclass Metrics Grid */}
+                            <div className="grid grid-cols-2 gap-3 text-xs">
+                              <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100/80">
+                                <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Enrolled</span>
+                                <span className="text-base font-black text-slate-800 mt-0.5 block">{count} / 35</span>
+                              </div>
+                              <div className="p-3 bg-emerald-50/50 rounded-2xl border border-emerald-100/60">
+                                <span className="block text-[10px] font-bold text-emerald-600 uppercase tracking-wider">Verified</span>
+                                <span className="text-base font-black text-emerald-800 mt-0.5 block">{verifiedCount}</span>
+                              </div>
+                              <div className="p-3 bg-blue-50/50 rounded-2xl border border-blue-100/60">
+                                <span className="block text-[10px] font-bold text-blue-600 uppercase tracking-wider">Fees Paid</span>
+                                <span className="text-base font-black text-blue-800 mt-0.5 block">{paidCount}</span>
+                              </div>
+                              <div className="p-3 bg-amber-50/50 rounded-2xl border border-amber-100/60">
+                                <span className="block text-[10px] font-bold text-amber-600 uppercase tracking-wider">Fees Pending</span>
+                                <span className="text-base font-black text-amber-800 mt-0.5 block">{pendingPaidCount}</span>
+                              </div>
+                            </div>
+
+                            {/* Capacity Progress Bar */}
+                            <div className="space-y-1.5 pt-1">
+                              <div className="flex justify-between items-center text-xs font-extrabold text-slate-700">
+                                <span>Capacity Gauge</span>
+                                <span className={isFull ? 'text-rose-600 font-black' : 'text-emerald-700'}>{pct}% Filled</span>
+                              </div>
+                              <div className="w-full bg-slate-200/80 h-2.5 rounded-full overflow-hidden">
+                                <div 
+                                  style={{ width: `${pct}%` }} 
+                                  className={`h-full transition-all rounded-full ${isFull ? 'bg-rose-500' : isGold ? 'bg-amber-500' : isSilver ? 'bg-slate-600' : 'bg-emerald-600'}`} 
+                                />
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Subgroup Card Footer Actions */}
+                          <div className="p-4 border-t border-slate-100 bg-slate-50/50 flex items-center justify-between gap-2" onClick={(e) => e.stopPropagation()}>
+                            <button
+                              onClick={() => setSelectedSubgroupRoster(subgroupName)}
+                              className="flex-1 py-2.5 px-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-extrabold text-xs transition-all flex items-center justify-center gap-1.5 shadow-2xs cursor-pointer"
+                            >
+                              <Users className="w-4 h-4 text-emerald-400" />
+                              <span>View Roster ({count})</span>
+                            </button>
+                            
+                            <button
+                              onClick={() => handleDownloadSubclassFullNames(subgroupName, classStudents)}
+                              disabled={count === 0}
+                              className="py-2.5 px-3 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-800 border border-blue-200 font-extrabold text-xs transition-all flex items-center justify-center gap-1 cursor-pointer disabled:opacity-40"
+                              title="Download student full names CSV for this arm"
+                            >
+                              <Download className="w-4 h-4 text-blue-600" />
+                              <span className="hidden sm:inline">Download</span>
+                            </button>
+
+                            <button
+                              onClick={() => handleRemoveAllFromSubclass(subgroupName, classStudents)}
+                              disabled={count === 0}
+                              className="py-2.5 px-3 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-extrabold text-xs transition-all flex items-center justify-center gap-1 cursor-pointer disabled:opacity-40"
+                              title={`Remove all ${count} students from ${subgroupName}`}
+                            >
+                              <Trash2 className="w-4 h-4 text-rose-600" />
+                              <span className="hidden sm:inline">Clear</span>
+                            </button>
+
+                            <button
+                              onClick={() => {
+                                setNewStudent(prev => ({ ...prev, intendedClass: subgroupName }));
+                                setActiveTab('new-verification');
+                              }}
+                              disabled={isFull}
+                              className={`py-2.5 px-3 rounded-xl font-extrabold text-xs transition-all flex items-center justify-center gap-1 cursor-pointer ${
+                                isFull 
+                                  ? 'bg-slate-200 text-slate-400 cursor-not-allowed' 
+                                  : 'bg-[#0f7343] hover:bg-[#0b5c34] text-white shadow-2xs'
+                              }`}
+                              title={isFull ? 'Subclass arm is full (35/35)' : 'Add student to this arm'}
+                            >
+                              <Plus className="w-4 h-4" />
+                              <span>{isFull ? 'Full' : 'Add'}</span>
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                </div>
+              </>
+            )}
 
             {/* Full-Page Subgroup Roster Section (replaces modal popup) */}
             {selectedSubgroupRoster && (
