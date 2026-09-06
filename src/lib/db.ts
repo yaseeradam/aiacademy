@@ -64,12 +64,64 @@ async function ensureSeeded() {
         { intendedClass: { $regex: /Primary/i } },
         { $set: { intendedClass: 'Basic 1' } }
       );
+
+      await autoAssignBareClasses(db);
     })().catch(err => {
       console.error('DB seed/index error:', err);
       seedPromise = null;
     });
   }
   return seedPromise;
+}
+
+async function autoAssignBareClasses(db: any) {
+  const students = await db.collection(STUDENTS_COL).find({}).toArray();
+  const bareStudents = students.filter((s: any) => {
+    if (!s.intendedClass) return true;
+    const cls = s.intendedClass.trim();
+    if (cls.includes('Unassigned') || cls.includes('Gold') || cls.includes('Silver') || cls.includes('Green') || cls.includes('Blue') || cls.includes('Diamond')) {
+      return false;
+    }
+    return true;
+  });
+
+  if (bareStudents.length === 0) return;
+
+  const groups: Record<string, any[]> = {};
+  for (const s of bareStudents) {
+    let baseClass = 'Nursery 1';
+    const cls = (s.intendedClass || '').trim();
+    if (/Basic 2|Primary 2/i.test(cls)) baseClass = 'Basic 2';
+    else if (/Basic 1|Primary 1/i.test(cls)) baseClass = 'Basic 1';
+    else if (/Nursery/i.test(cls)) baseClass = 'Nursery 1';
+
+    if (!groups[baseClass]) groups[baseClass] = [];
+    groups[baseClass].push(s);
+  }
+
+  const arms = ['Gold', 'Silver', 'Green', 'Gold 2', 'Silver 2', 'Green 2'];
+
+  for (const [baseClass, list] of Object.entries(groups)) {
+    list.sort((a: any, b: any) => (a.formNumber || a.id).localeCompare(b.formNumber || b.id));
+
+    for (const student of list) {
+      let assignedArm = `${baseClass} Gold`;
+      for (const arm of arms) {
+        const candidate = `${baseClass} ${arm}`;
+        const count = students.filter((s: any) => s.intendedClass && s.intendedClass.trim() === candidate).length;
+        if (count < 35) {
+          assignedArm = candidate;
+          break;
+        }
+      }
+
+      student.intendedClass = assignedArm;
+      await db.collection(STUDENTS_COL).updateOne(
+        { id: student.id },
+        { $set: { intendedClass: assignedArm } }
+      );
+    }
+  }
 }
 
 export async function clearAllStudentsAndParents(): Promise<{ studentCount: number; parentCount: number }> {
