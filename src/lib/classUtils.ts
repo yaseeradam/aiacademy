@@ -2,7 +2,10 @@ import { Student } from '@/types';
 
 export function getStudentClassArm(cls: string | undefined, studentId?: string, allStudents?: Student[]): string {
   if (!cls) return 'Nursery 1 Gold';
-  const trimmed = cls.trim();
+  let trimmed = cls.trim();
+  if (trimmed === 'Nursery (Unassigned)') {
+    trimmed = 'Nursery 1 (Unassigned)';
+  }
 
   // If explicitly unassigned to a subclass arm
   if (trimmed.includes('Unassigned')) {

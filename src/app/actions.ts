@@ -323,8 +323,17 @@ export async function unassignStudentFromSubclassAction(studentId: string): Prom
   const student = await getStudentById(studentId);
   if (!student) return { success: false, error: 'Student not found.' };
 
-  let baseClass = student.intendedClass.replace(/\s+(Gold|Silver|Green)(\s+\d+)?/gi, '').replace(/\(Unassigned\)/gi, '').trim();
-  if (!baseClass) baseClass = 'Nursery 1';
+  let baseClass = 'Nursery 1';
+  if (/Basic 2|Primary 2/i.test(student.intendedClass || '')) {
+    baseClass = 'Basic 2';
+  } else if (/Basic 1|Primary 1/i.test(student.intendedClass || '')) {
+    baseClass = 'Basic 1';
+  } else if (/Nursery/i.test(student.intendedClass || '')) {
+    baseClass = 'Nursery 1';
+  } else if (student.intendedClass) {
+    baseClass = student.intendedClass.replace(/\s+(Gold|Silver|Green|Blue|Diamond)(\s+\d+)?/gi, '').replace(/\(Unassigned\)/gi, '').trim();
+    if (!baseClass) baseClass = 'Nursery 1';
+  }
 
   await addOrUpdateStudent({
     ...student,
@@ -349,8 +358,17 @@ export async function unassignMultipleStudentsFromSubclassAction(studentIds: str
     for (const id of studentIds) {
       const student = await getStudentById(id);
       if (student) {
-        let baseClass = student.intendedClass.replace(/\s+(Gold|Silver|Green)(\s+\d+)?/gi, '').replace(/\(Unassigned\)/gi, '').trim();
-        if (!baseClass) baseClass = 'Nursery 1';
+        let baseClass = 'Nursery 1';
+        if (/Basic 2|Primary 2/i.test(student.intendedClass || '')) {
+          baseClass = 'Basic 2';
+        } else if (/Basic 1|Primary 1/i.test(student.intendedClass || '')) {
+          baseClass = 'Basic 1';
+        } else if (/Nursery/i.test(student.intendedClass || '')) {
+          baseClass = 'Nursery 1';
+        } else if (student.intendedClass) {
+          baseClass = student.intendedClass.replace(/\s+(Gold|Silver|Green|Blue|Diamond)(\s+\d+)?/gi, '').replace(/\(Unassigned\)/gi, '').trim();
+          if (!baseClass) baseClass = 'Nursery 1';
+        }
         await addOrUpdateStudent({
           ...student,
           intendedClass: `${baseClass} (Unassigned)`,
