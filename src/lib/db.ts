@@ -119,7 +119,7 @@ async function autoAssignBareClasses(db: any) {
       let assignedArm = `${baseClass} Gold`;
       for (const arm of arms) {
         const candidate = `${baseClass} ${arm}`;
-        if ((armCounts[candidate] || 0) < 35) {
+        if ((armCounts[candidate] || 0) < 36) {
           assignedArm = candidate;
           armCounts[candidate] = (armCounts[candidate] || 0) + 1;
           break;

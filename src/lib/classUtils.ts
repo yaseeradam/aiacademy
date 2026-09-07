@@ -32,9 +32,9 @@ export function getStudentClassArm(cls: string | undefined, studentId?: string, 
 
     const idx = bareClassStudents.findIndex(s => s.id === studentId);
     if (idx >= 0) {
-      if (idx < 35) return `${baseClass} Gold`;
-      if (idx < 70) return `${baseClass} Silver`;
-      if (idx < 105) return `${baseClass} Green`;
+      if (idx < 36) return `${baseClass} Gold`;
+      if (idx < 72) return `${baseClass} Silver`;
+      if (idx < 108) return `${baseClass} Green`;
       return `${baseClass} Gold 2`;
     }
   }

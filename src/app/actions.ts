@@ -537,20 +537,20 @@ export async function resolveAutoSubgroup(requestedClass: string, allStudents: S
   else if (/Basic 1|Primary 1/i.test(requestedClass)) targetBase = 'Basic 1';
   else if (/Nursery/i.test(requestedClass)) targetBase = 'Nursery 1';
 
-  // If exact subgroup specified and it has space (< 35), check true resolved count
+  // If exact subgroup specified and it has space (< 36), check true resolved count
   if (requestedClass.includes('Gold') || requestedClass.includes('Silver') || requestedClass.includes('Green')) {
     const exactCount = allStudents.filter(s => getStudentClassArm(s.intendedClass, s.id, allStudents) === requestedClass).length;
-    if (exactCount < 35) {
+    if (exactCount < 36) {
       return requestedClass;
     }
   }
 
-  // Find first available arm with < 35 students using getStudentClassArm
+  // Find first available arm with < 36 students using getStudentClassArm
   const arms = ['Gold', 'Silver', 'Green', 'Gold 2', 'Silver 2', 'Green 2', 'Gold 3', 'Silver 3', 'Green 3'];
   for (const arm of arms) {
     const candidate = `${targetBase} ${arm}`;
     const count = allStudents.filter(s => getStudentClassArm(s.intendedClass, s.id, allStudents) === candidate).length;
-    if (count < 35) {
+    if (count < 36) {
       return candidate;
     }
   }

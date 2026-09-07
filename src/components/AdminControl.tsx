@@ -227,8 +227,8 @@ export default function AdminControl({ students }: AdminControlProps) {
         if (countB !== countA) return countB - countA;
         return a.localeCompare(b);
       } else if (subgroupSortOrder === 'capacity') {
-        const isFullA = countA >= 35 ? 1 : 0;
-        const isFullB = countB >= 35 ? 1 : 0;
+        const isFullA = countA >= 36 ? 1 : 0;
+        const isFullB = countB >= 36 ? 1 : 0;
         if (isFullB !== isFullA) return isFullB - isFullA;
         return countB - countA;
       } else {
@@ -695,7 +695,7 @@ export default function AdminControl({ students }: AdminControlProps) {
           isOpen: true,
           type: 'success',
           title: 'Subclass Roster Cleared!',
-          message: `Successfully unassigned all ${res.count} students from ${subgroupName}. All student profiles remain safely preserved in the student directory. Subclass capacity is now 0/35.`,
+          message: `Successfully unassigned all ${res.count} students from ${subgroupName}. All student profiles remain safely preserved in the student directory. Subclass capacity is now 0/36.`,
         });
       } else {
         setFeedbackModal({
@@ -1988,7 +1988,7 @@ export default function AdminControl({ students }: AdminControlProps) {
                       <span>Classes & Subgroups Roster</span>
                     </h1>
                     <p className="text-slate-500 text-sm font-semibold mt-2.5">
-                      Class arms with 35-student capacity tracking (Gold, Silver, Green) with automatic overflow and instant admission letter printing.
+                      Class arms with 36-student capacity tracking (Gold, Silver, Green) with automatic overflow and instant admission letter printing.
                     </p>
                   </div>
 
@@ -2024,7 +2024,7 @@ export default function AdminControl({ students }: AdminControlProps) {
                     const verified = classStudents.filter(s => s.verificationStatus === 'verified').length;
                     const paid = classStudents.filter(s => s.paymentStatus === 'paid').length;
                     const pendingPaid = classStudents.filter(s => s.paymentStatus !== 'paid').length;
-                    const totalCapacity = 105; // 3 arms x 35 capacity
+                    const totalCapacity = 108; // 3 arms x 36 capacity
                     const mainPct = Math.min(100, Math.round((classStudents.length / totalCapacity) * 100));
 
                     const isSelected = classTabFilter === mainClass;
@@ -2054,7 +2054,7 @@ export default function AdminControl({ students }: AdminControlProps) {
                             </div>
 
                             <span className="text-xs font-black bg-emerald-100 text-emerald-800 px-3 py-1 rounded-full border border-emerald-200">
-                              {classStudents.length} / 105 Enrolled
+                              {classStudents.length} / 108 Enrolled
                             </span>
                           </div>
                         </div>
@@ -2090,7 +2090,7 @@ export default function AdminControl({ students }: AdminControlProps) {
 
                           {/* Subclass Arm Rows Breakdown */}
                           <div className="pt-2 space-y-2 border-t border-slate-100">
-                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">Subclass Arms (35 Max Each):</span>
+                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">Subclass Arms (36 Max Each):</span>
                             
                             {/* Gold */}
                             <div className="flex items-center justify-between p-2 rounded-xl bg-amber-50/50 border border-amber-100 text-xs">
@@ -2098,8 +2098,8 @@ export default function AdminControl({ students }: AdminControlProps) {
                                 <span className="w-2.5 h-2.5 rounded-full bg-amber-500 shrink-0" />
                                 <span>Gold Arm</span>
                               </div>
-                              <span className={`font-black ${goldCount >= 35 ? 'text-rose-600' : 'text-slate-800'}`}>
-                                {goldCount} / 35 {goldCount >= 35 && '🔴 FULL'}
+                              <span className={`font-black ${goldCount >= 36 ? 'text-rose-600' : 'text-slate-800'}`}>
+                                {goldCount} / 36 {goldCount >= 36 && '🔴 FULL'}
                               </span>
                             </div>
 
@@ -2109,8 +2109,8 @@ export default function AdminControl({ students }: AdminControlProps) {
                                 <span className="w-2.5 h-2.5 rounded-full bg-slate-500 shrink-0" />
                                 <span>Silver Arm</span>
                               </div>
-                              <span className={`font-black ${silverCount >= 35 ? 'text-rose-600' : 'text-slate-800'}`}>
-                                {silverCount} / 35 {silverCount >= 35 && '🔴 FULL'}
+                              <span className={`font-black ${silverCount >= 36 ? 'text-rose-600' : 'text-slate-800'}`}>
+                                {silverCount} / 36 {silverCount >= 36 && '🔴 FULL'}
                               </span>
                             </div>
 
@@ -2120,8 +2120,8 @@ export default function AdminControl({ students }: AdminControlProps) {
                                 <span className="w-2.5 h-2.5 rounded-full bg-emerald-600 shrink-0" />
                                 <span>Green Arm</span>
                               </div>
-                              <span className={`font-black ${greenCount >= 35 ? 'text-rose-600' : 'text-slate-800'}`}>
-                                {greenCount} / 35 {greenCount >= 35 && '🔴 FULL'}
+                              <span className={`font-black ${greenCount >= 36 ? 'text-rose-600' : 'text-slate-800'}`}>
+                                {greenCount} / 36 {greenCount >= 36 && '🔴 FULL'}
                               </span>
                             </div>
                           </div>
@@ -2240,8 +2240,8 @@ export default function AdminControl({ students }: AdminControlProps) {
                     .map(subgroupName => {
                       const classStudents = students.filter(s => getStudentClassArm(s.intendedClass, s.id, students) === subgroupName);
                       const count = classStudents.length;
-                      const isFull = count >= 35;
-                      const pct = Math.min(100, Math.round((count / 35) * 100));
+                      const isFull = count >= 36;
+                      const pct = Math.min(100, Math.round((count / 36) * 100));
 
                       const verifiedCount = classStudents.filter(s => s.verificationStatus === 'verified').length;
                       const paidCount = classStudents.filter(s => s.paymentStatus === 'paid').length;
@@ -2287,18 +2287,18 @@ export default function AdminControl({ students }: AdminControlProps) {
                                     {subgroupName}
                                   </h2>
                                   <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
-                                    Max Capacity: 35
+                                    Max Capacity: 36
                                   </span>
                                 </div>
                               </div>
 
                               {isFull ? (
                                 <span className="bg-rose-100 text-rose-800 text-[10px] font-black px-2.5 py-1 rounded-full border border-rose-200 shrink-0">
-                                  🔴 FULL (35/35)
+                                  🔴 FULL (36/36)
                                 </span>
                               ) : (
                                 <span className="bg-emerald-100 text-emerald-800 text-[10px] font-black px-2.5 py-1 rounded-full border border-emerald-200 shrink-0">
-                                  🟢 {35 - count} Available
+                                  🟢 {36 - count} Available
                                 </span>
                               )}
                             </div>
@@ -2310,7 +2310,7 @@ export default function AdminControl({ students }: AdminControlProps) {
                             <div className="grid grid-cols-2 gap-3 text-xs">
                               <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100/80">
                                 <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Enrolled</span>
-                                <span className="text-base font-black text-slate-800 mt-0.5 block">{count} / 35</span>
+                                <span className="text-base font-black text-slate-800 mt-0.5 block">{count} / 36</span>
                               </div>
                               <div className="p-3 bg-emerald-50/50 rounded-2xl border border-emerald-100/60">
                                 <span className="block text-[10px] font-bold text-emerald-600 uppercase tracking-wider">Verified</span>
@@ -2379,7 +2379,7 @@ export default function AdminControl({ students }: AdminControlProps) {
                                   ? 'bg-slate-200 text-slate-400 cursor-not-allowed' 
                                   : 'bg-[#0f7343] hover:bg-[#0b5c34] text-white shadow-2xs'
                               }`}
-                              title={isFull ? 'Subclass arm is full (35/35)' : 'Select existing students to add to this arm'}
+                              title={isFull ? 'Subclass arm is full (36/36)' : 'Select existing students to add to this arm'}
                             >
                               <Plus className="w-4 h-4" />
                               <span>{isFull ? 'Full' : 'Add'}</span>
@@ -2421,8 +2421,8 @@ export default function AdminControl({ students }: AdminControlProps) {
                   const isGreen = selectedSubgroupRoster.includes('Green');
                   const rosterStudents = students.filter(s => getStudentClassArm(s.intendedClass, s.id, students) === selectedSubgroupRoster);
                   const enrolledCount = rosterStudents.length;
-                  const isFull = enrolledCount >= 35;
-                  const fillPct = Math.min(100, Math.round((enrolledCount / 35) * 100));
+                  const isFull = enrolledCount >= 36;
+                  const fillPct = Math.min(100, Math.round((enrolledCount / 36) * 100));
 
                   const verifiedCount = rosterStudents.filter(s => s.verificationStatus === 'verified').length;
                   const paidCount = rosterStudents.filter(s => s.paymentStatus === 'paid').length;
@@ -2456,13 +2456,13 @@ export default function AdminControl({ students }: AdminControlProps) {
                                   ? 'bg-rose-500/20 text-rose-300 border-rose-500/30' 
                                   : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
                               }`}>
-                                {isFull ? '🔴 ARM FULL (35/35)' : `🟢 ${35 - enrolledCount} SPOTS OPEN`}
+                                {isFull ? '🔴 ARM FULL (36/36)' : `🟢 ${36 - enrolledCount} SPOTS OPEN`}
                               </span>
                             </div>
                             
                             <div className="flex items-center gap-3 mt-3">
                               <p className="text-xs text-slate-300 font-bold">
-                                Enrolled: <strong className="text-white text-base">{enrolledCount}</strong> / 35 Max Capacity
+                                Enrolled: <strong className="text-white text-base">{enrolledCount}</strong> / 36 Max Capacity
                               </p>
                               <div className="w-44 bg-slate-800 h-2.5 rounded-full overflow-hidden border border-slate-700">
                                 <div 
@@ -2531,7 +2531,7 @@ export default function AdminControl({ students }: AdminControlProps) {
                           </div>
                           <div>
                             <span className="block text-[10px] font-bold text-slate-400 uppercase">Enrolled Capacity</span>
-                            <span className="text-sm font-black text-slate-800">{enrolledCount} / 35 Capacity</span>
+                            <span className="text-sm font-black text-slate-800">{enrolledCount} / 36 Capacity</span>
                           </div>
                         </div>
 
@@ -3371,13 +3371,13 @@ export default function AdminControl({ students }: AdminControlProps) {
                         const arms = ['Gold', 'Silver', 'Green', 'Gold 2', 'Silver 2', 'Green 2'];
                         const targetArm = arms.find(arm => {
                           const cnt = students.filter(s => getStudentClassArm(s.intendedClass, s.id, students) === `${mainCls} ${arm}`).length;
-                          return cnt < 35;
+                          return cnt < 36;
                         }) || 'Gold';
                         const assignedFull = `${mainCls} ${targetArm}`;
                         const spotCnt = students.filter(s => getStudentClassArm(s.intendedClass, s.id, students) === assignedFull).length;
                         return (
                           <option key={`auto-${mainCls}`} value={assignedFull}>
-                            ⚡ Auto-Assign to {mainCls} (→ {targetArm} Arm: {35 - spotCnt} spots available)
+                            ⚡ Auto-Assign to {mainCls} (→ {targetArm} Arm: {36 - spotCnt} spots available)
                           </option>
                         );
                       })}
@@ -3385,7 +3385,7 @@ export default function AdminControl({ students }: AdminControlProps) {
                     <optgroup label="Direct Subgroup Selection">
                       {classList.map(cls => {
                         const count = students.filter(s => getStudentClassArm(s.intendedClass, s.id, students) === cls).length;
-                        const isFull = count >= 35;
+                        const isFull = count >= 36;
                         return (
                           <option 
                             key={cls} 
@@ -3393,7 +3393,7 @@ export default function AdminControl({ students }: AdminControlProps) {
                             disabled={isFull}
                             className={isFull ? 'text-rose-400 bg-slate-100 font-normal' : 'font-bold text-slate-800'}
                           >
-                            {cls} {isFull ? '🔴 FULL (35/35)' : `🟢 (${count}/35 enrolled)`}
+                            {cls} {isFull ? '🔴 FULL (36/36)' : `🟢 (${count}/36 enrolled)`}
                           </option>
                         );
                       })}
@@ -3975,13 +3975,13 @@ export default function AdminControl({ students }: AdminControlProps) {
                         const arms = ['Gold', 'Silver', 'Green', 'Gold 2', 'Silver 2', 'Green 2'];
                         const targetArm = arms.find(arm => {
                           const cnt = otherStudents.filter(s => getStudentClassArm(s.intendedClass, s.id, otherStudents) === `${mainCls} ${arm}`).length;
-                          return cnt < 35;
+                          return cnt < 36;
                         }) || 'Gold';
                         const assignedFull = `${mainCls} ${targetArm}`;
                         const spotCnt = otherStudents.filter(s => getStudentClassArm(s.intendedClass, s.id, otherStudents) === assignedFull).length;
                         return (
                           <option key={`edit-auto-${mainCls}`} value={assignedFull}>
-                            ⚡ Auto-Assign to {mainCls} (→ {targetArm} Arm: {35 - spotCnt} spots available)
+                            ⚡ Auto-Assign to {mainCls} (→ {targetArm} Arm: {36 - spotCnt} spots available)
                           </option>
                         );
                       })}
@@ -3992,7 +3992,7 @@ export default function AdminControl({ students }: AdminControlProps) {
                         const currentResolved = getStudentClassArm(editingStudent.intendedClass, editingStudent.id, students);
                         const count = otherStudents.filter(s => getStudentClassArm(s.intendedClass, s.id, otherStudents) === cls).length;
                         const isCurrent = currentResolved === cls;
-                        const isFull = count >= 35 && !isCurrent;
+                        const isFull = count >= 36 && !isCurrent;
                         return (
                           <option 
                             key={cls} 
@@ -4000,7 +4000,7 @@ export default function AdminControl({ students }: AdminControlProps) {
                             disabled={isFull}
                             className={isFull ? 'text-rose-400 bg-slate-100 font-normal' : 'font-bold text-slate-800'}
                           >
-                            {cls} {isCurrent ? '(Current Arm)' : isFull ? '🔴 FULL (35/35)' : `🟢 (${count}/35 enrolled)`}
+                            {cls} {isCurrent ? '(Current Arm)' : isFull ? '🔴 FULL (36/36)' : `🟢 (${count}/36 enrolled)`}
                           </option>
                         );
                       })}
@@ -4579,11 +4579,11 @@ export default function AdminControl({ students }: AdminControlProps) {
 
               {(() => {
                 const currentEnrolled = students.filter(s => getStudentClassArm(s.intendedClass, s.id, students) === assignToArmModal.armName).length;
-                const openSpots = Math.max(0, 35 - currentEnrolled);
+                const openSpots = Math.max(0, 36 - currentEnrolled);
                 return (
                   <div className="flex items-center gap-3 text-xs font-bold text-slate-700 shrink-0">
                     <span className="bg-white border border-slate-300 px-3 py-1.5 rounded-xl">
-                      Enrolled: <strong className="text-slate-900">{currentEnrolled}</strong> / 35
+                      Enrolled: <strong className="text-slate-900">{currentEnrolled}</strong> / 36
                     </span>
                     <span className={`px-3 py-1.5 rounded-xl border ${openSpots > 0 ? 'bg-emerald-50 text-emerald-800 border-emerald-200 font-black' : 'bg-rose-50 text-rose-800 border-rose-200 font-black'}`}>
                       {openSpots} Spots Open
