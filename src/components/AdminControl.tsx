@@ -185,12 +185,28 @@ export default function AdminControl({ students }: AdminControlProps) {
 
 
 
+  const classStudentMap = useMemo(() => {
+    const map: Record<string, Student[]> = {};
+    students.forEach(student => {
+      const cls = getStudentClassArm(student.intendedClass, student.id, students);
+      if (!map[cls]) map[cls] = [];
+      map[cls].push(student);
+    });
+    return map;
+  }, [students]);
+
   // Main class categories sorted by enrollment count (most populated first)
   const sortedMainClasses = useMemo(() => {
     const classes = ['Nursery 1', 'Basic 1', 'Basic 2'];
     return classes.sort((a, b) => {
-      const countA = students.filter(s => getStudentClassArm(s.intendedClass, s.id, students).startsWith(a)).length;
-      const countB = students.filter(s => getStudentClassArm(s.intendedClass, s.id, students).startsWith(b)).length;
+      const countA = students.filter(s => {
+        const arm = getStudentClassArm(s.intendedClass, s.id, students);
+        return arm.startsWith(a);
+      }).length;
+      const countB = students.filter(s => {
+        const arm = getStudentClassArm(s.intendedClass, s.id, students);
+        return arm.startsWith(b);
+      }).length;
       return countB - countA;
     });
   }, [students]);
@@ -199,16 +215,16 @@ export default function AdminControl({ students }: AdminControlProps) {
   const classList = useMemo(() => {
     const set = new Set([
       ...defaultSubgroups,
-      ...students.map(s => getStudentClassArm(s.intendedClass, s.id, students)).filter(arm => arm && !arm.includes('Unassigned'))
+      ...Object.keys(classStudentMap).filter(arm => arm && !arm.includes('Unassigned'))
     ]);
     const list = Array.from(set);
 
     return list.sort((a, b) => {
-      const countA = students.filter(s => getStudentClassArm(s.intendedClass, s.id, students) === a).length;
-      const countB = students.filter(s => getStudentClassArm(s.intendedClass, s.id, students) === b).length;
+      const countA = classStudentMap[a]?.length || 0;
+      const countB = classStudentMap[b]?.length || 0;
 
       if (subgroupSortOrder === 'most_populated') {
-        if (countB !== countA) return countB - countA; // Highest enrollment first!
+        if (countB !== countA) return countB - countA;
         return a.localeCompare(b);
       } else if (subgroupSortOrder === 'capacity') {
         const isFullA = countA >= 35 ? 1 : 0;
@@ -219,17 +235,7 @@ export default function AdminControl({ students }: AdminControlProps) {
         return a.localeCompare(b);
       }
     });
-  }, [students, defaultSubgroups, subgroupSortOrder]);
-
-  const classStudentMap = useMemo(() => {
-    const map: Record<string, Student[]> = {};
-    students.forEach(student => {
-      const cls = getStudentClassArm(student.intendedClass, student.id, students);
-      if (!map[cls]) map[cls] = [];
-      map[cls].push(student);
-    });
-    return map;
-  }, [students]);
+  }, [defaultSubgroups, classStudentMap, subgroupSortOrder]);
 
   const handleDownloadSubclassFullNames = (subgroupName: string, subgroupStudents: Student[]) => {
     if (!subgroupStudents || subgroupStudents.length === 0) return;
