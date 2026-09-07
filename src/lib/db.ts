@@ -75,17 +75,21 @@ async function ensureSeeded() {
 }
 
 async function autoAssignBareClasses(db: any) {
-  const students = await db.collection(STUDENTS_COL).find({}).toArray();
-  const bareStudents = students.filter((s: any) => {
-    if (!s.intendedClass) return true;
-    const cls = s.intendedClass.trim();
-    if (cls.includes('Unassigned') || cls.includes('Gold') || cls.includes('Silver') || cls.includes('Green') || cls.includes('Blue') || cls.includes('Diamond')) {
-      return false;
-    }
-    return true;
-  });
+  const bareStudents = await db.collection(STUDENTS_COL).find({
+    $or: [
+      { intendedClass: null },
+      { intendedClass: 'Nursery' },
+      { intendedClass: 'Nursery 1' },
+      { intendedClass: 'Basic 1' },
+      { intendedClass: 'Primary 1' },
+      { intendedClass: 'Basic 2' },
+      { intendedClass: 'Primary 2' },
+    ]
+  }).toArray();
 
   if (bareStudents.length === 0) return;
+
+  const allStudents = await db.collection(STUDENTS_COL).find({}, { projection: { intendedClass: 1, formNumber: 1, id: 1 } }).toArray();
 
   const groups: Record<string, any[]> = {};
   for (const s of bareStudents) {
@@ -100,27 +104,40 @@ async function autoAssignBareClasses(db: any) {
   }
 
   const arms = ['Gold', 'Silver', 'Green', 'Gold 2', 'Silver 2', 'Green 2'];
+  const bulkOps: any[] = [];
 
   for (const [baseClass, list] of Object.entries(groups)) {
     list.sort((a: any, b: any) => (a.formNumber || a.id).localeCompare(b.formNumber || b.id));
+
+    const armCounts: Record<string, number> = {};
+    for (const arm of arms) {
+      const candidate = `${baseClass} ${arm}`;
+      armCounts[candidate] = allStudents.filter((s: any) => s.intendedClass && s.intendedClass.trim() === candidate).length;
+    }
 
     for (const student of list) {
       let assignedArm = `${baseClass} Gold`;
       for (const arm of arms) {
         const candidate = `${baseClass} ${arm}`;
-        const count = students.filter((s: any) => s.intendedClass && s.intendedClass.trim() === candidate).length;
-        if (count < 35) {
+        if ((armCounts[candidate] || 0) < 35) {
           assignedArm = candidate;
+          armCounts[candidate] = (armCounts[candidate] || 0) + 1;
           break;
         }
       }
 
       student.intendedClass = assignedArm;
-      await db.collection(STUDENTS_COL).updateOne(
-        { id: student.id },
-        { $set: { intendedClass: assignedArm } }
-      );
+      bulkOps.push({
+        updateOne: {
+          filter: { id: student.id },
+          update: { $set: { intendedClass: assignedArm } },
+        }
+      });
     }
+  }
+
+  if (bulkOps.length > 0) {
+    await db.collection(STUDENTS_COL).bulkWrite(bulkOps);
   }
 }
 
