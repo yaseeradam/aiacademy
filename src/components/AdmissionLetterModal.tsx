@@ -446,6 +446,316 @@ export function printBulkAdmissionLetters(students: Student[], logoSrc: string =
   }
 }
 
+export function printPaidStudentsPDF(students: Student[], logoSrc: string = '/logo.jpg', allStudents?: Student[]) {
+  const paidStudents = (students || []).filter(s => s.paymentStatus === 'paid');
+
+  if (paidStudents.length === 0) {
+    alert('No students with paid fee status were found.');
+    return;
+  }
+
+  // Group paid students by subclass arm
+  const groups: Record<string, Student[]> = {};
+  paidStudents.forEach(student => {
+    const arm = getStudentClassArm(student.intendedClass, student.id, allStudents || students);
+    if (!groups[arm]) groups[arm] = [];
+    groups[arm].push(student);
+  });
+
+  const sortedArms = Object.keys(groups).sort((a, b) => a.localeCompare(b));
+  const currentDate = new Date().toLocaleDateString('en-GB', {
+    day: '2-digit',
+    month: 'long',
+    year: 'numeric',
+  });
+
+  const printHTML = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Paid Students Directory - AI Integrated Academy Argungu</title>
+  <style>
+    @page {
+      size: A4 portrait;
+      margin: 12mm 15mm;
+    }
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      color: #0f172a;
+      background: white;
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
+    .container {
+      width: 100%;
+      max-width: 210mm;
+      margin: 0 auto;
+    }
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 3px solid #0f7343;
+      padding-bottom: 12px;
+      margin-bottom: 16px;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .logo {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      object-fit: contain;
+      border: 2px solid #0f7343;
+    }
+    .school-title {
+      font-size: 20px;
+      font-weight: 900;
+      color: #0f7343;
+      letter-spacing: -0.5px;
+      text-transform: uppercase;
+      line-height: 1.1;
+    }
+    .motto {
+      font-size: 11px;
+      font-weight: 700;
+      color: #d97706;
+      font-style: italic;
+      margin-top: 3px;
+    }
+    .doc-meta {
+      text-align: right;
+      font-size: 11px;
+      color: #475569;
+    }
+    .doc-badge {
+      display: inline-block;
+      background: #0f7343;
+      color: white;
+      font-weight: 800;
+      font-size: 11px;
+      padding: 4px 10px;
+      border-radius: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 4px;
+    }
+    .summary-bar {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    .stat-card {
+      flex: 1;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 8px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .stat-label {
+      font-size: 10px;
+      font-weight: 700;
+      color: #64748b;
+      text-transform: uppercase;
+    }
+    .stat-val {
+      font-size: 14px;
+      font-weight: 900;
+      color: #0f7343;
+    }
+    .class-section {
+      margin-bottom: 24px;
+      page-break-inside: avoid;
+    }
+    .class-header {
+      background: #f1f5f9;
+      border-left: 5px solid #0f7343;
+      padding: 8px 12px;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-radius: 0 6px 6px 0;
+    }
+    .class-name {
+      font-size: 14px;
+      font-weight: 900;
+      color: #0f172a;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+    .class-count {
+      font-size: 11px;
+      font-weight: 800;
+      color: #0f7343;
+      background: #e2e8f0;
+      padding: 2px 8px;
+      border-radius: 12px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 11px;
+    }
+    th {
+      background: #0f7343;
+      color: white;
+      font-weight: 800;
+      text-transform: uppercase;
+      font-size: 10px;
+      letter-spacing: 0.5px;
+      padding: 6px 10px;
+      text-align: left;
+    }
+    td {
+      padding: 7px 10px;
+      border-bottom: 1px solid #e2e8f0;
+      font-weight: 600;
+      color: #1e293b;
+    }
+    tr:nth-child(even) {
+      background: #f8fafc;
+    }
+    .sn-col {
+      width: 40px;
+      text-align: center;
+      font-weight: 700;
+      color: #64748b;
+    }
+    .name-col {
+      font-weight: 800;
+      color: #0f172a;
+      text-transform: uppercase;
+    }
+    .class-col {
+      font-weight: 700;
+      color: #0f7343;
+    }
+    .paid-badge {
+      display: inline-block;
+      background: #dcfce7;
+      color: #15803d;
+      border: 1px solid #bbf7d0;
+      font-size: 9px;
+      font-weight: 800;
+      padding: 2px 6px;
+      border-radius: 4px;
+      text-transform: uppercase;
+    }
+    .footer {
+      margin-top: 30px;
+      padding-top: 12px;
+      border-top: 1px solid #e2e8f0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 10px;
+      color: #94a3b8;
+      font-weight: 600;
+    }
+    @media print {
+      body { padding: 0; }
+      .no-print { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="brand">
+        <img src="${logoSrc}" class="logo" alt="Logo" />
+        <div>
+          <div class="school-title">AI Integrated Academy Argungu</div>
+          <div class="motto">Motto: Learning Today, Leading Tomorrow</div>
+        </div>
+      </div>
+      <div class="doc-meta">
+        <div class="doc-badge">FEE PAID ROSTER</div>
+        <div>Date: <strong>${currentDate}</strong></div>
+        <div>Session: <strong>2026/2027</strong></div>
+      </div>
+    </div>
+
+    <div class="summary-bar">
+      <div class="stat-card">
+        <span class="stat-label">Total Verified Paid Students</span>
+        <span class="stat-val">${paidStudents.length} Students</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label">Total Active Subclasses</span>
+        <span class="stat-val">${sortedArms.length} Subclasses</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label">Fee Status</span>
+        <span class="stat-val">100% PAID ✓</span>
+      </div>
+    </div>
+
+    ${sortedArms.map(arm => {
+      const armStudents = groups[arm];
+      return `
+        <div class="class-section">
+          <div class="class-header">
+            <span class="class-name">CLASS: ${arm}</span>
+            <span class="class-count">${armStudents.length} Paid Student(s)</span>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th class="sn-col">S/N</th>
+                <th>Student Full Name</th>
+                <th>Class / Subclass Arm</th>
+                <th style="text-align: right;">Payment Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${armStudents.map((s, idx) => `
+                <tr>
+                  <td class="sn-col">${idx + 1}</td>
+                  <td class="name-col">${s.firstName} ${s.lastName}</td>
+                  <td class="class-col">${arm}</td>
+                  <td style="text-align: right;"><span class="paid-badge">FEE PAID ✓</span></td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      `;
+    }).join('')}
+
+    <div class="footer">
+      <div>Official Record • AI Integrated Academy Argungu, Kebbi State</div>
+      <div>Generated automatically</div>
+    </div>
+  </div>
+  <script>
+    window.onload = function() {
+      setTimeout(function() {
+        window.print();
+      }, 300);
+    };
+  </script>
+</body>
+</html>`;
+
+  const printWindow = window.open('', '_blank', 'width=900,height=1000');
+  if (printWindow) {
+    printWindow.document.write(printHTML);
+    printWindow.document.close();
+  }
+}
+
 export default function AdmissionLetterModal({ student, isOpen, onClose, allStudents }: AdmissionLetterModalProps) {
   const [logoSrc, setLogoSrc] = useState<string>(() => {
     if (typeof window !== 'undefined') {

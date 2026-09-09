@@ -14,7 +14,7 @@ import {
   GraduationCap, Folder, FolderOpen, Edit3
 } from 'lucide-react';
 import { logoutAction, adminUpdateStudentAction, adminDeleteStudentAction, adminDeleteMultipleStudentsAction, unassignStudentFromSubclassAction, unassignMultipleStudentsFromSubclassAction, assignMultipleStudentsToSubclassAction, restoreMissingSeedStudentsAction, clearAllDatabaseDataAction, adminCreateStudentAction, adminVerifyAction, adminTogglePaymentStatusAction, getAuditLogsAction, scanAdmissionFormOCRAction, getSchoolSettingsAction, updateSchoolSettingsAction, findDuplicateStudentsAction, DuplicateGroup } from '@/app/actions';
-import AdmissionLetterModal, { printBulkAdmissionLetters, getStudentClassArm, getStudentAdmissionNumber } from './AdmissionLetterModal';
+import AdmissionLetterModal, { printBulkAdmissionLetters, printPaidStudentsPDF, getStudentClassArm, getStudentAdmissionNumber } from './AdmissionLetterModal';
 
 interface AdminControlProps {
   students: Student[];
@@ -1995,6 +1995,15 @@ export default function AdminControl({ students }: AdminControlProps) {
                   <div className="flex flex-wrap items-center gap-3">
                     <button
                       type="button"
+                      onClick={() => printPaidStudentsPDF(students, schoolSettings.logo || '/logo.jpg')}
+                      className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-emerald-800 to-[#0f7343] hover:from-emerald-900 hover:to-[#0b5c34] text-white font-black text-xs rounded-xl shadow-sm transition-all cursor-pointer border border-emerald-500/30"
+                    >
+                      <FileText className="w-4 h-4 text-emerald-300" />
+                      <span>Paid Students PDF ({students.filter(s => s.paymentStatus === 'paid').length})</span>
+                    </button>
+
+                    <button
+                      type="button"
                       onClick={() => printBulkAdmissionLetters(students, schoolSettings.logo)}
                       className="flex items-center gap-2 px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl shadow-sm transition-all cursor-pointer"
                     >
@@ -2508,6 +2517,17 @@ export default function AdminControl({ students }: AdminControlProps) {
                           >
                             <Printer className="w-4 h-4 text-emerald-400" />
                             <span>Bulk Print Letters ({enrolledCount})</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => printPaidStudentsPDF(rosterStudents, schoolSettings.logo || '/logo.jpg', students)}
+                            disabled={rosterStudents.filter(s => s.paymentStatus === 'paid').length === 0}
+                            className="px-4 py-2.5 bg-emerald-800 hover:bg-emerald-700 text-white rounded-xl font-bold text-xs flex items-center gap-2 border border-emerald-600 shadow-sm transition-all cursor-pointer disabled:opacity-40"
+                            title="Download stylish PDF of students who paid fees in this class arm"
+                          >
+                            <FileText className="w-4 h-4 text-emerald-200" />
+                            <span>Paid Students PDF ({rosterStudents.filter(s => s.paymentStatus === 'paid').length})</span>
                           </button>
 
                           <button
@@ -3615,6 +3635,15 @@ export default function AdminControl({ students }: AdminControlProps) {
                 <span className="px-3.5 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 font-bold text-xs">
                   {students.filter(s => s.paymentStatus === 'paid').length} Approved / Paid Letters
                 </span>
+                <button
+                  type="button"
+                  onClick={() => printPaidStudentsPDF(students, schoolSettings.logo || '/logo.jpg')}
+                  className="flex items-center gap-2 py-2 px-4 rounded-xl bg-gradient-to-r from-emerald-800 to-[#0f7343] hover:from-emerald-900 hover:to-[#0b5c34] text-white font-black text-xs transition-all cursor-pointer shadow-md active:scale-98 border border-emerald-500/30"
+                  title="Download stylish PDF of all paid students separated by class"
+                >
+                  <FileText className="w-4 h-4 text-emerald-300" />
+                  <span>Download Paid Students PDF ({students.filter(s => s.paymentStatus === 'paid').length})</span>
+                </button>
                 <button
                   type="button"
                   onClick={() => {
