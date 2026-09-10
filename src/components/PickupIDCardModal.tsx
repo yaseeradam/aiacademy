@@ -256,98 +256,86 @@ export default function PickupIDCardModal({
                   return (
                     <div 
                       key={student.id} 
-                      className="id-card-wrapper relative bg-white rounded-3xl border-2 border-slate-200 shadow-xl overflow-hidden flex flex-col justify-between text-slate-900 group hover:border-[#0f7343] transition-all print:border-2 print:border-slate-800 print:shadow-none print:rounded-2xl print:break-inside-avoid"
-                      style={{ minHeight: '280px' }}
+                      className="id-card-wrapper relative bg-white rounded-2xl border border-slate-300 shadow-md overflow-hidden flex flex-col justify-between text-slate-900 group transition-all print:border-2 print:border-slate-800 print:shadow-none print:rounded-2xl print:break-inside-avoid"
+                      style={{ minHeight: '260px' }}
                     >
-                      {/* Lanyard Hole Punch Slot Graphic */}
-                      <div className="w-10 h-2 bg-slate-200 rounded-full mx-auto mt-2 border border-slate-300 shadow-inner" />
-
                       {/* Header Emerald Banner */}
-                      <div className="bg-[#0f7343] text-white px-4 py-2.5 mt-1 border-b-2 border-amber-400 flex items-center justify-between gap-3 shadow-xs">
-                        <div className="flex items-center gap-2.5 min-w-0">
+                      <div className="bg-[#0f7343] text-white px-4 py-3 border-b-2 border-amber-400 flex items-center justify-between gap-3 shadow-xs">
+                        <div className="flex items-center gap-3 min-w-0">
                           {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img src={logoSrc} alt="School Logo" className="w-9 h-9 rounded-xl object-contain bg-white p-0.5 border border-emerald-300 shadow-xs shrink-0" />
+                          <img src={logoSrc} alt="School Logo" className="w-10 h-10 rounded-full object-contain bg-white p-0.5 border border-emerald-300 shadow-xs shrink-0" />
                           <div className="min-w-0">
-                            <h4 className="text-[11px] font-black uppercase tracking-wider text-white leading-none truncate">
+                            <h4 className="text-[12px] font-black uppercase tracking-wider text-white leading-none truncate">
                               AI INTEGRATED ACADEMY
                             </h4>
-                            <span className="text-[8px] font-black text-amber-300 uppercase tracking-widest block mt-0.5">
-                              PARENT PICKUP PASS • ARGUNGU
+                            <span className="text-[8px] font-extrabold text-amber-300 uppercase tracking-widest block mt-1">
+                              STUDENT IDENTITY CARD • ARGUNGU
                             </span>
                           </div>
                         </div>
 
-                        <span className="text-[9px] font-mono font-black bg-emerald-950/80 text-amber-300 px-2 py-0.5 rounded-md border border-emerald-400/40 shrink-0">
-                          {student.formNumber || admissionNo}
-                        </span>
-                      </div>
-
-                      {/* Main Card Body */}
-                      <div className="p-4 flex-1 flex flex-col justify-between space-y-3">
-                        <div className="flex items-start gap-3.5">
-                          {/* Student Passport Photo */}
-                          <div className="w-20 h-24 rounded-2xl overflow-hidden bg-slate-100 border-2 border-[#0f7343] shadow-md shrink-0 relative">
-                            {student.photo ? (
-                              /* eslint-disable-next-line @next/next/no-img-element */
-                              <img src={student.photo} alt={student.firstName} className="w-full h-full object-cover" />
-                            ) : (
-                              <div className="w-full h-full flex items-center justify-center bg-emerald-50 text-[#0f7343] font-black text-2xl">
-                                {student.firstName[0]}{student.lastName?.[0] || ''}
-                              </div>
-                            )}
-                          </div>
-
-                          {/* Student Name & Class Details */}
-                          <div className="flex-1 min-w-0 space-y-1">
-                            <span className="text-[9px] font-black uppercase tracking-wider text-[#0f7343] block">
-                              STUDENT DETAILS
-                            </span>
-                            <h3 className="font-black text-base text-slate-900 tracking-tight leading-snug truncate">
-                              {student.firstName} {student.lastName}
-                            </h3>
-
-                            <div className="inline-block px-2.5 py-0.5 rounded-lg bg-emerald-50 border border-emerald-300 text-[#0f7343] text-[10px] font-black tracking-wide">
-                              {classArm}
-                            </div>
-
-                            <div className="text-[10px] text-slate-600 font-semibold space-y-0.5 pt-1 border-t border-slate-100">
-                              <p className="truncate">
-                                <span className="text-slate-400 font-bold">Authorized Parent:</span> <strong className="text-slate-800 font-extrabold">{student.fatherName || student.guardianName || 'N/A'}</strong>
-                              </p>
-                              <p className="truncate">
-                                <span className="text-slate-400 font-bold">Emergency Phone:</span> <strong className="font-mono text-[#0f7343] font-black">{student.phone1 || 'N/A'}</strong>
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* QR Code & Scan Footer */}
-                        <div className="pt-2 border-t border-slate-200 flex items-center justify-between gap-3">
-                          <div className="flex items-center gap-2">
-                            <ShieldCheck className="w-4 h-4 text-[#0f7343]" />
-                            <div>
-                              <span className="text-[9px] font-black text-slate-900 block leading-tight">OFFLINE SECURITY PASS</span>
-                              <span className="text-[8px] font-bold text-slate-400">Authorized Gate Release</span>
-                            </div>
-                          </div>
-
-                          <div className="flex items-center gap-2 bg-slate-50 p-1.5 rounded-xl border border-slate-200 shadow-2xs">
-                            <QRCodeSVG 
-                              value={qrPayload} 
-                              size={56} 
-                              level="M" 
-                              includeMargin={false}
-                            />
-                            <div className="pr-1 text-right">
-                              <span className="text-[7px] font-black uppercase text-[#0f7343] block">SCAN AT GATE</span>
-                              <span className="text-[7px] font-mono text-slate-400 block">100% Offline</span>
-                            </div>
-                          </div>
+                        <div className="text-right shrink-0">
+                          <span className="text-[8px] font-bold text-emerald-200 block uppercase">FORM / ADM NO</span>
+                          <span className="text-[10px] font-mono font-black text-amber-300 bg-emerald-950/80 px-2 py-0.5 rounded-md border border-emerald-400/40 block mt-0.5">
+                            {student.formNumber || admissionNo}
+                          </span>
                         </div>
                       </div>
 
-                      {/* Card Bottom Stripe */}
-                      <div className="h-1.5 bg-[#0f7343]" />
+                      {/* Main Card Body (3 Columns: Photo | Student Info | QR Code) */}
+                      <div className="p-4 flex-1 flex items-center justify-between gap-3 bg-white">
+                        {/* Column 1: Passport Photo */}
+                        <div className="w-20 h-24 rounded-xl overflow-hidden bg-slate-50 border-2 border-[#0f7343] shadow-xs shrink-0 relative">
+                          {student.photo ? (
+                            /* eslint-disable-next-line @next/next/no-img-element */
+                            <img src={student.photo} alt={student.firstName} className="w-full h-full object-cover" />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center bg-emerald-50 text-[#0f7343] font-black text-2xl">
+                              {student.firstName[0]}{student.lastName?.[0] || ''}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Column 2: Student Details */}
+                        <div className="flex-1 min-w-0 space-y-1">
+                          <h3 className="font-black text-base text-slate-900 tracking-tight leading-snug truncate">
+                            {student.firstName} {student.lastName}
+                          </h3>
+
+                          <div className="inline-block px-2.5 py-0.5 rounded-md bg-emerald-50 border border-emerald-300 text-[#0f7343] text-[10px] font-black tracking-wide">
+                            {classArm}
+                          </div>
+
+                          <div className="text-[10px] text-slate-600 font-semibold space-y-0.5 pt-1.5 border-t border-slate-100">
+                            <p className="truncate">
+                              <span className="text-slate-400 font-bold">Gender & DoB:</span> <strong className="text-slate-700 font-bold">{student.gender || 'N/A'}{student.dateOfBirth ? ` • ${student.dateOfBirth}` : ''}</strong>
+                            </p>
+                            <p className="truncate">
+                              <span className="text-slate-400 font-bold">Parent:</span> <strong className="text-slate-900 font-extrabold">{student.fatherName || student.guardianName || 'N/A'}</strong>
+                            </p>
+                            <p className="truncate">
+                              <span className="text-slate-400 font-bold">Contact Phone:</span> <strong className="font-mono text-[#0f7343] font-black">{student.phone1 || 'N/A'}</strong>
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* Column 3: Scannable QR Code */}
+                        <div className="w-20 bg-slate-50 p-1.5 rounded-xl border border-slate-200 shadow-2xs flex flex-col items-center justify-center shrink-0">
+                          <QRCodeSVG 
+                            value={qrPayload} 
+                            size={68} 
+                            level="M" 
+                            includeMargin={false}
+                          />
+                          <span className="text-[7px] font-black uppercase text-[#0f7343] mt-1 block">STUDENT QR ID</span>
+                        </div>
+                      </div>
+
+                      {/* Card Bottom Footer */}
+                      <div className="bg-slate-50 px-4 py-1.5 border-t border-slate-200 flex items-center justify-between text-[8px] text-slate-500 font-semibold">
+                        <span className="font-bold text-[#0f7343]">AI Integrated Academy Argungu</span>
+                        <span>Official Student ID Badge</span>
+                      </div>
                     </div>
                   );
                 })}
@@ -609,23 +597,13 @@ async function generateIDCardImageBlob(
   ctx.lineWidth = 4;
   ctx.strokeRect(2, 2, width - 4, height - 4);
 
-  // 2. Lanyard Slot
-  ctx.fillStyle = '#cbd5e1';
-  ctx.beginPath();
-  if (typeof ctx.roundRect === 'function') {
-    ctx.roundRect(width / 2 - 60, 12, 120, 16, 8);
-  } else {
-    ctx.rect(width / 2 - 60, 12, 120, 16);
-  }
-  ctx.fill();
-
-  // 3. Top Emerald Banner
+  // 2. Top Emerald Banner (Clean ID Card Header)
   ctx.fillStyle = '#0f7343';
-  ctx.fillRect(0, 38, width, 108);
+  ctx.fillRect(0, 0, width, 130);
 
   // Gold accent bar
   ctx.fillStyle = '#f59e0b';
-  ctx.fillRect(0, 146, width, 8);
+  ctx.fillRect(0, 130, width, 8);
 
   // Draw Logo if available
   if (logoSrc) {
@@ -633,9 +611,9 @@ async function generateIDCardImageBlob(
       const logoImg = await loadImage(logoSrc);
       ctx.save();
       ctx.beginPath();
-      ctx.arc(70, 92, 35, 0, Math.PI * 2);
+      ctx.arc(70, 65, 40, 0, Math.PI * 2);
       ctx.clip();
-      ctx.drawImage(logoImg, 35, 57, 70, 70);
+      ctx.drawImage(logoImg, 30, 25, 80, 80);
       ctx.restore();
     } catch {
       // ignore logo load error
@@ -644,30 +622,30 @@ async function generateIDCardImageBlob(
 
   // Header Titles
   ctx.fillStyle = '#ffffff';
-  ctx.font = 'bold 30px sans-serif';
-  ctx.fillText('AI INTEGRATED ACADEMY', 120, 80);
+  ctx.font = 'bold 32px sans-serif';
+  ctx.fillText('AI INTEGRATED ACADEMY', 130, 60);
 
   ctx.fillStyle = '#fef08a';
-  ctx.font = 'bold 18px sans-serif';
-  ctx.fillText('PARENT PICKUP PASS • ARGUNGU', 120, 114);
+  ctx.font = 'bold 20px sans-serif';
+  ctx.fillText('STUDENT IDENTITY CARD • ARGUNGU', 130, 100);
 
   // Admission / Form Pill
   ctx.fillStyle = '#064e3b';
   ctx.beginPath();
   if (typeof ctx.roundRect === 'function') {
-    ctx.roundRect(width - 250, 60, 220, 44, 10);
+    ctx.roundRect(width - 270, 42, 240, 48, 10);
   } else {
-    ctx.rect(width - 250, 60, 220, 44);
+    ctx.rect(width - 270, 42, 240, 48);
   }
   ctx.fill();
 
   ctx.fillStyle = '#fef08a';
-  ctx.font = 'bold 20px monospace';
-  ctx.fillText(student.formNumber || admissionNo, width - 235, 90);
+  ctx.font = 'bold 22px monospace';
+  ctx.fillText(student.formNumber || admissionNo, width - 255, 74);
 
-  // 4. Student Photo
+  // 3. Student Photo (Left Column)
   const photoX = 45;
-  const photoY = 175;
+  const photoY = 165;
   const photoW = 200;
   const photoH = 250;
 
@@ -696,60 +674,112 @@ async function generateIDCardImageBlob(
     ctx.textAlign = 'left';
   }
 
-  // 5. Student Details Text
-  const textX = 270;
+  // 4. Student Details Text (Middle Column)
+  const textX = 275;
   ctx.fillStyle = '#0f7343';
   ctx.font = 'bold 18px sans-serif';
-  ctx.fillText('STUDENT DETAILS', textX, 195);
+  ctx.fillText('STUDENT DETAILS', textX, 185);
 
   ctx.fillStyle = '#0f172a';
   ctx.font = 'bold 36px sans-serif';
   const fullName = `${student.firstName} ${student.lastName || ''}`.trim();
-  ctx.fillText(fullName, textX, 240);
+  ctx.fillText(fullName, textX, 230);
 
   // Class Arm Pill
   ctx.fillStyle = '#ecfdf5';
   ctx.beginPath();
   if (typeof ctx.roundRect === 'function') {
-    ctx.roundRect(textX, 260, 280, 42, 10);
+    ctx.roundRect(textX, 250, 260, 42, 10);
   } else {
-    ctx.rect(textX, 260, 280, 42);
+    ctx.rect(textX, 250, 260, 42);
   }
   ctx.fill();
 
   ctx.fillStyle = '#0f7343';
   ctx.font = 'bold 22px sans-serif';
-  ctx.fillText(classArm, textX + 15, 290);
+  ctx.fillText(classArm, textX + 15, 280);
 
-  // Parent & Emergency Contact Details
+  // Gender & DoB
   ctx.fillStyle = '#64748b';
   ctx.font = '20px sans-serif';
-  ctx.fillText('Authorized Parent:', textX, 345);
+  ctx.fillText('Gender & DoB:', textX, 335);
 
   ctx.fillStyle = '#1e293b';
   ctx.font = 'bold 22px sans-serif';
-  ctx.fillText(student.fatherName || student.guardianName || 'N/A', textX + 185, 345);
+  const genderDobStr = `${student.gender || 'N/A'}${student.dateOfBirth ? ` • ${student.dateOfBirth}` : ''}`;
+  ctx.fillText(genderDobStr, textX + 185, 335);
+
+  // Parent & Contact Details
+  ctx.fillStyle = '#64748b';
+  ctx.font = '20px sans-serif';
+  ctx.fillText('Authorized Parent:', textX, 375);
+
+  ctx.fillStyle = '#1e293b';
+  ctx.font = 'bold 22px sans-serif';
+  ctx.fillText(student.fatherName || student.guardianName || 'N/A', textX + 185, 375);
 
   ctx.fillStyle = '#64748b';
   ctx.font = '20px sans-serif';
-  ctx.fillText('Emergency Phone:', textX, 385);
+  ctx.fillText('Contact Phone:', textX, 415);
 
   ctx.fillStyle = '#0f7343';
   ctx.font = 'bold 22px monospace';
-  ctx.fillText(student.phone1 || 'N/A', textX + 185, 385);
+  ctx.fillText(student.phone1 || 'N/A', textX + 185, 415);
 
-  // Footer Details
-  ctx.fillStyle = '#0f172a';
+  // 5. QR Code Drawing (Right Column)
+  const qrX = width - 220;
+  const qrY = 175;
+  const qrSize = 180;
+
+  const qrPayload = JSON.stringify({
+    id: student.id,
+    fn: student.firstName,
+    ln: student.lastName,
+    form: student.formNumber || admissionNo,
+    cls: classArm,
+    fa: student.fatherName || student.guardianName || 'N/A',
+    ph: student.phone1 || 'N/A'
+  });
+
+  // Render QR Code onto canvas
+  ctx.fillStyle = '#f8fafc';
+  ctx.fillRect(qrX - 10, qrY - 10, qrSize + 20, qrSize + 45);
+  ctx.strokeStyle = '#cbd5e1';
+  ctx.lineWidth = 2;
+  ctx.strokeRect(qrX - 10, qrY - 10, qrSize + 20, qrSize + 45);
+
+  try {
+    const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(qrPayload)}`;
+    const qrImg = await loadImage(qrApiUrl);
+    ctx.drawImage(qrImg, qrX, qrY, qrSize, qrSize);
+  } catch {
+    ctx.fillStyle = '#0f7343';
+    ctx.fillRect(qrX, qrY, qrSize, qrSize);
+  }
+
+  ctx.fillStyle = '#0f7343';
+  ctx.font = 'bold 16px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('STUDENT QR ID', qrX + qrSize / 2, qrY + qrSize + 24);
+  ctx.textAlign = 'left';
+
+  // 6. Clean Footer
+  ctx.fillStyle = '#f8fafc';
+  ctx.fillRect(0, height - 60, width, 60);
+
+  ctx.fillStyle = '#0f7343';
   ctx.font = 'bold 20px sans-serif';
-  ctx.fillText('OFFLINE SECURITY PASS', 45, 485);
+  ctx.fillText('AI Integrated Academy Argungu', 45, height - 24);
 
   ctx.fillStyle = '#64748b';
   ctx.font = '18px sans-serif';
-  ctx.fillText('Gateman Verification Badge • Argungu, Kebbi State', 45, 515);
+  ctx.textAlign = 'right';
+  ctx.fillText('Official Student Identity Card', width - 45, height - 24);
+  ctx.textAlign = 'left';
 
-  // Bottom Emerald Line
+  // Bottom Emerald Bar
   ctx.fillStyle = '#0f7343';
-  ctx.fillRect(0, height - 20, width, 20);
+  ctx.fillRect(0, height - 8, width, 8);
 
   return new Promise((resolve) => {
     canvas.toBlob((blob) => {
