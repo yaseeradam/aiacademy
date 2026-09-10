@@ -191,85 +191,98 @@ export default function PickupIDCardModal({
                   return (
                     <div 
                       key={student.id} 
-                      className="id-card-wrapper relative bg-gradient-to-b from-slate-900 via-slate-900 to-[#062414] rounded-3xl border border-emerald-500/30 p-5 shadow-[0_15px_35px_rgba(0,0,0,0.6)] flex flex-col justify-between overflow-hidden text-white group hover:border-emerald-400/60 transition-all print:border-2 print:border-slate-800 print:shadow-none print:bg-white print:text-slate-900 print:rounded-2xl print:p-4 print:break-inside-avoid"
-                      style={{ minHeight: '270px' }}
+                      className="id-card-wrapper relative bg-white rounded-3xl border-2 border-slate-200 shadow-xl overflow-hidden flex flex-col justify-between text-slate-900 group hover:border-[#0f7343] transition-all print:border-2 print:border-slate-800 print:shadow-none print:rounded-2xl print:break-inside-avoid"
+                      style={{ minHeight: '280px' }}
                     >
-                      {/* Top Decorative Header */}
-                      <div className="absolute top-0 left-0 right-0 h-3 bg-gradient-to-r from-amber-400 via-emerald-500 to-[#0f7343]" />
+                      {/* Lanyard Hole Punch Slot Graphic */}
+                      <div className="w-10 h-2 bg-slate-200 rounded-full mx-auto mt-2 border border-slate-300 shadow-inner" />
 
-                      {/* Header Section */}
-                      <div className="flex items-center justify-between gap-3 pt-2 border-b border-slate-800 pb-3 print:border-slate-300">
-                        <div className="flex items-center gap-2.5">
+                      {/* Header Emerald Banner */}
+                      <div className="bg-[#0f7343] text-white px-4 py-2.5 mt-1 border-b-2 border-amber-400 flex items-center justify-between gap-3 shadow-xs">
+                        <div className="flex items-center gap-2.5 min-w-0">
                           {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img src={logoSrc} alt="School Logo" className="w-9 h-9 rounded-xl object-cover border border-emerald-400/40 shadow-xs" />
-                          <div>
-                            <h4 className="text-[11px] font-black uppercase tracking-wider text-emerald-400 leading-tight print:text-[#0f7343]">
+                          <img src={logoSrc} alt="School Logo" className="w-9 h-9 rounded-xl object-contain bg-white p-0.5 border border-emerald-300 shadow-xs shrink-0" />
+                          <div className="min-w-0">
+                            <h4 className="text-[11px] font-black uppercase tracking-wider text-white leading-none truncate">
                               AI INTEGRATED ACADEMY
                             </h4>
-                            <span className="text-[9px] font-extrabold text-amber-400 uppercase tracking-widest block print:text-amber-700">
-                              OFFICIAL PICKUP PASS
+                            <span className="text-[8px] font-black text-amber-300 uppercase tracking-widest block mt-0.5">
+                              PARENT PICKUP PASS • ARGUNGU
                             </span>
                           </div>
                         </div>
 
-                        <span className="text-[9px] font-mono font-black bg-emerald-950 text-emerald-300 px-2 py-0.5 rounded-lg border border-emerald-500/40 print:bg-slate-100 print:text-slate-800 print:border-slate-300">
+                        <span className="text-[9px] font-mono font-black bg-emerald-950/80 text-amber-300 px-2 py-0.5 rounded-md border border-emerald-400/40 shrink-0">
                           {student.formNumber || admissionNo}
                         </span>
                       </div>
 
-                      {/* Body Section */}
-                      <div className="my-3 flex items-center justify-between gap-3">
-                        {/* Student Photo */}
-                        <div className="w-20 h-24 rounded-2xl overflow-hidden bg-slate-800 border-2 border-emerald-400/40 shadow-md shrink-0 relative print:border-slate-400">
-                          {student.photo ? (
-                            /* eslint-disable-next-line @next/next/no-img-element */
-                            <img src={student.photo} alt={student.firstName} className="w-full h-full object-cover" />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center bg-slate-800 text-slate-400 font-black text-xl">
-                              {student.firstName[0]}{student.lastName?.[0] || ''}
+                      {/* Main Card Body */}
+                      <div className="p-4 flex-1 flex flex-col justify-between space-y-3">
+                        <div className="flex items-start gap-3.5">
+                          {/* Student Passport Photo */}
+                          <div className="w-20 h-24 rounded-2xl overflow-hidden bg-slate-100 border-2 border-[#0f7343] shadow-md shrink-0 relative">
+                            {student.photo ? (
+                              /* eslint-disable-next-line @next/next/no-img-element */
+                              <img src={student.photo} alt={student.firstName} className="w-full h-full object-cover" />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center bg-emerald-50 text-[#0f7343] font-black text-2xl">
+                                {student.firstName[0]}{student.lastName?.[0] || ''}
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Student Name & Class Details */}
+                          <div className="flex-1 min-w-0 space-y-1">
+                            <span className="text-[9px] font-black uppercase tracking-wider text-[#0f7343] block">
+                              STUDENT DETAILS
+                            </span>
+                            <h3 className="font-black text-base text-slate-900 tracking-tight leading-snug truncate">
+                              {student.firstName} {student.lastName}
+                            </h3>
+
+                            <div className="inline-block px-2.5 py-0.5 rounded-lg bg-emerald-50 border border-emerald-300 text-[#0f7343] text-[10px] font-black tracking-wide">
+                              {classArm}
                             </div>
-                          )}
-                        </div>
 
-                        {/* Student & Parent Info */}
-                        <div className="flex-1 min-w-0 space-y-1">
-                          <h3 className="font-black text-base text-white tracking-tight leading-snug truncate print:text-slate-900">
-                            {student.firstName} {student.lastName}
-                          </h3>
-
-                          <div className="inline-block px-2.5 py-0.5 rounded-md bg-[#0f7343]/60 border border-emerald-400/30 text-emerald-200 text-[10px] font-black tracking-wide print:bg-emerald-100 print:text-emerald-900 print:border-emerald-300">
-                            {classArm}
-                          </div>
-
-                          <div className="text-[10px] text-slate-300 font-semibold space-y-0.5 pt-1 print:text-slate-700">
-                            <p className="truncate">
-                              <span className="text-slate-400 font-bold print:text-slate-500">Parent:</span> {student.fatherName || student.guardianName || 'N/A'}
-                            </p>
-                            <p className="truncate">
-                              <span className="text-slate-400 font-bold print:text-slate-500">Phone:</span> <strong className="font-mono text-emerald-300 print:text-slate-900">{student.phone1 || 'N/A'}</strong>
-                            </p>
+                            <div className="text-[10px] text-slate-600 font-semibold space-y-0.5 pt-1 border-t border-slate-100">
+                              <p className="truncate">
+                                <span className="text-slate-400 font-bold">Authorized Parent:</span> <strong className="text-slate-800 font-extrabold">{student.fatherName || student.guardianName || 'N/A'}</strong>
+                              </p>
+                              <p className="truncate">
+                                <span className="text-slate-400 font-bold">Emergency Phone:</span> <strong className="font-mono text-[#0f7343] font-black">{student.phone1 || 'N/A'}</strong>
+                              </p>
+                            </div>
                           </div>
                         </div>
 
-                        {/* Scannable Offline QR Code */}
-                        <div className="w-20 h-20 bg-white p-1.5 rounded-2xl shadow-md border border-emerald-300/40 flex items-center justify-center shrink-0 print:border-slate-400">
-                          <QRCodeSVG 
-                            value={qrPayload} 
-                            size={68} 
-                            level="M" 
-                            includeMargin={false}
-                          />
+                        {/* QR Code & Scan Footer */}
+                        <div className="pt-2 border-t border-slate-200 flex items-center justify-between gap-3">
+                          <div className="flex items-center gap-2">
+                            <ShieldCheck className="w-4 h-4 text-[#0f7343]" />
+                            <div>
+                              <span className="text-[9px] font-black text-slate-900 block leading-tight">OFFLINE SECURITY PASS</span>
+                              <span className="text-[8px] font-bold text-slate-400">Authorized Gate Release</span>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-2 bg-slate-50 p-1.5 rounded-xl border border-slate-200 shadow-2xs">
+                            <QRCodeSVG 
+                              value={qrPayload} 
+                              size={56} 
+                              level="M" 
+                              includeMargin={false}
+                            />
+                            <div className="pr-1 text-right">
+                              <span className="text-[7px] font-black uppercase text-[#0f7343] block">SCAN AT GATE</span>
+                              <span className="text-[7px] font-mono text-slate-400 block">100% Offline</span>
+                            </div>
+                          </div>
                         </div>
                       </div>
 
-                      {/* Footer Section */}
-                      <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between text-[8px] text-slate-400 font-semibold print:border-slate-300 print:text-slate-600">
-                        <span className="flex items-center gap-1">
-                          <ShieldCheck className="w-3 h-3 text-emerald-400 print:text-[#0f7343]" />
-                          <span>Gateman Verification Badge</span>
-                        </span>
-                        <span className="font-mono">ARGUNGU • KEBBI STATE</span>
-                      </div>
+                      {/* Card Bottom Stripe */}
+                      <div className="h-1.5 bg-[#0f7343]" />
                     </div>
                   );
                 })}
