@@ -18,28 +18,36 @@ export default async function DashboardPage() {
 
   const isAdmin = phone === 'admin';
   const displayPhone = phone || '';
-  let studentsData = [];
-  const settings = await getSchoolSettings();
 
   if (isAdmin) {
-    studentsData = await getAllStudents();
-  } else {
-    const parent = await getParentByPhone(phone);
-    if (!parent) {
-      redirect('/');
-    }
-    studentsData = await getStudentsByParentId(parent.id);
+    // Run settings + students in parallel — they are independent
+    const [, allStudents] = await Promise.all([
+      getSchoolSettings(),
+      getAllStudents(),
+    ]);
+    return (
+      <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
+        <AdminControl students={allStudents} />
+      </div>
+    );
   }
+
+  // Parent portal: fetch settings + parent in parallel
+  const [settings, parent] = await Promise.all([
+    getSchoolSettings(),
+    getParentByPhone(phone),
+  ]);
+
+  if (!parent) {
+    redirect('/');
+  }
+
+  const studentsData = await getStudentsByParentId(parent.id);
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
-      {isAdmin ? (
-        <AdminControl
-          students={studentsData}
-        />
-      ) : (
-        /* ================= PARENT PORTAL LAYOUT (Matches children list.png) ================= */
-        <div className="flex flex-col flex-1">
+      {/* PARENT PORTAL LAYOUT */}
+      <div className="flex flex-col flex-1">
           {/* Header */}
           <header className="bg-white border-b border-slate-200/80 sticky top-0 z-40">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -147,7 +155,6 @@ export default async function DashboardPage() {
             </div>
           </footer>
         </div>
-      )}
     </div>
   );
 }

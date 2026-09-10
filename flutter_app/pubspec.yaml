@@ -1,0 +1,26 @@
+name: ai_academy_pickup_scanner
+description: "AI Integrated Academy Argungu - Offline Gate Security Pickup Scanner App"
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.6
+  mobile_scanner: ^5.0.0
+  hive: ^2.2.3
+  hive_flutter: ^1.1.0
+  audioplayers: ^6.0.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/logo.png

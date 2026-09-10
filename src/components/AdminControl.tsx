@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { logoutAction, adminUpdateStudentAction, adminDeleteStudentAction, adminDeleteMultipleStudentsAction, unassignStudentFromSubclassAction, unassignMultipleStudentsFromSubclassAction, assignMultipleStudentsToSubclassAction, restoreMissingSeedStudentsAction, clearAllDatabaseDataAction, adminCreateStudentAction, adminVerifyAction, adminTogglePaymentStatusAction, getAuditLogsAction, scanAdmissionFormOCRAction, getSchoolSettingsAction, updateSchoolSettingsAction, findDuplicateStudentsAction, DuplicateGroup } from '@/app/actions';
 import AdmissionLetterModal, { printBulkAdmissionLetters, printPaidStudentsPDF, getStudentClassArm, getStudentAdmissionNumber } from './AdmissionLetterModal';
+import PickupIDCardModal from './PickupIDCardModal';
 
 interface AdminControlProps {
   students: Student[];
@@ -113,6 +114,7 @@ export default function AdminControl({ students }: AdminControlProps) {
 
   // Modal State for viewing Admission Letter
   const [letterModalStudent, setLetterModalStudent] = useState<Student | null>(null);
+  const [isPickupModalOpen, setIsPickupModalOpen] = useState<boolean>(false);
   const [isTogglingFee, setIsTogglingFee] = useState<string | null>(null);
 
   // Audit Logs state
@@ -3635,6 +3637,16 @@ export default function AdminControl({ students }: AdminControlProps) {
               </div>
 
               <div className="flex flex-wrap items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => setIsPickupModalOpen(true)}
+                  className="flex items-center gap-2 py-2 px-4 rounded-xl bg-gradient-to-r from-[#0f7343] to-emerald-600 hover:from-emerald-700 hover:to-[#0b5c34] text-white font-black text-xs transition-all cursor-pointer shadow-md active:scale-98 border border-emerald-400/40"
+                  title="Generate Parent Pickup CR80 Security Passes & test Gate Scanner simulator"
+                >
+                  <ShieldCheck className="w-4 h-4 text-amber-300" />
+                  <span>Parent Pickup ID Cards ({students.length})</span>
+                </button>
+
                 <span className="px-3.5 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 font-bold text-xs">
                   {students.filter(s => s.paymentStatus === 'paid').length} Approved / Paid Letters
                 </span>
@@ -3882,6 +3894,14 @@ export default function AdminControl({ students }: AdminControlProps) {
           allStudents={students}
         />
       )}
+
+      {/* Official CR80 Student Pickup ID Card & Offline Gate Scanner Modal */}
+      <PickupIDCardModal
+        isOpen={isPickupModalOpen}
+        onClose={() => setIsPickupModalOpen(false)}
+        students={students}
+        logoSrc={schoolSettings.logo || '/logo.jpg'}
+      />
 
       {/* ================= EDIT STUDENT DETAILS MODAL OVERLAY (Matches students edit page.png) ================= */}
       {editingStudent && (

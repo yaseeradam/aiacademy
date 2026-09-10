@@ -56,6 +56,7 @@ async function ensureSeeded() {
           db.collection(STUDENTS_COL).createIndex({ formNumber: 1 }),
           db.collection(SETTINGS_COL).createIndex({ id: 1 }, { unique: true }),
           db.collection(COUNTERS_COL).createIndex({ _id: 1 }),
+          db.collection(AUDIT_COL).createIndex({ timestamp: -1 }),
         ]);
       } catch {
         /* ignore index conflict if already exists */
@@ -69,17 +70,26 @@ async function ensureSeeded() {
         await db.collection<Student>(STUDENTS_COL).updateOne({ id: s.id }, { $setOnInsert: s }, { upsert: true });
       }
 
-      // Fix #7: Correctly migrate legacy class names without conflating grades
-      await db.collection<Student>(STUDENTS_COL).updateMany(
-        { intendedClass: { $regex: /Primary 2/i } },
-        { $set: { intendedClass: 'Basic 2' } }
-      );
-      await db.collection<Student>(STUDENTS_COL).updateMany(
-        { intendedClass: { $regex: /Primary 1/i } },
-        { $set: { intendedClass: 'Basic 1' } }
-      );
+      // Fix migration: only run class-name migrations once (skip on subsequent cold starts)
+      const migrationDoc = await db.collection(SETTINGS_COL).findOne({ id: 'migration_version' });
+      const migrationVersion = (migrationDoc as Record<string, unknown> | null)?.version as number | undefined ?? 0;
 
-      await autoAssignBareClasses(db);
+      if (migrationVersion < 1) {
+        await db.collection<Student>(STUDENTS_COL).updateMany(
+          { intendedClass: { $regex: /Primary 2/i } },
+          { $set: { intendedClass: 'Basic 2' } }
+        );
+        await db.collection<Student>(STUDENTS_COL).updateMany(
+          { intendedClass: { $regex: /Primary 1/i } },
+          { $set: { intendedClass: 'Basic 1' } }
+        );
+        await autoAssignBareClasses(db);
+        await db.collection(SETTINGS_COL).updateOne(
+          { id: 'migration_version' },
+          { $set: { id: 'migration_version', version: 1 } },
+          { upsert: true }
+        );
+      }
     })().catch(err => {
       console.error('DB seed/index error (will not retry):', err);
       seedFailed = true;  // stop silent retry loop
@@ -337,15 +347,11 @@ export async function addOrUpdateStudent(student: Student): Promise<void> {
 
 export async function addOrUpdateParent(parent: Parent): Promise<void> {
   const db = await getDB();
-  const existing = await db.collection<Parent>(PARENTS_COL).findOne({ id: parent.id });
-  if (existing) {
-    await db.collection<Parent>(PARENTS_COL).updateOne(
-      { id: parent.id },
-      { $set: parent }
-    );
-  } else {
-    await db.collection<Parent>(PARENTS_COL).insertOne(parent);
-  }
+  await db.collection<Parent>(PARENTS_COL).updateOne(
+    { id: parent.id },
+    { $set: parent },
+    { upsert: true }
+  );
 }
 
 export async function deleteStudent(studentId: string): Promise<boolean> {
