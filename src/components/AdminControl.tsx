@@ -3663,23 +3663,38 @@ export default function AdminControl({ students }: AdminControlProps) {
                   type="button"
                   onClick={() => {
                     const paidStudents = students.filter(s => s.paymentStatus === 'paid');
-                    const targetStudents = paidStudents.length > 0 ? paidStudents : filteredStudents;
-                    if (targetStudents.length === 0) {
+                    if (paidStudents.length === 0) {
+                      alert("No paid student records available to print.");
+                      return;
+                    }
+                    printBulkAdmissionLetters(paidStudents, schoolSettings.logo || '/logo.jpg');
+                  }}
+                  className="flex items-center gap-2 py-2 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition-all cursor-pointer shadow-sm active:scale-98"
+                  title="Print A4 admission letters for paid students"
+                >
+                  <Printer className="w-4 h-4 text-emerald-200" />
+                  <span>Print Paid Admission Letters ({students.filter(s => s.paymentStatus === 'paid').length})</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!students || students.length === 0) {
                       alert("No student records available to print.");
                       return;
                     }
-                    printBulkAdmissionLetters(targetStudents, schoolSettings.logo || '/logo.jpg');
+                    printBulkAdmissionLetters(students, schoolSettings.logo || '/logo.jpg');
                   }}
-                  className="flex items-center gap-2 py-2 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition-all cursor-pointer shadow-sm active:scale-98"
+                  className="flex items-center gap-2 py-2 px-4 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-black text-xs transition-all cursor-pointer shadow-sm active:scale-98 border border-slate-700"
+                  title="Print bulk A4 admission letters for ALL students regardless of fee payment status"
                 >
-                  <Printer className="w-4 h-4 text-emerald-200" />
-                  <span>Print All Admission Letters (Bulk A4)</span>
+                  <Printer className="w-4 h-4 text-emerald-400" />
+                  <span>Print ALL Letters (Paid & Unpaid) ({students.length})</span>
                 </button>
                 <button
                   type="button"
                   onClick={handleExportPhotos}
                   disabled={isExportingPhotos}
-                  className="flex items-center gap-2 py-2 px-3.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs transition-all cursor-pointer shadow-xs disabled:opacity-50"
+                  className="flex items-center gap-2 py-2 px-3.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs transition-all cursor-pointer shadow-xs disabled:opacity-50"
                 >
                   {isExportingPhotos ? <RefreshCw className="w-4 h-4 animate-spin text-emerald-400" /> : <Camera className="w-4 h-4 text-emerald-400" />}
                   <span>{isExportingPhotos ? "Packaging ZIP..." : "Export Photos (ZIP)"}</span>
