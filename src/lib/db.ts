@@ -260,27 +260,21 @@ export async function findDuplicateStudent(studentData: Partial<Student>): Promi
   const formNum = studentData.formNumber?.trim();
   const first = studentData.firstName?.trim();
   const last = studentData.lastName?.trim();
-  const phone = studentData.phone1 ? normalizePhone(studentData.phone1) : '';
-  const dob = studentData.dateOfBirth?.trim();
 
   const conditions: object[] = [];
 
-  // Fix #6: All user-supplied strings are escaped before being embedded in regex
+  // Escape user-supplied strings before embedding in regex
   if (formNum) {
     conditions.push({ formNumber: { $regex: new RegExp(`^${escapeRegex(formNum)}$`, 'i') } });
   }
-  if (first && last && phone) {
+  if (first && last) {
     conditions.push({
       firstName: { $regex: new RegExp(`^${escapeRegex(first)}$`, 'i') },
-      lastName:  { $regex: new RegExp(`^${escapeRegex(last)}$`, 'i') },
-      phone1:    { $regex: `${escapeRegex(phone)}$` }
+      lastName:  { $regex: new RegExp(`^${escapeRegex(last)}$`, 'i') }
     });
-  }
-  if (first && last && dob) {
+  } else if (first && first.length > 2) {
     conditions.push({
-      firstName:   { $regex: new RegExp(`^${escapeRegex(first)}$`, 'i') },
-      lastName:    { $regex: new RegExp(`^${escapeRegex(last)}$`, 'i') },
-      dateOfBirth: { $regex: new RegExp(`^${escapeRegex(dob)}$`, 'i') }
+      firstName: { $regex: new RegExp(`^${escapeRegex(first)}$`, 'i') }
     });
   }
 

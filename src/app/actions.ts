@@ -454,7 +454,7 @@ export async function findDuplicateStudentsAction(): Promise<{ success: boolean;
     formMap.get(key)!.push(s);
   });
 
-  formMap.forEach((students, key) => {
+  formMap.forEach((students) => {
     if (students.length > 1) {
       groups.push({
         reason: 'Duplicate Form / Serial Number',
@@ -464,24 +464,23 @@ export async function findDuplicateStudentsAction(): Promise<{ success: boolean;
     }
   });
 
-  // 2. Group by Full Name + Phone
-  const namePhoneMap = new Map<string, Student[]>();
+  // 2. Group by Full Name (Detect Same Student Name)
+  const nameMap = new Map<string, Student[]>();
   allStudents.forEach(s => {
-    const name = `${s.firstName} ${s.lastName}`.trim().toLowerCase();
-    const phone = s.phone1 ? normalizePhone(s.phone1) : '';
-    if (!name || !phone) return;
-    const key = `${name}__${phone}`;
-    if (!namePhoneMap.has(key)) namePhoneMap.set(key, []);
-    namePhoneMap.get(key)!.push(s);
+    const fullName = `${s.firstName || ''} ${s.lastName || ''}`.trim().toLowerCase().replace(/\s+/g, ' ');
+    if (!fullName || fullName.length < 2) return;
+    if (!nameMap.has(fullName)) nameMap.set(fullName, []);
+    nameMap.get(fullName)!.push(s);
   });
 
-  namePhoneMap.forEach((students) => {
+  nameMap.forEach((students) => {
     if (students.length > 1) {
       const alreadyInFormGroup = groups.some(g => g.reason === 'Duplicate Form / Serial Number' && g.students.some(s => s.id === students[0].id));
       if (!alreadyInFormGroup) {
+        const formattedName = `${students[0].firstName} ${students[0].lastName || ''}`.trim();
         groups.push({
-          reason: 'Duplicate Name & Parent Contact Phone',
-          key: `${students[0].firstName} ${students[0].lastName} (${students[0].phone1})`,
+          reason: 'Duplicate Student Name',
+          key: formattedName,
           students
         });
       }
