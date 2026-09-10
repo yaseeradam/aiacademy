@@ -756,10 +756,13 @@ export default function AdminControl({ students }: AdminControlProps) {
   };
 
   const handleClearAllSeededData = async () => {
-    const confirm = window.confirm(
-      'Are you sure you want to clear ALL initial seeded demo data from the database?\n\nThis will remove all demo student records and start with a fresh empty database.'
+    const typed = window.prompt(
+      '⚠️ DANGER ZONE ⚠️\n\nThis will permanently delete ALL student and parent records from the database. This action CANNOT be undone.\n\nType  DELETE ALL  (in capitals) to confirm:'
     );
-    if (!confirm) return;
+    if (typed?.trim() !== 'DELETE ALL') {
+      if (typed !== null) alert('Confirmation text did not match. Database was NOT cleared.');
+      return;
+    }
 
     setFeedbackModal({
       isOpen: true,

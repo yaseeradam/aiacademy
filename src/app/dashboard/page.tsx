@@ -122,7 +122,7 @@ export default async function DashboardPage() {
                   </p>
                   <div className="max-w-md mx-auto text-xs text-slate-400 leading-relaxed bg-slate-50 p-4 rounded-xl border border-slate-100">
                     Please contact the school administration office to register or correct your phone number:
-                    <strong className="block text-slate-600 mt-1">08069676697, 07034784861</strong>
+                    <strong className="block text-slate-600 mt-1">{settings.phones || '08069676697, 07034784861'}</strong>
                   </div>
                 </div>
               )}

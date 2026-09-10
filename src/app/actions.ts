@@ -21,6 +21,7 @@ import {
   updateSchoolSettings,
   restoreMissingSeedStudents,
   clearAllStudentsAndParents,
+  getNextAdmissionSequence,
 } from '@/lib/db';
 import { Student, Parent, SchoolSettings } from '@/types';
 import { getStudentClassArm } from '@/lib/classUtils';
@@ -148,24 +149,12 @@ export async function adminTogglePaymentStatusAction(studentId: string, paymentS
   const todayStr = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
   const currentYear = new Date().getFullYear();
 
-  // Generate admission number if approving and not already assigned (Refined Variant 3C: AIAA-B26-001)
+  // Fix #5: Generate admission number atomically to prevent race-condition duplicates
   let admissionNumber = student.admissionNumber;
   if (paymentStatus === 'paid' && !admissionNumber) {
-    const allStudents = await getAllStudents();
-    const currentYearShort = new Date().getFullYear().toString().slice(-2); // e.g. '26'
-    const pattern = `AIAA-B${currentYearShort}-`;
-    let maxNum = 0;
-    allStudents.forEach(s => {
-      if (s.admissionNumber && s.id !== studentId) {
-        const parts = s.admissionNumber.split('-');
-        const lastPart = parts[parts.length - 1];
-        const num = parseInt(lastPart, 10);
-        if (!isNaN(num) && num > maxNum) {
-          maxNum = num;
-        }
-      }
-    });
-    const nextNum = String(maxNum + 1).padStart(3, '0');
+    const currentYearShort = currentYear.toString().slice(-2); // e.g. '26'
+    const seq = await getNextAdmissionSequence(currentYearShort);
+    const nextNum = String(seq).padStart(3, '0');
     admissionNumber = `AIAA-B${currentYearShort}-${nextNum}`;
   }
 
@@ -319,21 +308,24 @@ export async function adminDeleteMultipleStudentsAction(studentIds: string[]): P
   }
 }
 
+// Fix #20: Shared base-class resolver — eliminates 30 lines of duplication
+function resolveBaseClass(cls: string | undefined): string {
+  const trimmed = (cls || '').trim();
+  if (/Basic 2|Primary 2/i.test(trimmed)) return 'Basic 2';
+  if (/Basic 1|Primary 1/i.test(trimmed)) return 'Basic 1';
+  if (/Nursery/i.test(trimmed)) return 'Nursery 1';
+  const stripped = trimmed
+    .replace(/\s+(Gold|Silver|Green|Blue|Diamond)(\s+\d+)?/gi, '')
+    .replace(/\(Unassigned\)/gi, '')
+    .trim();
+  return stripped || 'Nursery 1';
+}
+
 export async function unassignStudentFromSubclassAction(studentId: string): Promise<{ success: boolean; error?: string }> {
   const student = await getStudentById(studentId);
   if (!student) return { success: false, error: 'Student not found.' };
 
-  let baseClass = 'Nursery 1';
-  if (/Basic 2|Primary 2/i.test(student.intendedClass || '')) {
-    baseClass = 'Basic 2';
-  } else if (/Basic 1|Primary 1/i.test(student.intendedClass || '')) {
-    baseClass = 'Basic 1';
-  } else if (/Nursery/i.test(student.intendedClass || '')) {
-    baseClass = 'Nursery 1';
-  } else if (student.intendedClass) {
-    baseClass = student.intendedClass.replace(/\s+(Gold|Silver|Green|Blue|Diamond)(\s+\d+)?/gi, '').replace(/\(Unassigned\)/gi, '').trim();
-    if (!baseClass) baseClass = 'Nursery 1';
-  }
+  const baseClass = resolveBaseClass(student.intendedClass);
 
   await addOrUpdateStudent({
     ...student,
@@ -358,17 +350,7 @@ export async function unassignMultipleStudentsFromSubclassAction(studentIds: str
     for (const id of studentIds) {
       const student = await getStudentById(id);
       if (student) {
-        let baseClass = 'Nursery 1';
-        if (/Basic 2|Primary 2/i.test(student.intendedClass || '')) {
-          baseClass = 'Basic 2';
-        } else if (/Basic 1|Primary 1/i.test(student.intendedClass || '')) {
-          baseClass = 'Basic 1';
-        } else if (/Nursery/i.test(student.intendedClass || '')) {
-          baseClass = 'Nursery 1';
-        } else if (student.intendedClass) {
-          baseClass = student.intendedClass.replace(/\s+(Gold|Silver|Green|Blue|Diamond)(\s+\d+)?/gi, '').replace(/\(Unassigned\)/gi, '').trim();
-          if (!baseClass) baseClass = 'Nursery 1';
-        }
+        const baseClass = resolveBaseClass(student.intendedClass);
         await addOrUpdateStudent({
           ...student,
           intendedClass: `${baseClass} (Unassigned)`,
@@ -555,7 +537,11 @@ export async function resolveAutoSubgroup(requestedClass: string, allStudents: S
     }
   }
 
-  return `${targetBase} Gold 2`;
+  // Fix #8: All arms are full — surface an error instead of silently overflowing
+  throw new Error(
+    `All subclass arms for ${targetBase} are at full capacity (36 students each). ` +
+    `Please create a new arm or increase capacity before adding more students.`
+  );
 }
 
 export async function adminCreateStudentAction(studentData: Omit<Student, 'id' | 'parentId'> & { parentId?: string }): Promise<{ success: boolean; id?: string; error?: string; existingStudent?: Student }> {

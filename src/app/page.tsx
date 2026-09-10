@@ -153,24 +153,11 @@ function LoginContent() {
           </a>
         </div>
 
-        {/* Admin and credentials helper link for evaluation */}
-        <div className="mt-8 pt-5 border-t border-slate-100/80 flex justify-between text-[10px] text-slate-400 font-bold">
+        {/* Admin and portal version badge */}
+        <div className="mt-8 pt-5 border-t border-slate-100/80 flex justify-center text-[10px] text-slate-400 font-bold">
           <span className="text-green-600 bg-green-50/60 px-2 py-0.5 rounded border border-green-100/40">
             Argungu Portal v2.0
           </span>
-          <button
-            type="button"
-            onClick={() => {
-              const phoneInput = document.getElementById('phone') as HTMLInputElement;
-              if (phoneInput) {
-                phoneInput.value = '07038363534';
-                phoneInput.focus();
-              }
-            }}
-            className="hover:text-slate-600 underline cursor-pointer"
-          >
-            Fill Parent Phone
-          </button>
         </div>
       </div>
 
@@ -244,7 +231,16 @@ function LoginContent() {
                 <div className="space-y-2 text-xs text-slate-600 bg-slate-50 p-3.5 rounded-xl border border-slate-100 font-semibold">
                   <p><strong className="text-slate-800">School:</strong> AI Integrated Academy Argungu</p>
                   <p><strong className="text-slate-800">Parent/Guardian:</strong> {verifiedStudent.fatherName || verifiedStudent.guardianName || 'N/A'}</p>
-                  <p><strong className="text-slate-800">Verification Status:</strong> <span className="text-emerald-700 font-extrabold uppercase">Officially Verified ✓</span></p>
+                  <p>
+                    <strong className="text-slate-800">Verification Status:</strong>{' '}
+                    {verifiedStudent.verificationStatus === 'verified' ? (
+                      <span className="text-emerald-700 font-extrabold uppercase">Officially Verified ✓</span>
+                    ) : verifiedStudent.verificationStatus === 'requires_correction' ? (
+                      <span className="text-amber-700 font-extrabold uppercase">Pending Correction ⚠</span>
+                    ) : (
+                      <span className="text-slate-500 font-extrabold uppercase">Pending Review</span>
+                    )}
+                  </p>
                 </div>
 
                 <div className="pt-2 text-center">

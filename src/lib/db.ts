@@ -6,6 +6,12 @@ const PARENTS_COL = 'parents';
 const STUDENTS_COL = 'students';
 const AUDIT_COL = 'audit_logs';
 const SETTINGS_COL = 'settings';
+const COUNTERS_COL = 'counters';
+
+// Escape a string so it is safe to embed inside a MongoDB $regex
+function escapeRegex(str: string): string {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Seed data — only inserted once when the database is empty
@@ -19,6 +25,7 @@ const INITIAL_STUDENTS: Student[] = [];
 // ─────────────────────────────────────────────────────────────────────────────
 
 let seedPromise: Promise<void> | null = null;
+let seedFailed = false;  // prevents infinite retry loops on persistent DB errors
 let cachedSettings: SchoolSettings | null = null;
 let cachedSettingsTime = 0;
 
@@ -35,6 +42,7 @@ async function getDB() {
 
 // Single-run seed & index creation across app lifecycle
 async function ensureSeeded() {
+  if (seedFailed) return;  // Don't retry after a persistent failure
   if (!seedPromise) {
     seedPromise = (async () => {
       const db = await getDB();
@@ -47,6 +55,7 @@ async function ensureSeeded() {
           db.collection(STUDENTS_COL).createIndex({ id: 1 }, { unique: true }),
           db.collection(STUDENTS_COL).createIndex({ formNumber: 1 }),
           db.collection(SETTINGS_COL).createIndex({ id: 1 }, { unique: true }),
+          db.collection(COUNTERS_COL).createIndex({ _id: 1 }),
         ]);
       } catch {
         /* ignore index conflict if already exists */
@@ -60,14 +69,20 @@ async function ensureSeeded() {
         await db.collection<Student>(STUDENTS_COL).updateOne({ id: s.id }, { $setOnInsert: s }, { upsert: true });
       }
 
+      // Fix #7: Correctly migrate legacy class names without conflating grades
       await db.collection<Student>(STUDENTS_COL).updateMany(
-        { intendedClass: { $regex: /Primary/i } },
+        { intendedClass: { $regex: /Primary 2/i } },
+        { $set: { intendedClass: 'Basic 2' } }
+      );
+      await db.collection<Student>(STUDENTS_COL).updateMany(
+        { intendedClass: { $regex: /Primary 1/i } },
         { $set: { intendedClass: 'Basic 1' } }
       );
 
       await autoAssignBareClasses(db);
     })().catch(err => {
-      console.error('DB seed/index error:', err);
+      console.error('DB seed/index error (will not retry):', err);
+      seedFailed = true;  // stop silent retry loop
       seedPromise = null;
     });
   }
@@ -240,21 +255,22 @@ export async function findDuplicateStudent(studentData: Partial<Student>): Promi
 
   const conditions: object[] = [];
 
+  // Fix #6: All user-supplied strings are escaped before being embedded in regex
   if (formNum) {
-    conditions.push({ formNumber: { $regex: new RegExp(`^${formNum}$`, 'i') } });
+    conditions.push({ formNumber: { $regex: new RegExp(`^${escapeRegex(formNum)}$`, 'i') } });
   }
   if (first && last && phone) {
     conditions.push({
-      firstName: { $regex: new RegExp(`^${first}$`, 'i') },
-      lastName: { $regex: new RegExp(`^${last}$`, 'i') },
-      phone1: { $regex: `${phone}$` }
+      firstName: { $regex: new RegExp(`^${escapeRegex(first)}$`, 'i') },
+      lastName:  { $regex: new RegExp(`^${escapeRegex(last)}$`, 'i') },
+      phone1:    { $regex: `${escapeRegex(phone)}$` }
     });
   }
   if (first && last && dob) {
     conditions.push({
-      firstName: { $regex: new RegExp(`^${first}$`, 'i') },
-      lastName: { $regex: new RegExp(`^${last}$`, 'i') },
-      dateOfBirth: { $regex: new RegExp(`^${dob}$`, 'i') }
+      firstName:   { $regex: new RegExp(`^${escapeRegex(first)}$`, 'i') },
+      lastName:    { $regex: new RegExp(`^${escapeRegex(last)}$`, 'i') },
+      dateOfBirth: { $regex: new RegExp(`^${escapeRegex(dob)}$`, 'i') }
     });
   }
 
@@ -270,7 +286,8 @@ export async function findDuplicateStudent(studentData: Partial<Student>): Promi
   const { _id, ...rest } = doc;
   void _id;
   const s = rest as Student;
-  if (/Primary/i.test(s.intendedClass)) s.intendedClass = 'Basic 1';
+  if (/Primary 1/i.test(s.intendedClass)) s.intendedClass = 'Basic 1';
+  else if (/Primary 2/i.test(s.intendedClass)) s.intendedClass = 'Basic 2';
   return s;
 }
 
@@ -335,6 +352,23 @@ export async function deleteStudent(studentId: string): Promise<boolean> {
   const db = await getDB();
   const result = await db.collection<Student>(STUDENTS_COL).deleteOne({ id: studentId });
   return result.deletedCount > 0;
+}
+
+/**
+ * Fix #5: Atomically increment and return the next admission number sequence.
+ * Using MongoDB $inc on a counters document guarantees uniqueness even under
+ * concurrent requests — no two admins can get the same number.
+ */
+export async function getNextAdmissionSequence(yearShort: string): Promise<number> {
+  const db = await getDB();
+  const counterId = `admission_seq_${yearShort}`;
+  interface CounterDoc { _id: string; seq: number; }
+  const result = await db.collection<CounterDoc>(COUNTERS_COL).findOneAndUpdate(
+    { _id: counterId } as unknown as import('mongodb').Filter<CounterDoc>,
+    { $inc: { seq: 1 } },
+    { upsert: true, returnDocument: 'after' }
+  );
+  return (result as unknown as CounterDoc | null)?.seq ?? 1;
 }
 
 export async function addAuditLog(log: Omit<AuditLog, 'id' | 'timestamp'>): Promise<void> {

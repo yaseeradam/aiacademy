@@ -27,6 +27,14 @@ export function getStudentClassArm(cls: string | undefined, studentId?: string, 
     const bareClassStudents = allStudents.filter(s => {
       if (!s.intendedClass) return baseClass === 'Nursery 1';
       const sTrim = s.intendedClass.trim();
+      
+      let sBaseClass = 'Nursery 1';
+      if (/Basic 2|Primary 2/i.test(sTrim)) sBaseClass = 'Basic 2';
+      else if (/Basic 1|Primary 1/i.test(sTrim)) sBaseClass = 'Basic 1';
+      else if (/Nursery/i.test(sTrim)) sBaseClass = 'Nursery 1';
+
+      if (sBaseClass !== baseClass) return false;
+
       return !sTrim.includes('Unassigned') && !sTrim.includes('Gold') && !sTrim.includes('Silver') && !sTrim.includes('Green') && !sTrim.includes('Blue') && !sTrim.includes('Diamond');
     });
 

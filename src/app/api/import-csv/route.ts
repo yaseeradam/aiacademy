@@ -135,8 +135,8 @@ export async function POST(request: NextRequest) {
       
       const guardianName = (row['parent / guardian name'] || row['parent/guardian name'] || row['guardian name'] || row['guardianname'] || row['guardian_name'] || row['parent name'] || '').trim();
       const guardianAddress = (row['guardian address'] || row['guardian_address'] || '').trim();
-      const nationality = (row['nationality'] || 'Nigerian').trim();
-      const religion = (row['religion'] || 'Islam').trim();
+      const nationality = (row['nationality'] || '').trim();
+      const religion = (row['religion'] || '').trim();
       const status = ((row['verification status'] || row['verification_status'] || row['status'] || 'pending').toLowerCase()) as VerificationStatus;
       const rawPayment = (row['fee payment status'] || row['payment status'] || row['payment_status'] || row['fee_payment_status'] || row['paymentstatus'] || '').toLowerCase();
       const paymentStatus: PaymentStatus = rawPayment.includes('paid') ? 'paid' : 'pending';
@@ -166,8 +166,8 @@ export async function POST(request: NextRequest) {
         continue;
       }
 
-      // Generate a non-conflicting form number if missing
-      const finalFormNumber = formNumber || `FORM-${Date.now().toString().slice(-5)}-${i}`;
+      // Generate a non-conflicting form number if missing — full timestamp + random suffix avoids collisions
+      const finalFormNumber = formNumber || `FORM-${Date.now()}-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
 
       // 1. Find or create the parent
       let parent = [...parents, ...Array.from(parentsToSave.values())].find(p => finalPhone1 !== 'N/A' && normalizePhone(p.phoneNumber) === normalizePhone(finalPhone1));

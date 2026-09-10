@@ -34,7 +34,12 @@ export async function GET() {
       'Nationality',
       'Religion',
       'Verification Status',
-      'Correction Notes'
+      'Correction Notes',
+      'Payment Status',
+      'Admission Number',
+      'Academic Session',
+      'Resumption Date',
+      'Admission Date',
     ];
 
     const csvRows = [headers.join(',')];
@@ -60,7 +65,12 @@ export async function GET() {
         escapeCSV(student.nationality),
         escapeCSV(student.religion),
         escapeCSV(student.verificationStatus),
-        escapeCSV(student.correctionNotes)
+        escapeCSV(student.correctionNotes),
+        escapeCSV(student.paymentStatus),
+        escapeCSV(student.admissionNumber),
+        escapeCSV(student.academicSession),
+        escapeCSV(student.resumptionDate),
+        escapeCSV(student.admissionDate),
       ];
       csvRows.push(row.join(','));
     }

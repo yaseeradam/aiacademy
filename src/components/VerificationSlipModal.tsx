@@ -7,7 +7,6 @@ interface VerificationSlipModalProps {
   student: Student;
   isOpen: boolean;
   onClose: () => void;
-  initialFormat?: string;
 }
 
 export default function VerificationSlipModal({ student, isOpen, onClose }: VerificationSlipModalProps) {
