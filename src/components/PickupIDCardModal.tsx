@@ -33,6 +33,10 @@ export default function PickupIDCardModal({
   const [pickupLogs, setPickupLogs] = useState<Array<{ id: string; name: string; time: string; status: string }>>([]);
   const [justApproved, setJustApproved] = useState<boolean>(false);
 
+  // ZIP Export State
+  const [isExportingZip, setIsExportingZip] = useState<boolean>(false);
+  const [zipProgress, setZipProgress] = useState<{ current: number; total: number }>({ current: 0, total: 0 });
+
   if (!isOpen) return null;
 
   // Filter students for ID Card batch preview
@@ -49,6 +53,46 @@ export default function PickupIDCardModal({
 
   const handlePrint = () => {
     window.print();
+  };
+
+  const handleDownloadZip = async () => {
+    if (displayStudents.length === 0) return;
+    setIsExportingZip(true);
+    setZipProgress({ current: 0, total: displayStudents.length });
+
+    try {
+      const JSZip = (await import('jszip')).default;
+      const zip = new JSZip();
+      const folder = zip.folder('Parent_Pickup_ID_Cards');
+
+      for (let i = 0; i < displayStudents.length; i++) {
+        const student = displayStudents[i];
+        setZipProgress({ current: i + 1, total: displayStudents.length });
+
+        const classArm = getStudentClassArm(student.intendedClass, student.id, students);
+        const admissionNo = getStudentAdmissionNumber(student);
+
+        const blob = await generateIDCardImageBlob(student, classArm, admissionNo, logoSrc);
+        const sanitize = (str: string) => (str || '').replace(/[^\w.-]/g, '_');
+        const fileName = `${sanitize(student.firstName)}_${sanitize(student.lastName)}_${sanitize(student.formNumber || admissionNo)}.png`;
+        folder?.file(fileName, blob);
+      }
+
+      const content = await zip.generateAsync({ type: 'blob' });
+      const url = URL.createObjectURL(content);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `AI_Academy_Parent_Pickup_ID_Cards_${new Date().toISOString().slice(0, 10)}.zip`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('ZIP generation error:', err);
+      alert('Failed to generate ZIP archive.');
+    } finally {
+      setIsExportingZip(false);
+    }
   };
 
   const handleApprovePickup = (student: Student) => {
@@ -154,14 +198,35 @@ export default function PickupIDCardModal({
                 </select>
               </div>
 
-              <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
+              <div className="flex items-center gap-3 w-full sm:w-auto justify-end flex-wrap">
                 <span className="text-xs font-bold text-slate-400">
                   Showing {displayStudents.length} card(s)
                 </span>
+
+                <button
+                  type="button"
+                  onClick={handleDownloadZip}
+                  disabled={isExportingZip || displayStudents.length === 0}
+                  className="px-5 py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs rounded-xl shadow-[0_6px_20px_rgba(245,158,11,0.3)] transition-all cursor-pointer flex items-center gap-2 border border-amber-300/40 disabled:opacity-50"
+                  title="Download all student ID card images instantly as a ZIP file"
+                >
+                  {isExportingZip ? (
+                    <RefreshCw className="w-4 h-4 animate-spin text-slate-950" />
+                  ) : (
+                    <Download className="w-4 h-4 text-slate-950" />
+                  )}
+                  <span>
+                    {isExportingZip 
+                      ? `Zipping ${zipProgress.current}/${zipProgress.total}...` 
+                      : `Download All ID Cards (ZIP)`}
+                  </span>
+                </button>
+
                 <button
                   type="button"
                   onClick={handlePrint}
                   className="px-5 py-2.5 bg-gradient-to-r from-emerald-600 to-[#0f7343] hover:from-emerald-500 hover:to-[#0b5c34] text-white font-black text-xs rounded-xl shadow-[0_6px_20px_rgba(16,185,129,0.3)] transition-all cursor-pointer flex items-center gap-2 border border-emerald-400/30"
+                  title="Print ID Cards via browser print engine"
                 >
                   <Printer className="w-4 h-4" />
                   <span>Print All ID Cards (A4 PDF)</span>
@@ -510,4 +575,185 @@ export default function PickupIDCardModal({
       `}</style>
     </div>
   );
+}
+
+function loadImage(src: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => resolve(img);
+    img.onerror = (err) => reject(err);
+    img.src = src;
+  });
+}
+
+async function generateIDCardImageBlob(
+  student: Student,
+  classArm: string,
+  admissionNo: string,
+  logoSrc: string
+): Promise<Blob> {
+  const width = 1011; // 300 DPI CR80 width
+  const height = 638; // 300 DPI CR80 height
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext('2d')!;
+
+  // 1. Pure White Background
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, width, height);
+
+  // Outer Border
+  ctx.strokeStyle = '#cbd5e1';
+  ctx.lineWidth = 4;
+  ctx.strokeRect(2, 2, width - 4, height - 4);
+
+  // 2. Lanyard Slot
+  ctx.fillStyle = '#cbd5e1';
+  ctx.beginPath();
+  if (typeof ctx.roundRect === 'function') {
+    ctx.roundRect(width / 2 - 60, 12, 120, 16, 8);
+  } else {
+    ctx.rect(width / 2 - 60, 12, 120, 16);
+  }
+  ctx.fill();
+
+  // 3. Top Emerald Banner
+  ctx.fillStyle = '#0f7343';
+  ctx.fillRect(0, 38, width, 108);
+
+  // Gold accent bar
+  ctx.fillStyle = '#f59e0b';
+  ctx.fillRect(0, 146, width, 8);
+
+  // Draw Logo if available
+  if (logoSrc) {
+    try {
+      const logoImg = await loadImage(logoSrc);
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(70, 92, 35, 0, Math.PI * 2);
+      ctx.clip();
+      ctx.drawImage(logoImg, 35, 57, 70, 70);
+      ctx.restore();
+    } catch {
+      // ignore logo load error
+    }
+  }
+
+  // Header Titles
+  ctx.fillStyle = '#ffffff';
+  ctx.font = 'bold 30px sans-serif';
+  ctx.fillText('AI INTEGRATED ACADEMY', 120, 80);
+
+  ctx.fillStyle = '#fef08a';
+  ctx.font = 'bold 18px sans-serif';
+  ctx.fillText('PARENT PICKUP PASS • ARGUNGU', 120, 114);
+
+  // Admission / Form Pill
+  ctx.fillStyle = '#064e3b';
+  ctx.beginPath();
+  if (typeof ctx.roundRect === 'function') {
+    ctx.roundRect(width - 250, 60, 220, 44, 10);
+  } else {
+    ctx.rect(width - 250, 60, 220, 44);
+  }
+  ctx.fill();
+
+  ctx.fillStyle = '#fef08a';
+  ctx.font = 'bold 20px monospace';
+  ctx.fillText(student.formNumber || admissionNo, width - 235, 90);
+
+  // 4. Student Photo
+  const photoX = 45;
+  const photoY = 175;
+  const photoW = 200;
+  const photoH = 250;
+
+  ctx.strokeStyle = '#0f7343';
+  ctx.lineWidth = 6;
+  ctx.strokeRect(photoX, photoY, photoW, photoH);
+
+  let photoLoaded = false;
+  if (student.photo) {
+    try {
+      const photoImg = await loadImage(student.photo);
+      ctx.drawImage(photoImg, photoX, photoY, photoW, photoH);
+      photoLoaded = true;
+    } catch {
+      photoLoaded = false;
+    }
+  }
+
+  if (!photoLoaded) {
+    ctx.fillStyle = '#ecfdf5';
+    ctx.fillRect(photoX, photoY, photoW, photoH);
+    ctx.fillStyle = '#0f7343';
+    ctx.font = 'bold 80px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText((student.firstName || 'S')[0], photoX + photoW / 2, photoY + photoH / 2 + 25);
+    ctx.textAlign = 'left';
+  }
+
+  // 5. Student Details Text
+  const textX = 270;
+  ctx.fillStyle = '#0f7343';
+  ctx.font = 'bold 18px sans-serif';
+  ctx.fillText('STUDENT DETAILS', textX, 195);
+
+  ctx.fillStyle = '#0f172a';
+  ctx.font = 'bold 36px sans-serif';
+  const fullName = `${student.firstName} ${student.lastName || ''}`.trim();
+  ctx.fillText(fullName, textX, 240);
+
+  // Class Arm Pill
+  ctx.fillStyle = '#ecfdf5';
+  ctx.beginPath();
+  if (typeof ctx.roundRect === 'function') {
+    ctx.roundRect(textX, 260, 280, 42, 10);
+  } else {
+    ctx.rect(textX, 260, 280, 42);
+  }
+  ctx.fill();
+
+  ctx.fillStyle = '#0f7343';
+  ctx.font = 'bold 22px sans-serif';
+  ctx.fillText(classArm, textX + 15, 290);
+
+  // Parent & Emergency Contact Details
+  ctx.fillStyle = '#64748b';
+  ctx.font = '20px sans-serif';
+  ctx.fillText('Authorized Parent:', textX, 345);
+
+  ctx.fillStyle = '#1e293b';
+  ctx.font = 'bold 22px sans-serif';
+  ctx.fillText(student.fatherName || student.guardianName || 'N/A', textX + 185, 345);
+
+  ctx.fillStyle = '#64748b';
+  ctx.font = '20px sans-serif';
+  ctx.fillText('Emergency Phone:', textX, 385);
+
+  ctx.fillStyle = '#0f7343';
+  ctx.font = 'bold 22px monospace';
+  ctx.fillText(student.phone1 || 'N/A', textX + 185, 385);
+
+  // Footer Details
+  ctx.fillStyle = '#0f172a';
+  ctx.font = 'bold 20px sans-serif';
+  ctx.fillText('OFFLINE SECURITY PASS', 45, 485);
+
+  ctx.fillStyle = '#64748b';
+  ctx.font = '18px sans-serif';
+  ctx.fillText('Gateman Verification Badge • Argungu, Kebbi State', 45, 515);
+
+  // Bottom Emerald Line
+  ctx.fillStyle = '#0f7343';
+  ctx.fillRect(0, height - 20, width, 20);
+
+  return new Promise((resolve) => {
+    canvas.toBlob((blob) => {
+      resolve(blob || new Blob([], { type: 'image/png' }));
+    }, 'image/png');
+  });
 }
