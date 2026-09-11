@@ -247,7 +247,8 @@ export default function PickupIDCardModal({
                     id: student.id,
                     fn: student.firstName,
                     ln: student.lastName,
-                    form: student.formNumber || admissionNo,
+                    admNo: admissionNo,
+                    form: student.formNumber || '',
                     cls: classArm,
                     fa: student.fatherName || student.guardianName || 'N/A',
                     mo: student.motherName || 'N/A',
@@ -276,9 +277,9 @@ export default function PickupIDCardModal({
                         </div>
 
                         <div className="text-right shrink-0">
-                          <span className="text-[8px] font-bold text-emerald-200 block uppercase">FORM / ADM NO</span>
+                          <span className="text-[8px] font-bold text-emerald-200 block uppercase">ADM NO</span>
                           <span className="text-[10px] font-mono font-black text-amber-300 bg-emerald-950/80 px-2 py-0.5 rounded-md border border-emerald-400/40 block mt-0.5">
-                            {student.formNumber || admissionNo}
+                            {admissionNo}
                           </span>
                         </div>
                       </div>
@@ -449,8 +450,8 @@ export default function PickupIDCardModal({
                             <span className="text-[11px] font-black text-emerald-400 block">
                               {getStudentClassArm(simulatedStudent.intendedClass, simulatedStudent.id, students)}
                             </span>
-                            <span className="text-[10px] font-mono text-slate-400">
-                              Form: {simulatedStudent.formNumber || 'AIA/2026'}
+                            <span className="text-[10px] font-mono text-slate-400 block">
+                              Adm No: {getStudentAdmissionNumber(simulatedStudent)}
                             </span>
                           </div>
                         </div>
@@ -661,7 +662,7 @@ async function generateIDCardImageBlob(
   const genderDob  = dob ? `${gender}  •  ${dob}` : gender;
   const parentName = safeStr(student.fatherName || student.guardianName);
   const phone      = safeStr(student.phone1 || student.phone2);
-  const formNo     = safeStr(student.formNumber || admissionNo);
+  const admNoStr   = safeStr(admissionNo || student.admissionNumber || student.formNumber);
   const cls        = safeStr(classArm);
 
   // ── Background ─────────────────────────────────────────────────────────
@@ -719,7 +720,7 @@ async function generateIDCardImageBlob(
   ctx.font = 'bold 18px sans-serif';
   fillScaledText(ctx, 'STUDENT IDENTITY CARD  •  ARGUNGU', 135, 98, W - 280);
 
-  // Adm/Form pill (top right)
+  // Admission No pill (top right)
   const pillW = 240;
   const pillX = W - pillW - 20;
   ctx.fillStyle = '#064e3b';
@@ -733,7 +734,7 @@ async function generateIDCardImageBlob(
 
   ctx.fillStyle = '#fef08a';
   ctx.font = 'bold 20px monospace';
-  fillScaledText(ctx, formNo, pillX + 12, 76, pillW - 20);
+  fillScaledText(ctx, admNoStr, pillX + 12, 76, pillW - 20);
 
   // ── Student photo (left column) ────────────────────────────────────────
   const PX = 40;
@@ -818,7 +819,7 @@ async function generateIDCardImageBlob(
   ty += ROW_GAP;
 
   // Row 2: Admission No
-  drawRow(ctx, 'Adm. No:', formNo,
+  drawRow(ctx, 'Adm. No:', admNoStr,
     TX, ty, COL_W, LABEL_FONT, 'bold 18px monospace', '#0f7343');
   ty += ROW_GAP;
 
@@ -840,7 +841,8 @@ async function generateIDCardImageBlob(
     id:   student.id,
     fn:   student.firstName,
     ln:   student.lastName,
-    form: formNo,
+    admNo: admNoStr,
+    form: safeStr(student.formNumber, ''),
     cls:  cls,
     fa:   parentName,
     ph:   phone
