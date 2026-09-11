@@ -803,14 +803,14 @@ async function generateIDCardImageBlob(
   ctx.lineWidth = 1.5;
   ctx.stroke();
   ctx.fillStyle = '#065f46';
-  ctx.font      = 'bold 18px sans-serif';
-  fillScaledText(ctx, cls, TX + 12, ty + 23, CLASS_PILL_W - 20);
+  ctx.font      = 'bold 22px sans-serif';
+  fillScaledText(ctx, cls, TX + 12, ty + 24, CLASS_PILL_W - 20);
   ty += CLASS_PILL_H + 20;
 
   // ─ Detail rows ─
-  const LABEL_FONT = '16px sans-serif';
-  const VALUE_FONT = 'bold 17px sans-serif';
-  const ROW_GAP    = 40;
+  const LABEL_FONT = 'bold 17px sans-serif';
+  const VALUE_FONT = 'bold 20px sans-serif';
+  const ROW_GAP    = 44;
 
   // Row 1: Gender & DoB
   drawRow(ctx, 'Gender / D.O.B:', genderDob,
@@ -901,13 +901,13 @@ async function generateIDCardImageBlob(
   ctx.stroke();
 
   ctx.fillStyle = '#0f7343';
-  ctx.font      = 'bold 18px sans-serif';
-  ctx.fillText('AI Integrated Academy Argungu', 40, H - 16);
+  ctx.font      = 'bold 20px sans-serif';
+  ctx.fillText('AI Integrated Academy Argungu', 40, H - 14);
 
   ctx.fillStyle  = '#64748b';
-  ctx.font       = '16px sans-serif';
+  ctx.font       = 'bold 18px sans-serif';
   ctx.textAlign  = 'right';
-  ctx.fillText('Official Student Identity Card', W - 40, H - 16);
+  ctx.fillText('Official Student Identity Card', W - 40, H - 14);
   ctx.textAlign  = 'left';
 
   // Bottom green bar
