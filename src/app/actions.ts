@@ -440,6 +440,8 @@ export interface DuplicateGroup {
   reason: string;
   key: string;
   students: Student[];
+  confidence?: number;       // 0-100 AI confidence score (only for AI-detected groups)
+  aiExplanation?: string;    // AI reasoning for the match
 }
 
 export async function checkDuplicateStudentAction(studentData: Partial<Student>): Promise<{ duplicate: boolean; existingStudent?: Student }> {
@@ -450,9 +452,180 @@ export async function checkDuplicateStudentAction(studentData: Partial<Student>)
   return { duplicate: false };
 }
 
+// ── Groq AI Fuzzy Duplicate Detection ───────────────────────────────────────
+
+const GROQ_API_KEY = process.env.GROQ_API_KEY || '';
+
+interface AIMatchPair {
+  id1: string;
+  id2: string;
+  confidence: number;
+  reason: string;
+}
+
+async function detectFuzzyDuplicatesWithAI(
+  students: Student[],
+  alreadyGroupedIds: Set<string>
+): Promise<DuplicateGroup[]> {
+  if (!GROQ_API_KEY) {
+    console.warn('GROQ_API_KEY not set — skipping AI duplicate detection');
+    return [];
+  }
+  if (students.length < 2) return [];
+
+  // Build a compact list of student names + ids for the AI
+  // Filter out students already caught by exact matching to reduce noise
+  const candidateStudents = students.filter(s => {
+    const firstName = (s.firstName || '').trim();
+    const lastName = (s.lastName || '').trim();
+    return firstName.length > 0 || lastName.length > 0;
+  });
+
+  if (candidateStudents.length < 2) return [];
+
+  // Build the student list for the AI prompt (id, firstName, lastName, class)
+  const studentList = candidateStudents.map(s => ({
+    id: s.id,
+    firstName: (s.firstName || '').trim(),
+    lastName: (s.lastName || '').trim(),
+    class: s.intendedClass || ''
+  }));
+
+  const prompt = `You are a strict duplicate student name detector for a school database. Your job is to find students who are likely the SAME PERSON registered more than once, but with different spellings, casing, typos, or name order.
+
+IMPORTANT RULES:
+- Compare ALL names against each other for similarity
+- Detect: typos (Mussa vs Musa), transliteration variants (Muhammad vs Mohammed vs Muhd), swapped first/last names (Ibrahim Musa vs Musa Ibrahim), missing/extra letters (Abdullahi vs Abdulahi), mixed casing (IBRAHIM vs Ibrahim)
+- Do NOT flag family members (siblings in different classes with different first names) as duplicates
+- Only flag pairs where you are ≥70% confident they are the SAME person
+- If two students have identical or near-identical names but are in very different class levels (e.g., Nursery 1 vs Basic 2), lower your confidence slightly but still flag if names are very similar
+- Return ONLY a JSON array. No markdown, no explanation outside JSON.
+
+Student records:
+${JSON.stringify(studentList)}
+
+Return a JSON array of duplicate pairs found. Each object must have:
+- "id1": first student id
+- "id2": second student id  
+- "confidence": number 70-100
+- "reason": brief explanation (max 15 words)
+
+If no fuzzy duplicates found, return: []
+
+Return ONLY valid JSON array, nothing else.`;
+
+  try {
+    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${GROQ_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'llama-3.3-70b-versatile',
+        messages: [
+          {
+            role: 'system',
+            content: 'You are a precise duplicate name detection system. You output ONLY valid JSON arrays. No markdown fences, no extra text.'
+          },
+          { role: 'user', content: prompt }
+        ],
+        temperature: 0.1,
+        max_tokens: 2048,
+        response_format: { type: 'json_object' }
+      }),
+    });
+
+    if (!response.ok) {
+      console.error(`Groq API error: ${response.status} ${response.statusText}`);
+      return [];
+    }
+
+    const data = await response.json();
+    const rawContent = data?.choices?.[0]?.message?.content || '[]';
+    
+    // Parse AI response — handle both direct arrays and wrapped objects
+    let pairs: AIMatchPair[] = [];
+    try {
+      const parsed = JSON.parse(rawContent);
+      if (Array.isArray(parsed)) {
+        pairs = parsed;
+      } else if (parsed && typeof parsed === 'object') {
+        // AI might wrap in an object like { "duplicates": [...] } or { "pairs": [...] }
+        const firstArrayKey = Object.keys(parsed).find(k => Array.isArray(parsed[k]));
+        if (firstArrayKey) {
+          pairs = parsed[firstArrayKey];
+        }
+      }
+    } catch (parseErr) {
+      // Try to extract JSON array from the raw text
+      const arrayMatch = rawContent.match(/\[[\s\S]*\]/);
+      if (arrayMatch) {
+        try {
+          pairs = JSON.parse(arrayMatch[0]);
+        } catch {
+          console.error('Groq AI: Could not parse response:', rawContent.substring(0, 300));
+          return [];
+        }
+      } else {
+        console.error('Groq AI: No JSON array in response:', rawContent.substring(0, 300));
+        return [];
+      }
+    }
+
+    // Validate and filter pairs
+    const validPairs = pairs.filter(p =>
+      p && typeof p.id1 === 'string' && typeof p.id2 === 'string' &&
+      typeof p.confidence === 'number' && p.confidence >= 70 &&
+      p.id1 !== p.id2
+    );
+
+    // Convert pairs to DuplicateGroup objects
+    const studentMap = new Map<string, Student>();
+    students.forEach(s => studentMap.set(s.id, s));
+
+    const aiGroups: DuplicateGroup[] = [];
+    const processedPairKeys = new Set<string>();
+
+    for (const pair of validPairs) {
+      const s1 = studentMap.get(pair.id1);
+      const s2 = studentMap.get(pair.id2);
+      if (!s1 || !s2) continue;
+
+      // Skip if BOTH students are already in an exact-match group together
+      if (alreadyGroupedIds.has(pair.id1) && alreadyGroupedIds.has(pair.id2)) continue;
+
+      // Deduplicate: don't create two groups for the same pair
+      const pairKey = [pair.id1, pair.id2].sort().join('|');
+      if (processedPairKeys.has(pairKey)) continue;
+      processedPairKeys.add(pairKey);
+
+      const displayName = `${s1.firstName} ${s1.lastName || ''} ↔ ${s2.firstName} ${s2.lastName || ''}`.trim();
+      aiGroups.push({
+        reason: '🧠 AI-Detected Similar Name',
+        key: displayName,
+        students: [s1, s2],
+        confidence: Math.round(pair.confidence),
+        aiExplanation: pair.reason || 'Names are similar — possible duplicate entry'
+      });
+    }
+
+    return aiGroups;
+  } catch (err) {
+    console.error('Groq AI duplicate detection failed (graceful fallback):', err);
+    return [];
+  }
+}
+
+// ── Main Duplicate Detection Action ─────────────────────────────────────────
+
 export async function findDuplicateStudentsAction(): Promise<{ success: boolean; duplicateGroups: DuplicateGroup[] }> {
   const allStudents = await getAllStudents();
   const groups: DuplicateGroup[] = [];
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // PHASE 1: Exact-match checks (instant, no AI needed)
+  // ═══════════════════════════════════════════════════════════════════════════
 
   // 1. Group by Form Number
   const formMap = new Map<string, Student[]>();
@@ -473,7 +646,7 @@ export async function findDuplicateStudentsAction(): Promise<{ success: boolean;
     }
   });
 
-  // 2. Group by Full Name (Detect Same Student Name)
+  // 2. Group by Full Name (Detect Same Student Name — case-insensitive)
   const nameMap = new Map<string, Student[]>();
   allStudents.forEach(s => {
     const fullName = `${s.firstName || ''} ${s.lastName || ''}`.trim().toLowerCase().replace(/\s+/g, ' ');
@@ -517,6 +690,22 @@ export async function findDuplicateStudentsAction(): Promise<{ success: boolean;
       }
     }
   });
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // PHASE 2: AI-powered fuzzy matching via Groq (catches typos, variants)
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  // Collect IDs already grouped by Phase 1 so AI can deprioritize them
+  const alreadyGroupedIds = new Set<string>();
+  groups.forEach(g => g.students.forEach(s => alreadyGroupedIds.add(s.id)));
+
+  try {
+    const aiGroups = await detectFuzzyDuplicatesWithAI(allStudents, alreadyGroupedIds);
+    groups.push(...aiGroups);
+  } catch (err) {
+    // Phase 2 failure should never break Phase 1 results
+    console.error('AI Phase 2 duplicate detection error (non-fatal):', err);
+  }
 
   return { success: true, duplicateGroups: groups };
 }

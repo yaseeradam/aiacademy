@@ -4395,7 +4395,8 @@ export default function AdminControl({ students }: AdminControlProps) {
               {duplicateModal.isLoading ? (
                 <div className="py-20 text-center space-y-4">
                   <Loader2 className="w-10 h-10 text-amber-500 animate-spin mx-auto" />
-                  <p className="text-sm font-bold text-slate-600">Scanning all student records for duplicate form numbers, names, and contact phones...</p>
+                  <p className="text-sm font-bold text-slate-600">Phase 1: Scanning for exact duplicate form numbers, names & admission numbers...</p>
+                  <p className="text-xs font-semibold text-violet-500">Phase 2: AI is analyzing all student names for typos, spelling variants & similar entries...</p>
                 </div>
               ) : duplicateModal.groups.length === 0 ? (
                 <div className="py-16 text-center bg-white rounded-3xl border border-slate-200 shadow-2xs space-y-4 max-w-lg mx-auto">
@@ -4405,7 +4406,7 @@ export default function AdminControl({ students }: AdminControlProps) {
                   <div>
                     <h3 className="text-lg font-black text-slate-800">Database is Clean!</h3>
                     <p className="text-xs text-slate-500 font-semibold mt-1">
-                      No duplicate student records were found matching identical Form Numbers, Names, or Contact Numbers.
+                      No duplicate student records found. Both exact matching and 🧠 AI fuzzy analysis confirmed zero duplicates.
                     </p>
                   </div>
                   <button
@@ -4418,18 +4419,23 @@ export default function AdminControl({ students }: AdminControlProps) {
               ) : (
                 <div className="space-y-6">
                   {duplicateModal.groups.map((group, groupIdx) => (
-                    <div key={groupIdx} className="bg-white rounded-3xl border border-amber-200 overflow-hidden shadow-xs">
-                      <div className="p-4 bg-amber-50 border-b border-amber-100 flex items-center justify-between gap-3 flex-wrap">
-                        <div className="flex items-center gap-2">
-                          <span className="bg-amber-500 text-white text-[10px] font-black px-2.5 py-1 rounded-lg uppercase tracking-wider">
+                    <div key={groupIdx} className={`bg-white rounded-3xl border overflow-hidden shadow-xs ${group.confidence ? 'border-violet-300' : 'border-amber-200'}`}>
+                      <div className={`p-4 border-b flex items-center justify-between gap-3 flex-wrap ${group.confidence ? 'bg-violet-50 border-violet-100' : 'bg-amber-50 border-amber-100'}`}>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className={`text-white text-[10px] font-black px-2.5 py-1 rounded-lg uppercase tracking-wider ${group.confidence ? 'bg-violet-600' : 'bg-amber-500'}`}>
                             Group #{groupIdx + 1}
                           </span>
-                          <h4 className="text-sm font-black text-amber-950">
+                          {group.confidence && (
+                            <span className="bg-violet-100 text-violet-800 text-[10px] font-black px-2.5 py-1 rounded-lg border border-violet-200 flex items-center gap-1">
+                              🧠 AI {group.confidence}% Match
+                            </span>
+                          )}
+                          <h4 className={`text-sm font-black ${group.confidence ? 'text-violet-950' : 'text-amber-950'}`}>
                             {group.reason}: <strong className="text-slate-900 font-mono">{group.key}</strong>
                           </h4>
                         </div>
                         <div className="flex items-center gap-3">
-                          <span className="text-xs font-bold text-amber-800">
+                          <span className={`text-xs font-bold ${group.confidence ? 'text-violet-800' : 'text-amber-800'}`}>
                             {group.students.length} matching students
                           </span>
                           {group.students.length > 1 && (
@@ -4444,6 +4450,12 @@ export default function AdminControl({ students }: AdminControlProps) {
                           )}
                         </div>
                       </div>
+                      {group.aiExplanation && (
+                        <div className="px-4 py-2 bg-violet-50/50 border-b border-violet-100 text-xs text-violet-700 font-semibold flex items-center gap-2">
+                          <span className="text-violet-500">💡</span>
+                          <span>{group.aiExplanation}</span>
+                        </div>
+                      )}
 
                       <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
                         {group.students.map((student) => {
