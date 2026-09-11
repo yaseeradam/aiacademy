@@ -3,7 +3,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Student, AuditLog } from '@/types';
 import { useRouter } from 'next/navigation';
-import { createWorker } from 'tesseract.js';
 import JSZip from 'jszip';
 import { 
   Upload, Download, Search, RefreshCw, 
@@ -197,21 +196,30 @@ export default function AdminControl({ students }: AdminControlProps) {
     return map;
   }, [students]);
 
+  // O(N) inverse lookup: studentId -> resolved arm string.
+  // Derived from classStudentMap so getStudentClassArm is NOT called again.
+  // All JSX call sites use this for O(1) lookups instead of O(N) scans.
+  const studentArmCache = useMemo(() => {
+    const cache = new Map<string, string>();
+    Object.entries(classStudentMap).forEach(([arm, armStudents]) => {
+      armStudents.forEach(s => cache.set(s.id, arm));
+    });
+    return cache;
+  }, [classStudentMap]);
+
   // Main class categories sorted by enrollment count (most populated first)
   const sortedMainClasses = useMemo(() => {
     const classes = ['Nursery 1', 'Basic 1', 'Basic 2'];
     return classes.sort((a, b) => {
-      const countA = students.filter(s => {
-        const arm = getStudentClassArm(s.intendedClass, s.id, students);
-        return arm.startsWith(a);
-      }).length;
-      const countB = students.filter(s => {
-        const arm = getStudentClassArm(s.intendedClass, s.id, students);
-        return arm.startsWith(b);
-      }).length;
+      const countA = (classStudentMap[`${a} Gold`]?.length || 0) +
+                     (classStudentMap[`${a} Silver`]?.length || 0) +
+                     (classStudentMap[`${a} Green`]?.length || 0);
+      const countB = (classStudentMap[`${b} Gold`]?.length || 0) +
+                     (classStudentMap[`${b} Silver`]?.length || 0) +
+                     (classStudentMap[`${b} Green`]?.length || 0);
       return countB - countA;
     });
-  }, [students]);
+  }, [classStudentMap]);
 
   // Class list sorted based on selected priority order (most populated first by default)
   const classList = useMemo(() => {
@@ -306,7 +314,7 @@ export default function AdminControl({ students }: AdminControlProps) {
     const rows: string[] = [];
 
     classList.forEach((subgroupName) => {
-      const subgroupStudents = students.filter(s => getStudentClassArm(s.intendedClass, s.id, students) === subgroupName);
+      const subgroupStudents = classStudentMap[subgroupName] || [];
       subgroupStudents.forEach((s) => {
         const fullName = `${s.firstName} ${s.lastName}`.trim();
         const admNo = getStudentAdmissionNumber(s);
@@ -2030,10 +2038,10 @@ export default function AdminControl({ students }: AdminControlProps) {
                 {/* Comprehensive Top Class Stat Cards */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                   {sortedMainClasses.map((mainClass) => {
-                    const classStudents = students.filter(s => getStudentClassArm(s.intendedClass, s.id, students).startsWith(mainClass));
-                    const goldCount = students.filter(s => getStudentClassArm(s.intendedClass, s.id, students) === `${mainClass} Gold`).length;
-                    const silverCount = students.filter(s => getStudentClassArm(s.intendedClass, s.id, students) === `${mainClass} Silver`).length;
-                    const greenCount = students.filter(s => getStudentClassArm(s.intendedClass, s.id, students) === `${mainClass} Green`).length;
+                    const classStudents = students.filter(s => (studentArmCache.get(s.id) ?? '').startsWith(mainClass));
+                    const goldCount = (classStudentMap[`${mainClass} Gold`]?.length || 0);
+                    const silverCount = (classStudentMap[`${mainClass} Silver`]?.length || 0);
+                    const greenCount = (classStudentMap[`${mainClass} Green`]?.length || 0);
 
                     const verified = classStudents.filter(s => s.verificationStatus === 'verified').length;
                     const paid = classStudents.filter(s => s.paymentStatus === 'paid').length;
@@ -2193,7 +2201,7 @@ export default function AdminControl({ students }: AdminControlProps) {
                             : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                         }`}
                       >
-                        {mainCls} ({students.filter(s => getStudentClassArm(s.intendedClass, s.id, students).startsWith(mainCls)).length})
+                        {mainCls} ({Object.entries(classStudentMap).filter(([arm]) => arm.startsWith(mainCls)).reduce((sum, [, arr]) => sum + arr.length, 0)})
                       </button>
                     ))}
                   </div>
@@ -2252,7 +2260,7 @@ export default function AdminControl({ students }: AdminControlProps) {
                       return subgroupName.startsWith(classTabFilter);
                     })
                     .map(subgroupName => {
-                      const classStudents = students.filter(s => getStudentClassArm(s.intendedClass, s.id, students) === subgroupName);
+                      const classStudents = classStudentMap[subgroupName] || [];
                       const count = classStudents.length;
                       const isFull = count >= 36;
                       const pct = Math.min(100, Math.round((count / 36) * 100));
@@ -2433,7 +2441,7 @@ export default function AdminControl({ students }: AdminControlProps) {
                   const isGold = selectedSubgroupRoster.includes('Gold');
                   const isSilver = selectedSubgroupRoster.includes('Silver');
                   const isGreen = selectedSubgroupRoster.includes('Green');
-                  const rosterStudents = students.filter(s => getStudentClassArm(s.intendedClass, s.id, students) === selectedSubgroupRoster);
+                  const rosterStudents = classStudentMap[selectedSubgroupRoster] || [];
                   const enrolledCount = rosterStudents.length;
                   const isFull = enrolledCount >= 36;
                   const fillPct = Math.min(100, Math.round((enrolledCount / 36) * 100));
@@ -2941,7 +2949,7 @@ export default function AdminControl({ students }: AdminControlProps) {
                           </button>
                           <button
                             onClick={() => {
-                              const arm = getStudentClassArm(student.intendedClass, student.id, students);
+                              const arm = studentArmCache.get(student.id) ?? 'Nursery 1 Gold';
                               if (window.confirm(`Are you sure you want to remove ${student.firstName} ${student.lastName} from ${arm}?`)) {
                                 handleRemoveStudentFromSubclass(student, arm);
                               }
@@ -3395,11 +3403,11 @@ export default function AdminControl({ students }: AdminControlProps) {
                       {['Nursery 1', 'Basic 1', 'Basic 2'].map(mainCls => {
                         const arms = ['Gold', 'Silver', 'Green', 'Gold 2', 'Silver 2', 'Green 2'];
                         const targetArm = arms.find(arm => {
-                          const cnt = students.filter(s => getStudentClassArm(s.intendedClass, s.id, students) === `${mainCls} ${arm}`).length;
+                          const cnt = (classStudentMap[`${mainCls} ${arm}`]?.length || 0);
                           return cnt < 36;
                         }) || 'Gold';
                         const assignedFull = `${mainCls} ${targetArm}`;
-                        const spotCnt = students.filter(s => getStudentClassArm(s.intendedClass, s.id, students) === assignedFull).length;
+                        const spotCnt = (classStudentMap[assignedFull]?.length || 0);
                         return (
                           <option key={`auto-${mainCls}`} value={assignedFull}>
                             ⚡ Auto-Assign to {mainCls} (→ {targetArm} Arm: {36 - spotCnt} spots available)
@@ -3409,7 +3417,7 @@ export default function AdminControl({ students }: AdminControlProps) {
                     </optgroup>
                     <optgroup label="Direct Subgroup Selection">
                       {classList.map(cls => {
-                        const count = students.filter(s => getStudentClassArm(s.intendedClass, s.id, students) === cls).length;
+                        const count = (classStudentMap[cls]?.length || 0);
                         const isFull = count >= 36;
                         return (
                           <option 
@@ -4439,7 +4447,7 @@ export default function AdminControl({ students }: AdminControlProps) {
 
                       <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
                         {group.students.map((student) => {
-                          const arm = getStudentClassArm(student.intendedClass, student.id, students);
+                          const arm = studentArmCache.get(student.id) ?? 'Nursery 1 Gold';
                           const admNo = getStudentAdmissionNumber(student);
 
                           return (
@@ -4645,7 +4653,7 @@ export default function AdminControl({ students }: AdminControlProps) {
               </div>
 
               {(() => {
-                const currentEnrolled = students.filter(s => getStudentClassArm(s.intendedClass, s.id, students) === assignToArmModal.armName).length;
+                const currentEnrolled = (classStudentMap[assignToArmModal.armName]?.length || 0);
                 const openSpots = Math.max(0, 36 - currentEnrolled);
                 return (
                   <div className="flex items-center gap-3 text-xs font-bold text-slate-700 shrink-0">
@@ -4668,7 +4676,7 @@ export default function AdminControl({ students }: AdminControlProps) {
                 let baseClass = assignToArmModal.armName.replace(/\s+(Gold|Silver|Green)(\s+\d+)?/gi, '').trim();
 
                 const candidates = students.filter(s => {
-                  const currentArm = getStudentClassArm(s.intendedClass, s.id, students);
+                  const currentArm = studentArmCache.get(s.id) ?? 'Nursery 1 Gold';
                   if (currentArm === assignToArmModal.armName) return false;
 
                   if (filter === 'unassigned') {
@@ -4690,8 +4698,8 @@ export default function AdminControl({ students }: AdminControlProps) {
 
                   return name.includes(q) || formNo.includes(q) || admNo.includes(q) || phone.includes(q) || parentName.includes(q);
                 }).sort((a, b) => {
-                  const aArm = getStudentClassArm(a.intendedClass, a.id, students);
-                  const bArm = getStudentClassArm(b.intendedClass, b.id, students);
+                  const aArm = studentArmCache.get(a.id) ?? 'Nursery 1 Gold';
+                  const bArm = studentArmCache.get(b.id) ?? 'Nursery 1 Gold';
 
                   const aIsUnassigned = aArm.includes('Unassigned') || a.intendedClass === baseClass;
                   const bIsUnassigned = bArm.includes('Unassigned') || b.intendedClass === baseClass;
@@ -4764,7 +4772,7 @@ export default function AdminControl({ students }: AdminControlProps) {
                     <div className="space-y-2">
                       {candidates.map((student) => {
                         const isSelected = assignToArmModal.selectedStudentIds.includes(student.id);
-                        const currentArm = getStudentClassArm(student.intendedClass, student.id, students);
+                        const currentArm = studentArmCache.get(student.id) ?? 'Nursery 1 Gold';
 
                         return (
                           <div

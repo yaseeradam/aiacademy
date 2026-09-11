@@ -3,9 +3,10 @@
 import React, { useState } from 'react';
 import { Student } from '@/types';
 import { QRCodeSVG } from 'qrcode.react';
+import type QRCode from 'qrcode';
 import { 
-  X, Printer, ShieldCheck, Phone, User, GraduationCap, 
-  Scan, Camera, CheckCircle2, AlertTriangle, RefreshCw, Sparkles, Download, Clock
+  X, Printer, ShieldCheck, Phone,
+  Scan, Camera, CheckCircle2, RefreshCw, Sparkles, Download, Clock
 } from 'lucide-react';
 import { getStudentClassArm, getStudentAdmissionNumber } from './AdmissionLetterModal';
 
@@ -565,6 +566,8 @@ export default function PickupIDCardModal({
   );
 }
 
+// ─── Helpers ────────────────────────────────────────────────────────────────
+
 function loadImage(src: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const img = new Image();
@@ -575,215 +578,331 @@ function loadImage(src: string): Promise<HTMLImageElement> {
   });
 }
 
+/** Draw text scaled down to fit within maxWidth. Returns actual drawn width. */
+function fillScaledText(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  x: number,
+  y: number,
+  maxWidth: number
+): void {
+  const measured = ctx.measureText(text).width;
+  if (measured > maxWidth) {
+    // Save current font, compute scale
+    const currentFont = ctx.font;
+    const scale = maxWidth / measured;
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.scale(scale, 1);
+    ctx.fillText(text, 0, 0);
+    ctx.restore();
+    ctx.font = currentFont; // restore font reference
+  } else {
+    ctx.fillText(text, x, y);
+  }
+}
+
+/** Draw a label–value row. Label in grey, value in dark/accent. */
+function drawRow(
+  ctx: CanvasRenderingContext2D,
+  label: string,
+  value: string,
+  x: number,
+  y: number,
+  colW: number,
+  labelFont: string,
+  valueFont: string,
+  valueColor: string
+): void {
+  // Separator line
+  ctx.strokeStyle = '#e2e8f0';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(x, y - 10);
+  ctx.lineTo(x + colW, y - 10);
+  ctx.stroke();
+
+  // Label
+  ctx.fillStyle = '#94a3b8';
+  ctx.font = labelFont;
+  ctx.fillText(label, x, y + 2);
+
+  // Value (right-align within the column, capped at max width)
+  ctx.fillStyle = valueColor;
+  ctx.font = valueFont;
+  const labelMeasured = ctx.measureText(label).width + 12;
+  const valueMaxW = colW - labelMeasured;
+  fillScaledText(ctx, value, x + labelMeasured, y + 2, valueMaxW);
+}
+
+// ─── Main ID card image renderer ────────────────────────────────────────────
+
 async function generateIDCardImageBlob(
   student: Student,
   classArm: string,
   admissionNo: string,
   logoSrc: string
 ): Promise<Blob> {
-  const width = 1011; // 300 DPI CR80 width
-  const height = 638; // 300 DPI CR80 height
+  // CR80 card at 150 DPI (good resolution, half of 300 for performance)
+  const W = 1011;
+  const H = 638;
   const canvas = document.createElement('canvas');
-  canvas.width = width;
-  canvas.height = height;
+  canvas.width = W;
+  canvas.height = H;
   const ctx = canvas.getContext('2d')!;
 
-  // 1. Pure White Background
+  // ── Safe field helpers ──────────────────────────────────────────────────
+  const safeStr = (v: string | undefined | null, fallback = 'N/A') =>
+    (v && v.trim()) ? v.trim() : fallback;
+
+  const fullName   = `${safeStr(student.firstName, '')} ${safeStr(student.lastName, '')}`.trim() || 'N/A';
+  const gender     = safeStr(student.gender);
+  const dob        = safeStr(student.dateOfBirth, '');
+  const genderDob  = dob ? `${gender}  •  ${dob}` : gender;
+  const parentName = safeStr(student.fatherName || student.guardianName);
+  const phone      = safeStr(student.phone1 || student.phone2);
+  const formNo     = safeStr(student.formNumber || admissionNo);
+  const cls        = safeStr(classArm);
+
+  // ── Background ─────────────────────────────────────────────────────────
   ctx.fillStyle = '#ffffff';
-  ctx.fillRect(0, 0, width, height);
+  ctx.fillRect(0, 0, W, H);
 
-  // Outer Border
-  ctx.strokeStyle = '#cbd5e1';
-  ctx.lineWidth = 4;
-  ctx.strokeRect(2, 2, width - 4, height - 4);
+  // Outer border
+  ctx.strokeStyle = '#94a3b8';
+  ctx.lineWidth = 3;
+  ctx.strokeRect(2, 2, W - 4, H - 4);
 
-  // 2. Top Emerald Banner (Clean ID Card Header)
+  // ── Top emerald banner ─────────────────────────────────────────────────
+  const BANNER_H = 130;
   ctx.fillStyle = '#0f7343';
-  ctx.fillRect(0, 0, width, 130);
+  ctx.fillRect(0, 0, W, BANNER_H);
 
-  // Gold accent bar
+  // Gold accent stripe
   ctx.fillStyle = '#f59e0b';
-  ctx.fillRect(0, 130, width, 8);
+  ctx.fillRect(0, BANNER_H, W, 7);
 
-  // Draw Logo if available
+  // School logo (circular clip)
   if (logoSrc) {
     try {
       const logoImg = await loadImage(logoSrc);
       ctx.save();
       ctx.beginPath();
-      ctx.arc(70, 65, 40, 0, Math.PI * 2);
+      ctx.arc(72, 65, 42, 0, Math.PI * 2);
       ctx.clip();
-      ctx.drawImage(logoImg, 30, 25, 80, 80);
+      ctx.drawImage(logoImg, 30, 23, 84, 84);
       ctx.restore();
-    } catch {
-      // ignore logo load error
-    }
+    } catch { /* skip on error */ }
   }
 
-  // Header Titles
+  // School name
   ctx.fillStyle = '#ffffff';
-  ctx.font = 'bold 32px sans-serif';
-  ctx.fillText('AI INTEGRATED ACADEMY', 130, 60);
+  ctx.font = 'bold 30px sans-serif';
+  fillScaledText(ctx, 'AI INTEGRATED ACADEMY', 135, 60, W - 330);
 
+  // Sub-title
   ctx.fillStyle = '#fef08a';
-  ctx.font = 'bold 20px sans-serif';
-  ctx.fillText('STUDENT IDENTITY CARD • ARGUNGU', 130, 100);
+  ctx.font = 'bold 18px sans-serif';
+  fillScaledText(ctx, 'STUDENT IDENTITY CARD  •  ARGUNGU', 135, 98, W - 280);
 
-  // Admission / Form Pill
+  // Adm/Form pill (top right)
+  const pillW = 240;
+  const pillX = W - pillW - 20;
   ctx.fillStyle = '#064e3b';
   ctx.beginPath();
   if (typeof ctx.roundRect === 'function') {
-    ctx.roundRect(width - 270, 42, 240, 48, 10);
+    ctx.roundRect(pillX, 44, pillW, 46, 10);
   } else {
-    ctx.rect(width - 270, 42, 240, 48);
+    ctx.rect(pillX, 44, pillW, 46);
   }
   ctx.fill();
 
   ctx.fillStyle = '#fef08a';
-  ctx.font = 'bold 22px monospace';
-  ctx.fillText(student.formNumber || admissionNo, width - 255, 74);
+  ctx.font = 'bold 20px monospace';
+  fillScaledText(ctx, formNo, pillX + 12, 76, pillW - 20);
 
-  // 3. Student Photo (Left Column)
-  const photoX = 45;
-  const photoY = 165;
-  const photoW = 200;
-  const photoH = 250;
+  // ── Student photo (left column) ────────────────────────────────────────
+  const PX = 40;
+  const PY = BANNER_H + 30;
+  const PW = 195;
+  const PH = 255;
 
+  // Photo border
   ctx.strokeStyle = '#0f7343';
-  ctx.lineWidth = 6;
-  ctx.strokeRect(photoX, photoY, photoW, photoH);
+  ctx.lineWidth = 5;
+  ctx.strokeRect(PX, PY, PW, PH);
 
   let photoLoaded = false;
   if (student.photo) {
     try {
       const photoImg = await loadImage(student.photo);
-      ctx.drawImage(photoImg, photoX, photoY, photoW, photoH);
+      ctx.drawImage(photoImg, PX, PY, PW, PH);
       photoLoaded = true;
-    } catch {
-      photoLoaded = false;
-    }
+    } catch { photoLoaded = false; }
   }
-
   if (!photoLoaded) {
     ctx.fillStyle = '#ecfdf5';
-    ctx.fillRect(photoX, photoY, photoW, photoH);
+    ctx.fillRect(PX, PY, PW, PH);
     ctx.fillStyle = '#0f7343';
-    ctx.font = 'bold 80px sans-serif';
+    ctx.font = 'bold 90px sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText((student.firstName || 'S')[0], photoX + photoW / 2, photoY + photoH / 2 + 25);
+    ctx.fillText((student.firstName || 'S')[0].toUpperCase(), PX + PW / 2, PY + PH / 2 + 30);
     ctx.textAlign = 'left';
   }
 
-  // 4. Student Details Text (Middle Column)
-  const textX = 275;
+  // Photo label below
+  ctx.fillStyle = '#64748b';
+  ctx.font = '15px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('PASSPORT PHOTO', PX + PW / 2, PY + PH + 22);
+  ctx.textAlign = 'left';
+
+  // ── Student details (middle column) ───────────────────────────────────
+  const TX   = PX + PW + 30;  // text column start x
+  const COL_W = W - TX - 220; // width of middle column
+  let   ty   = BANNER_H + 30; // running Y position
+
+  // Section label
   ctx.fillStyle = '#0f7343';
-  ctx.font = 'bold 18px sans-serif';
-  ctx.fillText('STUDENT DETAILS', textX, 185);
+  ctx.font      = 'bold 15px sans-serif';
+  ctx.fillText('STUDENT DETAILS', TX, ty + 16);
+  ty += 38;
 
+  // Full name (big)
   ctx.fillStyle = '#0f172a';
-  ctx.font = 'bold 36px sans-serif';
-  const fullName = `${student.firstName} ${student.lastName || ''}`.trim();
-  ctx.fillText(fullName, textX, 230);
+  ctx.font      = 'bold 34px sans-serif';
+  fillScaledText(ctx, fullName, TX, ty, COL_W);
+  ty += 8;
 
-  // Class Arm Pill
+  // Class arm pill
+  const CLASS_PILL_H = 38;
+  const CLASS_PILL_W = Math.min(COL_W, 280);
   ctx.fillStyle = '#ecfdf5';
   ctx.beginPath();
   if (typeof ctx.roundRect === 'function') {
-    ctx.roundRect(textX, 250, 260, 42, 10);
+    ctx.roundRect(TX, ty, CLASS_PILL_W, CLASS_PILL_H, 8);
   } else {
-    ctx.rect(textX, 250, 260, 42);
+    ctx.rect(TX, ty, CLASS_PILL_W, CLASS_PILL_H);
   }
   ctx.fill();
+  ctx.strokeStyle = '#6ee7b7';
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+  ctx.fillStyle = '#065f46';
+  ctx.font      = 'bold 20px sans-serif';
+  fillScaledText(ctx, cls, TX + 12, ty + 26, CLASS_PILL_W - 20);
+  ty += CLASS_PILL_H + 24;
 
-  ctx.fillStyle = '#0f7343';
-  ctx.font = 'bold 22px sans-serif';
-  ctx.fillText(classArm, textX + 15, 280);
+  // ─ Detail rows ─
+  const LABEL_FONT = '17px sans-serif';
+  const VALUE_FONT = 'bold 18px sans-serif';
+  const ROW_GAP    = 42;
 
-  // Gender & DoB
-  ctx.fillStyle = '#64748b';
-  ctx.font = '20px sans-serif';
-  ctx.fillText('Gender & DoB:', textX, 335);
+  // Row 1: Gender & DoB
+  drawRow(ctx, 'Gender / D.O.B:', genderDob,
+    TX, ty, COL_W, LABEL_FONT, VALUE_FONT, '#1e293b');
+  ty += ROW_GAP;
 
-  ctx.fillStyle = '#1e293b';
-  ctx.font = 'bold 22px sans-serif';
-  const genderDobStr = `${student.gender || 'N/A'}${student.dateOfBirth ? ` • ${student.dateOfBirth}` : ''}`;
-  ctx.fillText(genderDobStr, textX + 185, 335);
+  // Row 2: Admission No
+  drawRow(ctx, 'Adm. No:', formNo,
+    TX, ty, COL_W, LABEL_FONT, 'bold 18px monospace', '#0f7343');
+  ty += ROW_GAP;
 
-  // Parent & Contact Details
-  ctx.fillStyle = '#64748b';
-  ctx.font = '20px sans-serif';
-  ctx.fillText('Authorized Parent:', textX, 375);
+  // Row 3: Parent / Guardian
+  drawRow(ctx, 'Parent / Guardian:', parentName,
+    TX, ty, COL_W, LABEL_FONT, 'bold 18px sans-serif', '#0f172a');
+  ty += ROW_GAP;
 
-  ctx.fillStyle = '#1e293b';
-  ctx.font = 'bold 22px sans-serif';
-  ctx.fillText(student.fatherName || student.guardianName || 'N/A', textX + 185, 375);
+  // Row 4: Phone
+  drawRow(ctx, 'Phone:', phone,
+    TX, ty, COL_W, LABEL_FONT, 'bold 18px monospace', '#0f7343');
 
-  ctx.fillStyle = '#64748b';
-  ctx.font = '20px sans-serif';
-  ctx.fillText('Contact Phone:', textX, 415);
-
-  ctx.fillStyle = '#0f7343';
-  ctx.font = 'bold 22px monospace';
-  ctx.fillText(student.phone1 || 'N/A', textX + 185, 415);
-
-  // 5. QR Code Drawing (Right Column)
-  const qrX = width - 220;
-  const qrY = 175;
-  const qrSize = 180;
+  // ── QR Code (right column) ─────────────────────────────────────────────
+  const QR_SIZE = 185;
+  const QRX     = W - QR_SIZE - 22;
+  const QRY     = BANNER_H + 28;
 
   const qrPayload = JSON.stringify({
-    id: student.id,
-    fn: student.firstName,
-    ln: student.lastName,
-    form: student.formNumber || admissionNo,
-    cls: classArm,
-    fa: student.fatherName || student.guardianName || 'N/A',
-    ph: student.phone1 || 'N/A'
+    id:   student.id,
+    fn:   student.firstName,
+    ln:   student.lastName,
+    form: formNo,
+    cls:  cls,
+    fa:   parentName,
+    ph:   phone
   });
 
-  // Render QR Code onto canvas
+  // QR background box
   ctx.fillStyle = '#f8fafc';
-  ctx.fillRect(qrX - 10, qrY - 10, qrSize + 20, qrSize + 45);
+  if (typeof ctx.roundRect === 'function') {
+    ctx.beginPath();
+    ctx.roundRect(QRX - 8, QRY - 8, QR_SIZE + 16, QR_SIZE + 40, 8);
+    ctx.fill();
+  } else {
+    ctx.fillRect(QRX - 8, QRY - 8, QR_SIZE + 16, QR_SIZE + 40);
+  }
   ctx.strokeStyle = '#cbd5e1';
-  ctx.lineWidth = 2;
-  ctx.strokeRect(qrX - 10, qrY - 10, qrSize + 20, qrSize + 45);
+  ctx.lineWidth = 1.5;
+  ctx.strokeRect(QRX - 8, QRY - 8, QR_SIZE + 16, QR_SIZE + 40);
 
+  // Draw QR using the 'qrcode' npm package (fully offline)
   try {
-    const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(qrPayload)}`;
-    const qrImg = await loadImage(qrApiUrl);
-    ctx.drawImage(qrImg, qrX, qrY, qrSize, qrSize);
+    const QRCodeLib: typeof QRCode = (await import('qrcode')).default;
+    const qrCanvas = document.createElement('canvas');
+    await QRCodeLib.toCanvas(qrCanvas, qrPayload, {
+      width: QR_SIZE,
+      margin: 1,
+      errorCorrectionLevel: 'M',
+      color: { dark: '#0f172a', light: '#f8fafc' }
+    });
+    ctx.drawImage(qrCanvas, QRX, QRY);
   } catch {
-    ctx.fillStyle = '#0f7343';
-    ctx.fillRect(qrX, qrY, qrSize, qrSize);
+    // Fallback: draw a placeholder cross-hatch to indicate QR position
+    ctx.fillStyle = '#e2e8f0';
+    ctx.fillRect(QRX, QRY, QR_SIZE, QR_SIZE);
+    ctx.fillStyle = '#94a3b8';
+    ctx.font = 'bold 14px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('QR CODE', QRX + QR_SIZE / 2, QRY + QR_SIZE / 2);
+    ctx.textAlign = 'left';
   }
 
+  // QR label
   ctx.fillStyle = '#0f7343';
-  ctx.font = 'bold 16px sans-serif';
+  ctx.font      = 'bold 14px sans-serif';
   ctx.textAlign = 'center';
-  ctx.fillText('STUDENT QR ID', qrX + qrSize / 2, qrY + qrSize + 24);
+  ctx.fillText('STUDENT QR ID', QRX + QR_SIZE / 2, QRY + QR_SIZE + 26);
   ctx.textAlign = 'left';
 
-  // 6. Clean Footer
-  ctx.fillStyle = '#f8fafc';
-  ctx.fillRect(0, height - 60, width, 60);
+  // ── Footer ─────────────────────────────────────────────────────────────
+  const FOOTER_Y = H - 55;
+  ctx.fillStyle  = '#f8fafc';
+  ctx.fillRect(0, FOOTER_Y, W, 55);
+
+  ctx.fillStyle  = '#94a3b8';
+  ctx.lineWidth  = 1;
+  ctx.beginPath();
+  ctx.moveTo(0, FOOTER_Y);
+  ctx.lineTo(W, FOOTER_Y);
+  ctx.stroke();
 
   ctx.fillStyle = '#0f7343';
-  ctx.font = 'bold 20px sans-serif';
-  ctx.fillText('AI Integrated Academy Argungu', 45, height - 24);
+  ctx.font      = 'bold 18px sans-serif';
+  ctx.fillText('AI Integrated Academy Argungu', 40, H - 20);
 
-  ctx.fillStyle = '#64748b';
-  ctx.font = '18px sans-serif';
-  ctx.textAlign = 'right';
-  ctx.fillText('Official Student Identity Card', width - 45, height - 24);
-  ctx.textAlign = 'left';
+  ctx.fillStyle  = '#64748b';
+  ctx.font       = '16px sans-serif';
+  ctx.textAlign  = 'right';
+  ctx.fillText('Official Student Identity Card', W - 40, H - 20);
+  ctx.textAlign  = 'left';
 
-  // Bottom Emerald Bar
+  // Bottom green bar
   ctx.fillStyle = '#0f7343';
-  ctx.fillRect(0, height - 8, width, 8);
+  ctx.fillRect(0, H - 7, W, 7);
 
   return new Promise((resolve) => {
     canvas.toBlob((blob) => {
-      resolve(blob || new Blob([], { type: 'image/png' }));
+      resolve(blob ?? new Blob([], { type: 'image/png' }));
     }, 'image/png');
   });
 }

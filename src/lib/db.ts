@@ -354,6 +354,43 @@ export async function deleteStudent(studentId: string): Promise<boolean> {
   return result.deletedCount > 0;
 }
 
+/** Batch-delete multiple students in a single MongoDB round-trip */
+export async function bulkDeleteStudents(studentIds: string[]): Promise<number> {
+  if (studentIds.length === 0) return 0;
+  const db = await getDB();
+  const result = await db.collection<Student>(STUDENTS_COL).deleteMany({ id: { $in: studentIds } });
+  return result.deletedCount;
+}
+
+/** Batch-fetch students by ID array in a single MongoDB round-trip */
+export async function getStudentsByIds(studentIds: string[]): Promise<Student[]> {
+  if (studentIds.length === 0) return [];
+  await ensureSeeded();
+  const db = await getDB();
+  const docs = await db.collection<Student>(STUDENTS_COL).find({ id: { $in: studentIds } }).toArray();
+  return docs.map(({ _id, ...rest }) => {
+    void _id;
+    const s = rest as Student;
+    if (/Primary/i.test(s.intendedClass)) s.intendedClass = 'Basic 1';
+    return s;
+  });
+}
+
+/** Batch-update intendedClass for multiple students using bulkWrite */
+export async function bulkUpdateStudentClasses(updates: Array<{ id: string; intendedClass: string }>): Promise<number> {
+  if (updates.length === 0) return 0;
+  const db = await getDB();
+  const ops = updates.map(u => ({
+    updateOne: {
+      filter: { id: u.id },
+      update: { $set: { intendedClass: u.intendedClass } },
+    },
+  }));
+  const result = await db.collection<Student>(STUDENTS_COL).bulkWrite(ops, { ordered: false });
+  return result.modifiedCount;
+}
+
+
 /**
  * Fix #5: Atomically increment and return the next admission number sequence.
  * Using MongoDB $inc on a counters document guarantees uniqueness even under

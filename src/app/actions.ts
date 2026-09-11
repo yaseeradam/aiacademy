@@ -22,6 +22,9 @@ import {
   restoreMissingSeedStudents,
   clearAllStudentsAndParents,
   getNextAdmissionSequence,
+  bulkDeleteStudents,
+  getStudentsByIds,
+  bulkUpdateStudentClasses,
 } from '@/lib/db';
 import { Student, Parent, SchoolSettings } from '@/types';
 import { getStudentClassArm } from '@/lib/classUtils';
@@ -285,22 +288,26 @@ export async function adminDeleteStudentAction(studentId: string): Promise<{ suc
 
 export async function adminDeleteMultipleStudentsAction(studentIds: string[]): Promise<{ success: boolean; count: number; error?: string }> {
   try {
-    let deletedCount = 0;
-    for (const id of studentIds) {
-      const student = await getStudentById(id);
-      const ok = await deleteStudent(id);
-      if (ok) {
-        deletedCount++;
-        const studentName = student ? `${student.firstName} ${student.lastName}` : id;
-        await addAuditLog({
+    // Fetch all students in a single query for audit log names
+    const students = await getStudentsByIds(studentIds);
+    const nameMap = new Map(students.map(s => [s.id, `${s.firstName} ${s.lastName}`]));
+
+    // Delete all in a single deleteMany call
+    const deletedCount = await bulkDeleteStudents(studentIds);
+
+    // Write all audit logs in parallel
+    await Promise.all(
+      studentIds.map(id =>
+        addAuditLog({
           action: 'DELETE',
           actor: 'School Administrator',
           details: `Admin bulk-removed student record from subclass`,
           studentId: id,
-          studentName,
-        });
-      }
-    }
+          studentName: nameMap.get(id) ?? id,
+        })
+      )
+    );
+
     return { success: true, count: deletedCount };
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : 'Failed to delete students.';
@@ -346,18 +353,18 @@ export async function unassignStudentFromSubclassAction(studentId: string): Prom
 
 export async function unassignMultipleStudentsFromSubclassAction(studentIds: string[]): Promise<{ success: boolean; count: number; error?: string }> {
   try {
-    let count = 0;
-    for (const id of studentIds) {
-      const student = await getStudentById(id);
-      if (student) {
-        const baseClass = resolveBaseClass(student.intendedClass);
-        await addOrUpdateStudent({
-          ...student,
-          intendedClass: `${baseClass} (Unassigned)`,
-        });
-        count++;
-      }
-    }
+    // Fetch all students in one round-trip
+    const students = await getStudentsByIds(studentIds);
+
+    // Prepare updates (each student may resolve to a different base class)
+    const updates = students.map(s => ({
+      id: s.id,
+      intendedClass: `${resolveBaseClass(s.intendedClass)} (Unassigned)`,
+    }));
+
+    // Apply all updates in a single bulkWrite
+    const count = await bulkUpdateStudentClasses(updates);
+
     return { success: true, count };
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : 'Failed to unassign students.';
@@ -370,25 +377,27 @@ export async function assignMultipleStudentsToSubclassAction(
   targetArm: string
 ): Promise<{ success: boolean; count: number; error?: string }> {
   try {
-    let count = 0;
-    for (const id of studentIds) {
-      const student = await getStudentById(id);
-      if (student) {
-        await addOrUpdateStudent({
-          ...student,
-          intendedClass: targetArm,
-        });
-        count++;
-        const studentName = `${student.firstName} ${student.lastName}`;
-        await addAuditLog({
+    // Fetch all student names in one round-trip for audit logs
+    const students = await getStudentsByIds(studentIds);
+    const nameMap = new Map(students.map(s => [s.id, `${s.firstName} ${s.lastName}`]));
+
+    // All targets get the same class — use bulkWrite in a single call
+    const updates = studentIds.map(id => ({ id, intendedClass: targetArm }));
+    const count = await bulkUpdateStudentClasses(updates);
+
+    // Write all audit logs in parallel
+    await Promise.all(
+      studentIds.map(id =>
+        addAuditLog({
           action: 'UPDATE',
           actor: 'School Administrator',
           details: `Admin assigned student to subclass arm ${targetArm}`,
           studentId: id,
-          studentName,
-        });
-      }
-    }
+          studentName: nameMap.get(id) ?? id,
+        })
+      )
+    );
+
     return { success: true, count };
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : 'Failed to assign students to subclass.';
