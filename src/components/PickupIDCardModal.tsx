@@ -618,21 +618,21 @@ function drawRow(
   ctx.strokeStyle = '#e2e8f0';
   ctx.lineWidth = 1;
   ctx.beginPath();
-  ctx.moveTo(x, y - 10);
-  ctx.lineTo(x + colW, y - 10);
+  ctx.moveTo(x, y - 8);
+  ctx.lineTo(x + colW, y - 8);
   ctx.stroke();
 
   // Label
   ctx.fillStyle = '#94a3b8';
   ctx.font = labelFont;
-  ctx.fillText(label, x, y + 2);
+  ctx.fillText(label, x, y + 14);
 
-  // Value (right-align within the column, capped at max width)
+  // Value
   ctx.fillStyle = valueColor;
   ctx.font = valueFont;
   const labelMeasured = ctx.measureText(label).width + 12;
   const valueMaxW = colW - labelMeasured;
-  fillScaledText(ctx, value, x + labelMeasured, y + 2, valueMaxW);
+  fillScaledText(ctx, value, x + labelMeasured, y + 14, valueMaxW);
 }
 
 // ─── Main ID card image renderer ────────────────────────────────────────────
@@ -758,25 +758,25 @@ async function generateIDCardImageBlob(
   ctx.textAlign = 'left';
 
   // ── Student details (middle column) ───────────────────────────────────
-  const TX   = PX + PW + 30;  // text column start x
-  const COL_W = W - TX - 220; // width of middle column
-  let   ty   = BANNER_H + 30; // running Y position
+  const TX    = PX + PW + 30;  // text column start x
+  const COL_W = W - TX - 220;  // width of middle column
+  let   ty    = BANNER_H + 22; // running Y position
 
   // Section label
   ctx.fillStyle = '#0f7343';
-  ctx.font      = 'bold 15px sans-serif';
-  ctx.fillText('STUDENT DETAILS', TX, ty + 16);
-  ty += 38;
+  ctx.font      = 'bold 14px sans-serif';
+  ctx.fillText('STUDENT DETAILS', TX, ty + 14);
+  ty += 30;
 
   // Full name (big)
   ctx.fillStyle = '#0f172a';
-  ctx.font      = 'bold 34px sans-serif';
+  ctx.font      = 'bold 30px sans-serif';
   fillScaledText(ctx, fullName, TX, ty, COL_W);
-  ty += 8;
+  ty += 36;
 
   // Class arm pill
-  const CLASS_PILL_H = 38;
-  const CLASS_PILL_W = Math.min(COL_W, 280);
+  const CLASS_PILL_H = 34;
+  const CLASS_PILL_W = Math.min(COL_W, 260);
   ctx.fillStyle = '#ecfdf5';
   ctx.beginPath();
   if (typeof ctx.roundRect === 'function') {
@@ -789,14 +789,14 @@ async function generateIDCardImageBlob(
   ctx.lineWidth = 1.5;
   ctx.stroke();
   ctx.fillStyle = '#065f46';
-  ctx.font      = 'bold 20px sans-serif';
-  fillScaledText(ctx, cls, TX + 12, ty + 26, CLASS_PILL_W - 20);
-  ty += CLASS_PILL_H + 24;
+  ctx.font      = 'bold 18px sans-serif';
+  fillScaledText(ctx, cls, TX + 12, ty + 23, CLASS_PILL_W - 20);
+  ty += CLASS_PILL_H + 20;
 
   // ─ Detail rows ─
-  const LABEL_FONT = '17px sans-serif';
-  const VALUE_FONT = 'bold 18px sans-serif';
-  const ROW_GAP    = 42;
+  const LABEL_FONT = '16px sans-serif';
+  const VALUE_FONT = 'bold 17px sans-serif';
+  const ROW_GAP    = 46;
 
   // Row 1: Gender & DoB
   drawRow(ctx, 'Gender / D.O.B:', genderDob,
