@@ -766,7 +766,7 @@ async function generateIDCardImageBlob(
   ctx.fillStyle = '#0f7343';
   ctx.font      = 'bold 14px sans-serif';
   ctx.fillText('STUDENT DETAILS', TX, ty + 14);
-  ty += 30;
+  ty += 62;
 
   // Full name (big)
   ctx.fillStyle = '#0f172a';
