@@ -277,8 +277,8 @@ export default function PickupIDCardModal({
                         </div>
 
                         <div className="text-right shrink-0">
-                          <span className="text-[8px] font-bold text-emerald-200 block uppercase">ADM NO</span>
-                          <span className="text-[10px] font-mono font-black text-amber-300 bg-emerald-950/80 px-2 py-0.5 rounded-md border border-emerald-400/40 block mt-0.5">
+                          <span className="text-[8px] font-extrabold text-white block uppercase tracking-wider">ADM NO</span>
+                          <span className="text-[10px] font-mono font-black text-amber-300 bg-slate-950 px-2 py-0.5 rounded-md border border-amber-400/60 block mt-0.5 shadow-xs">
                             {admissionNo}
                           </span>
                         </div>
@@ -308,15 +308,15 @@ export default function PickupIDCardModal({
                             {classArm}
                           </div>
 
-                          <div className="text-[10px] text-slate-600 font-semibold space-y-0.5 pt-1.5 border-t border-slate-100">
+                          <div className="text-[10px] text-slate-700 font-semibold space-y-1 pt-1.5 border-t border-slate-200">
                             <p className="truncate">
-                              <span className="text-slate-400 font-bold">Gender & DoB:</span> <strong className="text-slate-700 font-bold">{student.gender || 'N/A'}{student.dateOfBirth ? ` • ${student.dateOfBirth}` : ''}</strong>
+                              <span className="text-slate-700 font-extrabold">Gender & DoB:</span> <strong className="text-slate-950 font-black">{student.gender || 'N/A'}{student.dateOfBirth ? ` • ${student.dateOfBirth}` : ''}</strong>
                             </p>
                             <p className="truncate">
-                              <span className="text-slate-400 font-bold">Parent:</span> <strong className="text-slate-900 font-extrabold">{student.fatherName || student.guardianName || 'N/A'}</strong>
+                              <span className="text-slate-700 font-extrabold">Parent:</span> <strong className="text-slate-950 font-black">{student.fatherName || student.guardianName || 'N/A'}</strong>
                             </p>
                             <p className="truncate">
-                              <span className="text-slate-400 font-bold">Contact Phone:</span> <strong className="font-mono text-[#0f7343] font-black">{student.phone1 || 'N/A'}</strong>
+                              <span className="text-slate-700 font-extrabold">Contact Phone:</span> <strong className="font-mono text-[#0f7343] font-black">{student.phone1 || 'N/A'}</strong>
                             </p>
                           </div>
                         </div>
@@ -624,7 +624,7 @@ function drawRow(
   ctx.stroke();
 
   // Label
-  ctx.fillStyle = '#94a3b8';
+  ctx.fillStyle = '#334155';
   ctx.font = labelFont;
   ctx.fillText(label, x, y + 14);
 
