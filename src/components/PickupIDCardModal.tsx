@@ -645,7 +645,7 @@ async function generateIDCardImageBlob(
 ): Promise<Blob> {
   // CR80 card at 150 DPI (good resolution, half of 300 for performance)
   const W = 1011;
-  const H = 638;
+  const H = 560;
   const canvas = document.createElement('canvas');
   canvas.width = W;
   canvas.height = H;
@@ -672,6 +672,20 @@ async function generateIDCardImageBlob(
   ctx.strokeStyle = '#94a3b8';
   ctx.lineWidth = 3;
   ctx.strokeRect(2, 2, W - 4, H - 4);
+
+  // ── Watermark logo (centered in body area) ─────────────────────────────
+  if (logoSrc) {
+    try {
+      const wmImg = await loadImage(logoSrc);
+      const WM = 220;
+      const wmX = (W - WM) / 2;
+      const wmY = 130 + (H - 130 - 55 - WM) / 2;
+      ctx.save();
+      ctx.globalAlpha = 0.07;
+      ctx.drawImage(wmImg, wmX, wmY, WM, WM);
+      ctx.restore();
+    } catch { /* skip */ }
+  }
 
   // ── Top emerald banner ─────────────────────────────────────────────────
   const BANNER_H = 130;
@@ -725,7 +739,7 @@ async function generateIDCardImageBlob(
   const PX = 40;
   const PY = BANNER_H + 30;
   const PW = 195;
-  const PH = 255;
+  const PH = 220;
 
   // Photo border
   ctx.strokeStyle = '#0f7343';
@@ -760,7 +774,7 @@ async function generateIDCardImageBlob(
   // ── Student details (middle column) ───────────────────────────────────
   const TX    = PX + PW + 30;  // text column start x
   const COL_W = W - TX - 220;  // width of middle column
-  let   ty    = BANNER_H + 22; // running Y position
+  let   ty    = BANNER_H + 18; // running Y position
 
   // Section label
   ctx.fillStyle = '#0f7343';
@@ -796,7 +810,7 @@ async function generateIDCardImageBlob(
   // ─ Detail rows ─
   const LABEL_FONT = '16px sans-serif';
   const VALUE_FONT = 'bold 17px sans-serif';
-  const ROW_GAP    = 46;
+  const ROW_GAP    = 40;
 
   // Row 1: Gender & DoB
   drawRow(ctx, 'Gender / D.O.B:', genderDob,
@@ -875,7 +889,7 @@ async function generateIDCardImageBlob(
   ctx.textAlign = 'left';
 
   // ── Footer ─────────────────────────────────────────────────────────────
-  const FOOTER_Y = H - 55;
+  const FOOTER_Y = H - 48;
   ctx.fillStyle  = '#f8fafc';
   ctx.fillRect(0, FOOTER_Y, W, 55);
 
@@ -888,12 +902,12 @@ async function generateIDCardImageBlob(
 
   ctx.fillStyle = '#0f7343';
   ctx.font      = 'bold 18px sans-serif';
-  ctx.fillText('AI Integrated Academy Argungu', 40, H - 20);
+  ctx.fillText('AI Integrated Academy Argungu', 40, H - 16);
 
   ctx.fillStyle  = '#64748b';
   ctx.font       = '16px sans-serif';
   ctx.textAlign  = 'right';
-  ctx.fillText('Official Student Identity Card', W - 40, H - 20);
+  ctx.fillText('Official Student Identity Card', W - 40, H - 16);
   ctx.textAlign  = 'left';
 
   // Bottom green bar
