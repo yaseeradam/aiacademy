@@ -258,16 +258,19 @@ export default function PickupIDCardModal({
                   return (
                     <div 
                       key={student.id} 
-                      className="id-card-wrapper relative bg-white rounded-2xl border border-slate-300 shadow-md overflow-hidden flex flex-col justify-between text-slate-900 group transition-all print:border-2 print:border-slate-800 print:shadow-none print:rounded-2xl print:break-inside-avoid"
-                      style={{ minHeight: '260px' }}
+                      className="id-card-wrapper relative bg-white rounded-2xl overflow-hidden flex flex-col justify-between text-slate-900 group transition-all shadow-[0_8px_32px_rgba(15,115,67,0.18)] border border-emerald-200 hover:shadow-[0_12px_40px_rgba(15,115,67,0.28)] hover:-translate-y-0.5 print:border-2 print:border-slate-800 print:shadow-none print:rounded-2xl print:break-inside-avoid"
+                      style={{ minHeight: '280px' }}
                     >
-                      {/* Header Emerald Banner */}
-                      <div className="bg-[#0f7343] text-white px-4 py-3 border-b-2 border-amber-400 flex items-center justify-between gap-3 shadow-xs">
-                        <div className="flex items-center gap-3 min-w-0">
+                      {/* Header Emerald Banner with diagonal stripe overlay */}
+                      <div className="relative bg-gradient-to-r from-[#0a5c33] via-[#0f7343] to-[#1a9456] text-white px-4 py-3 border-b-4 border-amber-400 flex items-center justify-between gap-3 overflow-hidden">
+                        {/* Diagonal stripe pattern */}
+                        <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'repeating-linear-gradient(45deg, #fff 0, #fff 1px, transparent 0, transparent 50%)', backgroundSize: '10px 10px' }} />
+                        
+                        <div className="flex items-center gap-3 min-w-0 relative z-10">
                           {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img src={logoSrc} alt="School Logo" className="w-10 h-10 rounded-full object-contain bg-white p-0.5 border border-emerald-300 shadow-xs shrink-0" />
+                          <img src={logoSrc} alt="School Logo" className="w-11 h-11 rounded-full object-contain bg-white p-0.5 border-2 border-amber-300 shadow-[0_2px_8px_rgba(0,0,0,0.3)] shrink-0" />
                           <div className="min-w-0">
-                            <h4 className="text-[12px] font-black uppercase tracking-wider text-white leading-none truncate">
+                            <h4 className="text-[12px] font-black uppercase tracking-wider text-white leading-none truncate drop-shadow">
                               AI INTEGRATED ACADEMY
                             </h4>
                             <span className="text-[8px] font-extrabold text-amber-300 uppercase tracking-widest block mt-1">
@@ -276,67 +279,84 @@ export default function PickupIDCardModal({
                           </div>
                         </div>
 
-                        <div className="text-right shrink-0">
-                          <span className="text-[8px] font-extrabold text-white block uppercase tracking-wider">ADM NO</span>
-                          <span className="text-[10px] font-mono font-black text-amber-300 bg-slate-950 px-2 py-0.5 rounded-md border border-amber-400/60 block mt-0.5 shadow-xs">
+                        <div className="text-right shrink-0 relative z-10">
+                          <span className="text-[7px] font-extrabold text-emerald-200 block uppercase tracking-wider mb-0.5">ADM NO</span>
+                          <span className="text-[10px] font-mono font-black text-amber-300 bg-black/40 px-2 py-0.5 rounded-md border border-amber-400/50 block shadow-inner">
                             {admissionNo}
                           </span>
                         </div>
                       </div>
 
-                      {/* Main Card Body (3 Columns: Photo | Student Info | QR Code) */}
-                      <div className="p-4 flex-1 flex items-center justify-between gap-3 bg-white">
-                        {/* Column 1: Passport Photo */}
-                        <div className="w-20 h-24 rounded-xl overflow-hidden bg-slate-50 border-2 border-[#0f7343] shadow-xs shrink-0 relative">
-                          {student.photo ? (
-                            /* eslint-disable-next-line @next/next/no-img-element */
-                            <img src={student.photo} alt={student.firstName} className="w-full h-full object-cover" />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center bg-emerald-50 text-[#0f7343] font-black text-2xl">
-                              {student.firstName[0]}{student.lastName?.[0] || ''}
+                      {/* Main Card Body */}
+                      <div className="flex-1 flex items-stretch gap-0 bg-white">
+                        {/* Left accent bar */}
+                        <div className="w-1.5 bg-gradient-to-b from-[#0f7343] via-amber-400 to-[#0f7343] shrink-0" />
+
+                        <div className="p-3 flex-1 flex items-center gap-3">
+                          {/* Column 1: Passport Photo */}
+                          <div className="shrink-0 flex flex-col items-center gap-1">
+                            <div className="w-[72px] h-[86px] rounded-xl overflow-hidden bg-gradient-to-br from-emerald-50 to-emerald-100 border-2 border-[#0f7343] shadow-[0_2px_8px_rgba(15,115,67,0.25)] relative">
+                              {student.photo ? (
+                                /* eslint-disable-next-line @next/next/no-img-element */
+                                <img src={student.photo} alt={student.firstName} className="w-full h-full object-cover" />
+                              ) : (
+                                <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-emerald-50 to-emerald-100 text-[#0f7343]">
+                                  <span className="font-black text-2xl leading-none">{student.firstName[0]}{student.lastName?.[0] || ''}</span>
+                                  <span className="text-[7px] font-bold text-emerald-600 mt-1 uppercase tracking-wide">Photo</span>
+                                </div>
+                              )}
                             </div>
-                          )}
-                        </div>
-
-                        {/* Column 2: Student Details */}
-                        <div className="flex-1 min-w-0 space-y-1">
-                          <h3 className="font-black text-base text-slate-900 tracking-tight leading-snug truncate">
-                            {student.firstName} {student.lastName}
-                          </h3>
-
-                          <div className="inline-block px-2.5 py-0.5 rounded-md bg-emerald-50 border border-emerald-300 text-[#0f7343] text-[10px] font-black tracking-wide">
-                            {classArm}
+                            <span className="text-[6.5px] font-black uppercase tracking-wider text-slate-400">Passport</span>
                           </div>
 
-                          <div className="text-[10px] text-slate-700 font-semibold space-y-1 pt-1.5 border-t border-slate-200">
-                            <p className="truncate">
-                              <span className="text-slate-700 font-extrabold">Gender & DoB:</span> <strong className="text-slate-950 font-black">{student.gender || 'N/A'}{student.dateOfBirth ? ` • ${student.dateOfBirth}` : ''}</strong>
-                            </p>
-                            <p className="truncate">
-                              <span className="text-slate-700 font-extrabold">Parent:</span> <strong className="text-slate-950 font-black">{student.fatherName || student.guardianName || 'N/A'}</strong>
-                            </p>
-                            <p className="truncate">
-                              <span className="text-slate-700 font-extrabold">Contact Phone:</span> <strong className="font-mono text-[#0f7343] font-black">{student.phone1 || 'N/A'}</strong>
-                            </p>
-                          </div>
-                        </div>
+                          {/* Column 2: Student Details */}
+                          <div className="flex-1 min-w-0 space-y-1.5">
+                            <div>
+                              <h3 className="font-black text-[13px] text-slate-900 tracking-tight leading-tight truncate">
+                                {student.firstName} {student.lastName}
+                              </h3>
+                              <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-300 text-[#0f7343] text-[9px] font-black tracking-wide mt-0.5">
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" />
+                                {classArm}
+                              </div>
+                            </div>
 
-                        {/* Column 3: Scannable QR Code */}
-                        <div className="w-20 bg-slate-50 p-1.5 rounded-xl border border-slate-200 shadow-2xs flex flex-col items-center justify-center shrink-0">
-                          <QRCodeSVG 
-                            value={qrPayload} 
-                            size={68} 
-                            level="M" 
-                            includeMargin={false}
-                          />
-                          <span className="text-[7px] font-black uppercase text-[#0f7343] mt-1 block">STUDENT QR ID</span>
+                            <div className="text-[9px] text-slate-600 space-y-1 pt-1.5 border-t border-dashed border-slate-200">
+                              <div className="flex items-baseline gap-1 truncate">
+                                <span className="text-slate-400 font-bold shrink-0">Gender/DoB</span>
+                                <span className="font-black text-slate-800 truncate">{student.gender || 'N/A'}{student.dateOfBirth ? ` • ${student.dateOfBirth}` : ''}</span>
+                              </div>
+                              <div className="flex items-baseline gap-1 truncate">
+                                <span className="text-slate-400 font-bold shrink-0">Parent</span>
+                                <span className="font-black text-slate-800 truncate">{student.fatherName || student.guardianName || 'N/A'}</span>
+                              </div>
+                              <div className="flex items-baseline gap-1 truncate">
+                                <span className="text-slate-400 font-bold shrink-0">Phone</span>
+                                <span className="font-mono font-black text-[#0f7343] truncate">{student.phone1 || 'N/A'}</span>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Column 3: QR Code */}
+                          <div className="shrink-0 flex flex-col items-center gap-1">
+                            <div className="bg-white p-1 rounded-lg border-2 border-emerald-200 shadow-[0_2px_8px_rgba(15,115,67,0.15)]">
+                              <QRCodeSVG 
+                                value={qrPayload} 
+                                size={64} 
+                                level="M" 
+                                includeMargin={false}
+                                fgColor="#0f172a"
+                              />
+                            </div>
+                            <span className="text-[6.5px] font-black uppercase tracking-wider text-[#0f7343]">Scan QR</span>
+                          </div>
                         </div>
                       </div>
 
                       {/* Card Bottom Footer */}
-                      <div className="bg-slate-50 px-4 py-1.5 border-t border-slate-200 flex items-center justify-between text-[8px] text-slate-500 font-semibold">
-                        <span className="font-bold text-[#0f7343]">AI Integrated Academy Argungu</span>
-                        <span>Official Student ID Badge</span>
+                      <div className="bg-gradient-to-r from-[#0a5c33] via-[#0f7343] to-[#1a9456] px-4 py-1.5 flex items-center justify-between">
+                        <span className="text-[8px] font-black text-amber-300 uppercase tracking-wider">AI Integrated Academy Argungu</span>
+                        <span className="text-[7px] font-bold text-emerald-200 uppercase tracking-wide">Official ID Badge</span>
                       </div>
                     </div>
                   );
@@ -669,9 +689,27 @@ async function generateIDCardImageBlob(
   ctx.fillStyle = '#ffffff';
   ctx.fillRect(0, 0, W, H);
 
+  // Subtle dot pattern on body
+  ctx.fillStyle = '#e2e8f0';
+  for (let dx = 20; dx < W; dx += 22) {
+    for (let dy = 140; dy < H - 55; dy += 22) {
+      ctx.beginPath();
+      ctx.arc(dx, dy, 1.2, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+
+  // Left accent bar (green → amber → green)
+  const grad = ctx.createLinearGradient(0, 137, 0, H - 55);
+  grad.addColorStop(0, '#0f7343');
+  grad.addColorStop(0.5, '#f59e0b');
+  grad.addColorStop(1, '#0f7343');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 137, 10, H - 137 - 55);
+
   // Outer border
-  ctx.strokeStyle = '#94a3b8';
-  ctx.lineWidth = 3;
+  ctx.strokeStyle = '#6ee7b7';
+  ctx.lineWidth = 4;
   ctx.strokeRect(2, 2, W - 4, H - 4);
 
   // ── Watermark logo (centered in body area) ─────────────────────────────
@@ -682,30 +720,64 @@ async function generateIDCardImageBlob(
       const wmX = (W - WM) / 2;
       const wmY = 130 + (H - 130 - 55 - WM) / 2;
       ctx.save();
-      ctx.globalAlpha = 0.07;
+      ctx.globalAlpha = 0.06;
       ctx.drawImage(wmImg, wmX, wmY, WM, WM);
       ctx.restore();
     } catch { /* skip */ }
   }
 
-  // ── Top emerald banner ─────────────────────────────────────────────────
+  // ── Top emerald banner with gradient ──────────────────────────────────
   const BANNER_H = 130;
-  ctx.fillStyle = '#0f7343';
+  const bannerGrad = ctx.createLinearGradient(0, 0, W, 0);
+  bannerGrad.addColorStop(0, '#0a5c33');
+  bannerGrad.addColorStop(0.5, '#0f7343');
+  bannerGrad.addColorStop(1, '#1a9456');
+  ctx.fillStyle = bannerGrad;
   ctx.fillRect(0, 0, W, BANNER_H);
 
-  // Gold accent stripe
-  ctx.fillStyle = '#f59e0b';
-  ctx.fillRect(0, BANNER_H, W, 7);
+  // Diagonal stripe overlay on banner
+  ctx.save();
+  ctx.globalAlpha = 0.07;
+  ctx.fillStyle = '#ffffff';
+  for (let sx = -BANNER_H; sx < W + BANNER_H; sx += 18) {
+    ctx.beginPath();
+    ctx.moveTo(sx, 0);
+    ctx.lineTo(sx + BANNER_H, BANNER_H);
+    ctx.lineTo(sx + BANNER_H + 8, BANNER_H);
+    ctx.lineTo(sx + 8, 0);
+    ctx.closePath();
+    ctx.fill();
+  }
+  ctx.restore();
 
-  // School logo (circular clip)
+  // Gold accent stripe (thicker)
+  ctx.fillStyle = '#f59e0b';
+  ctx.fillRect(0, BANNER_H, W, 9);
+
+  // School logo (circular clip with white ring + amber ring)
   if (logoSrc) {
     try {
       const logoImg = await loadImage(logoSrc);
+      // Amber outer ring
       ctx.save();
       ctx.beginPath();
-      ctx.arc(72, 65, 42, 0, Math.PI * 2);
+      ctx.arc(72, 65, 46, 0, Math.PI * 2);
+      ctx.fillStyle = '#f59e0b';
+      ctx.fill();
+      ctx.restore();
+      // White inner ring
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(72, 65, 43, 0, Math.PI * 2);
+      ctx.fillStyle = '#ffffff';
+      ctx.fill();
+      ctx.restore();
+      // Clip and draw logo
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(72, 65, 40, 0, Math.PI * 2);
       ctx.clip();
-      ctx.drawImage(logoImg, 30, 23, 84, 84);
+      ctx.drawImage(logoImg, 32, 25, 80, 80);
       ctx.restore();
     } catch { /* skip on error */ }
   }
@@ -737,15 +809,27 @@ async function generateIDCardImageBlob(
   fillScaledText(ctx, admNoStr, pillX + 12, 76, pillW - 20);
 
   // ── Student photo (left column) ────────────────────────────────────────
-  const PX = 40;
-  const PY = BANNER_H + 30;
+  const PX = 22;
+  const PY = BANNER_H + 22;
   const PW = 195;
-  const PH = 220;
+  const PH = 225;
 
-  // Photo border
-  ctx.strokeStyle = '#0f7343';
-  ctx.lineWidth = 5;
-  ctx.strokeRect(PX, PY, PW, PH);
+  // Photo shadow
+  ctx.save();
+  ctx.shadowColor = 'rgba(15,115,67,0.3)';
+  ctx.shadowBlur = 16;
+  ctx.shadowOffsetY = 4;
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(PX - 3, PY - 3, PW + 6, PH + 6);
+  ctx.restore();
+
+  // Photo border (rounded via clip)
+  ctx.save();
+  if (typeof ctx.roundRect === 'function') {
+    ctx.beginPath();
+    ctx.roundRect(PX, PY, PW, PH, 10);
+    ctx.clip();
+  }
 
   let photoLoaded = false;
   if (student.photo) {
@@ -756,7 +840,10 @@ async function generateIDCardImageBlob(
     } catch { photoLoaded = false; }
   }
   if (!photoLoaded) {
-    ctx.fillStyle = '#ecfdf5';
+    const pgGrad = ctx.createLinearGradient(PX, PY, PX + PW, PY + PH);
+    pgGrad.addColorStop(0, '#ecfdf5');
+    pgGrad.addColorStop(1, '#d1fae5');
+    ctx.fillStyle = pgGrad;
     ctx.fillRect(PX, PY, PW, PH);
     ctx.fillStyle = '#0f7343';
     ctx.font = 'bold 90px sans-serif';
@@ -764,12 +851,33 @@ async function generateIDCardImageBlob(
     ctx.fillText((student.firstName || 'S')[0].toUpperCase(), PX + PW / 2, PY + PH / 2 + 30);
     ctx.textAlign = 'left';
   }
+  ctx.restore();
 
-  // Photo label below
-  ctx.fillStyle = '#64748b';
-  ctx.font = '15px sans-serif';
+  // Green border around photo
+  ctx.strokeStyle = '#0f7343';
+  ctx.lineWidth = 4;
+  if (typeof ctx.roundRect === 'function') {
+    ctx.beginPath();
+    ctx.roundRect(PX, PY, PW, PH, 10);
+    ctx.stroke();
+  } else {
+    ctx.strokeRect(PX, PY, PW, PH);
+  }
+
+  // Photo label pill below
+  const lblW = 130;
+  const lblX = PX + (PW - lblW) / 2;
+  const lblY = PY + PH + 8;
+  ctx.fillStyle = '#ecfdf5';
+  if (typeof ctx.roundRect === 'function') {
+    ctx.beginPath();
+    ctx.roundRect(lblX, lblY, lblW, 22, 6);
+    ctx.fill();
+  }
+  ctx.fillStyle = '#0f7343';
+  ctx.font = 'bold 13px sans-serif';
   ctx.textAlign = 'center';
-  ctx.fillText('PASSPORT PHOTO', PX + PW / 2, PY + PH + 22);
+  ctx.fillText('PASSPORT PHOTO', PX + PW / 2, lblY + 15);
   ctx.textAlign = 'left';
 
   // ── Student details (middle column) ───────────────────────────────────
@@ -891,30 +999,23 @@ async function generateIDCardImageBlob(
   ctx.textAlign = 'left';
 
   // ── Footer ─────────────────────────────────────────────────────────────
-  const FOOTER_Y = H - 48;
-  ctx.fillStyle  = '#f8fafc';
-  ctx.fillRect(0, FOOTER_Y, W, 55);
+  const FOOTER_Y = H - 52;
+  const footerGrad = ctx.createLinearGradient(0, FOOTER_Y, W, FOOTER_Y);
+  footerGrad.addColorStop(0, '#0a5c33');
+  footerGrad.addColorStop(0.5, '#0f7343');
+  footerGrad.addColorStop(1, '#1a9456');
+  ctx.fillStyle = footerGrad;
+  ctx.fillRect(0, FOOTER_Y, W, 52);
 
-  ctx.fillStyle  = '#94a3b8';
-  ctx.lineWidth  = 1;
-  ctx.beginPath();
-  ctx.moveTo(0, FOOTER_Y);
-  ctx.lineTo(W, FOOTER_Y);
-  ctx.stroke();
+  ctx.fillStyle = '#fbbf24';
+  ctx.font      = 'bold 19px sans-serif';
+  ctx.fillText('AI Integrated Academy Argungu', 30, H - 16);
 
-  ctx.fillStyle = '#0f7343';
-  ctx.font      = 'bold 20px sans-serif';
-  ctx.fillText('AI Integrated Academy Argungu', 40, H - 14);
-
-  ctx.fillStyle  = '#64748b';
-  ctx.font       = 'bold 18px sans-serif';
+  ctx.fillStyle  = '#a7f3d0';
+  ctx.font       = 'bold 16px sans-serif';
   ctx.textAlign  = 'right';
-  ctx.fillText('Official Student Identity Card', W - 40, H - 14);
+  ctx.fillText('Official Student Identity Card', W - 30, H - 16);
   ctx.textAlign  = 'left';
-
-  // Bottom green bar
-  ctx.fillStyle = '#0f7343';
-  ctx.fillRect(0, H - 7, W, 7);
 
   return new Promise((resolve) => {
     canvas.toBlob((blob) => {
