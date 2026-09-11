@@ -49,3 +49,37 @@ export function getStudentClassArm(cls: string | undefined, studentId?: string, 
 
   return `${baseClass} Gold`;
 }
+
+export function getStudentAdmissionNumber(student: Student): string {
+  if (student.admissionNumber && student.admissionNumber.trim().length > 0) {
+    return student.admissionNumber.trim();
+  }
+
+  // If formNumber starts with AIAA-B or AIAA/, use that as admission number
+  if (student.formNumber && (student.formNumber.startsWith('AIAA-B') || student.formNumber.startsWith('AIAA/'))) {
+    return student.formNumber.trim();
+  }
+
+  const currentYearShort = new Date().getFullYear().toString().slice(-2);
+
+  // Extract number sequence from formNumber if present
+  if (student.formNumber) {
+    const digits = student.formNumber.replace(/\D/g, '');
+    if (digits.length >= 3) {
+      const lastDigits = digits.length > 3 ? digits.slice(-4) : digits;
+      const num = String(parseInt(lastDigits, 10) || 1).padStart(3, '0');
+      return `AIAA-B${currentYearShort}-${num}`;
+    }
+  }
+
+  // Fallback to student ID hash to guarantee uniqueness when formNumber is absent/identical
+  let hash = 0;
+  const str = student.id || student.firstName || '0';
+  for (let i = 0; i < str.length; i++) {
+    hash = ((hash << 5) - hash) + str.charCodeAt(i);
+    hash |= 0;
+  }
+  const uniqueNum = String(Math.abs(hash) % 899 + 100).padStart(3, '0');
+  return `AIAA-B${currentYearShort}-${uniqueNum}`;
+}
+

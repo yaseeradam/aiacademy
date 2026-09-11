@@ -90,6 +90,15 @@ async function ensureSeeded() {
           { upsert: true }
         );
       }
+
+      if (migrationVersion < 2) {
+        await fixDuplicateAndMissingAdmissionNumbers();
+        await db.collection(SETTINGS_COL).updateOne(
+          { id: 'migration_version' },
+          { $set: { id: 'migration_version', version: 2 } },
+          { upsert: true }
+        );
+      }
     })().catch(err => {
       console.error('DB seed/index error (will not retry):', err);
       seedFailed = true;  // stop silent retry loop
@@ -469,3 +478,68 @@ export async function updateSchoolSettings(settings: SchoolSettings): Promise<vo
     { upsert: true }
   );
 }
+
+/**
+ * Automatically inspect all student records in MongoDB.
+ * Reassign unique sequential admission numbers to any students missing an admission number
+ * OR sharing a duplicate admission number with another student.
+ */
+export async function fixDuplicateAndMissingAdmissionNumbers(): Promise<{
+  fixedCount: number;
+  updatedStudents: { id: string; name: string; oldAdm: string; newAdm: string }[];
+}> {
+  const db = await getDB();
+  const students = await db.collection<Student>(STUDENTS_COL).find({}).toArray();
+  const currentYearShort = new Date().getFullYear().toString().slice(-2);
+
+  const seenAdmNumbers = new Set<string>();
+  const updatedStudents: { id: string; name: string; oldAdm: string; newAdm: string }[] = [];
+
+  for (const s of students) {
+    const rawAdm = s.admissionNumber?.trim();
+    let isDuplicateOrMissing = false;
+
+    if (!rawAdm) {
+      isDuplicateOrMissing = true;
+    } else {
+      const normalized = rawAdm.toLowerCase();
+      if (seenAdmNumbers.has(normalized)) {
+        isDuplicateOrMissing = true;
+      } else {
+        seenAdmNumbers.add(normalized);
+      }
+    }
+
+    if (isDuplicateOrMissing) {
+      let candidate = '';
+      do {
+        const seq = await getNextAdmissionSequence(currentYearShort);
+        const nextNumStr = String(seq).padStart(3, '0');
+        candidate = `AIAA-B${currentYearShort}-${nextNumStr}`;
+      } while (seenAdmNumbers.has(candidate.toLowerCase()));
+
+      seenAdmNumbers.add(candidate.toLowerCase());
+
+      const oldAdm = rawAdm || '(None)';
+      const name = `${s.firstName} ${s.lastName || ''}`.trim();
+
+      await db.collection<Student>(STUDENTS_COL).updateOne(
+        { id: s.id },
+        { $set: { admissionNumber: candidate } }
+      );
+
+      updatedStudents.push({
+        id: s.id,
+        name,
+        oldAdm,
+        newAdm: candidate
+      });
+    }
+  }
+
+  return {
+    fixedCount: updatedStudents.length,
+    updatedStudents
+  };
+}
+

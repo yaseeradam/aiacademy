@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAllStudents, getAllParents, addOrUpdateStudent, addOrUpdateParent, normalizePhone } from '@/lib/db';
+import { getAllStudents, getAllParents, addOrUpdateStudent, addOrUpdateParent, normalizePhone, getNextAdmissionSequence } from '@/lib/db';
 import { Student, Parent, VerificationStatus, PaymentStatus } from '@/types';
 import { resolveAutoSubgroup } from '@/app/actions';
 
@@ -192,11 +192,18 @@ export async function POST(request: NextRequest) {
       }
 
       // 2. Create the student
+      let finalAdmissionNumber = admissionNumber;
+      if (!finalAdmissionNumber) {
+        const currentYearShort = new Date().getFullYear().toString().slice(-2);
+        const seq = await getNextAdmissionSequence(currentYearShort);
+        finalAdmissionNumber = `AIAA-B${currentYearShort}-${String(seq).padStart(3, '0')}`;
+      }
+
       const studentData: Student = {
         id: generateId('stud'),
         parentId: parent.id,
         formNumber: finalFormNumber,
-        admissionNumber: admissionNumber || undefined,
+        admissionNumber: finalAdmissionNumber,
         firstName,
         lastName,
         gender,

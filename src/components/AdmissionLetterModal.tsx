@@ -12,18 +12,9 @@ interface AdmissionLetterModalProps {
   allStudents?: Student[];
 }
 
-import { getStudentClassArm } from '@/lib/classUtils';
-export { getStudentClassArm };
+import { getStudentClassArm, getStudentAdmissionNumber } from '@/lib/classUtils';
+export { getStudentClassArm, getStudentAdmissionNumber };
 
-export function getStudentAdmissionNumber(student: Student): string {
-  if (student.admissionNumber && (student.admissionNumber.startsWith('AIAA-B') || student.admissionNumber.startsWith('AIAA/'))) {
-    return student.admissionNumber;
-  }
-  const currentYearShort = new Date().getFullYear().toString().slice(-2);
-  const digits = (student.formNumber || student.id || '').replace(/\D/g, '');
-  const num = digits ? String(parseInt(digits.slice(-3), 10) || 1).padStart(3, '0') : '001';
-  return `AIAA-B${currentYearShort}-${num}`;
-}
 
 export function printBulkAdmissionLetters(students: Student[], logoSrc: string = '/logo.jpg', allStudents?: Student[]) {
   if (!students || students.length === 0) {

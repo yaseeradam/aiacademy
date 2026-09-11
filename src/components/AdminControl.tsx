@@ -12,7 +12,7 @@ import {
   Loader2, Scan, History, MessageSquare, Camera, FileText, CheckCircle2, CreditCard, Printer,
   GraduationCap, Folder, FolderOpen, Edit3
 } from 'lucide-react';
-import { logoutAction, adminUpdateStudentAction, adminDeleteStudentAction, adminDeleteMultipleStudentsAction, unassignStudentFromSubclassAction, unassignMultipleStudentsFromSubclassAction, assignMultipleStudentsToSubclassAction, restoreMissingSeedStudentsAction, clearAllDatabaseDataAction, adminCreateStudentAction, adminVerifyAction, adminTogglePaymentStatusAction, getAuditLogsAction, scanAdmissionFormOCRAction, getSchoolSettingsAction, updateSchoolSettingsAction, findDuplicateStudentsAction, DuplicateGroup } from '@/app/actions';
+import { logoutAction, adminUpdateStudentAction, adminDeleteStudentAction, adminDeleteMultipleStudentsAction, unassignStudentFromSubclassAction, unassignMultipleStudentsFromSubclassAction, assignMultipleStudentsToSubclassAction, restoreMissingSeedStudentsAction, clearAllDatabaseDataAction, adminCreateStudentAction, adminVerifyAction, adminTogglePaymentStatusAction, getAuditLogsAction, scanAdmissionFormOCRAction, getSchoolSettingsAction, updateSchoolSettingsAction, findDuplicateStudentsAction, fixDuplicateAdmissionNumbersAction, DuplicateGroup } from '@/app/actions';
 import AdmissionLetterModal, { printBulkAdmissionLetters, printPaidStudentsPDF, getStudentClassArm, getStudentAdmissionNumber } from './AdmissionLetterModal';
 import PickupIDCardModal from './PickupIDCardModal';
 
@@ -578,64 +578,90 @@ export default function AdminControl({ students }: AdminControlProps) {
 
   const handleRemoveGroupDuplicates = async (group: DuplicateGroup) => {
     if (group.students.length <= 1) return;
-
-    const extras = group.students.slice(1);
-    const idsToDelete = extras.map(s => s.id);
-
-    const confirmMsg = `Remove ${idsToDelete.length} duplicate copy(ies) in this group?\n\nThis will keep "${group.students[0].firstName} ${group.students[0].lastName}" and delete the redundant duplicate record(s).`;
-    if (!window.confirm(confirmMsg)) return;
+    const keepStudent = group.students[0];
+    const duplicatesToRemove = group.students.slice(1);
+    const idsToRemove = duplicatesToRemove.map(s => s.id);
 
     setFeedbackModal({
       isOpen: true,
       type: 'loading',
-      title: 'Cleaning Group Duplicates...',
-      message: `Deleting ${idsToDelete.length} duplicate record(s)...`,
+      title: 'Removing Duplicates...',
+      message: `Removing ${duplicatesToRemove.length} duplicate record(s) for "${group.key}"...`,
     });
 
     try {
-      const res = await adminDeleteMultipleStudentsAction(idsToDelete);
+      const res = await adminDeleteMultipleStudentsAction(idsToRemove);
       if (res.success) {
         setDuplicateModal(prev => {
           const newGroups = prev.groups
-            .map(g => {
-              if (g.key === group.key) {
-                return {
-                  ...g,
-                  students: [g.students[0]]
-                };
-              }
-              return g;
-            })
+            .map(g => ({
+              ...g,
+              students: g.students.filter(s => !idsToRemove.includes(s.id))
+            }))
             .filter(g => g.students.length > 1);
 
-          return {
-            ...prev,
-            groups: newGroups
-          };
+          return { ...prev, groups: newGroups };
         });
 
         router.refresh();
+
         setFeedbackModal({
           isOpen: true,
           type: 'success',
-          title: 'Group Duplicates Removed!',
-          message: `Successfully deleted ${res.count} duplicate record(s) from this group.`,
+          title: 'Duplicates Removed!',
+          message: `Successfully kept "${keepStudent.firstName} ${keepStudent.lastName}" and deleted ${duplicatesToRemove.length} duplicate record(s).`,
         });
       } else {
         setFeedbackModal({
           isOpen: true,
           type: 'error',
-          title: 'Deletion Failed',
-          message: res.error || 'Failed to remove duplicates.',
+          title: 'Error Deleting Duplicates',
+          message: res.error || 'Failed to delete duplicate records.',
         });
       }
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Error removing group duplicates.';
+    } catch {
       setFeedbackModal({
         isOpen: true,
         type: 'error',
         title: 'Error',
-        message: msg,
+        message: 'An unexpected error occurred while deleting duplicate records.',
+      });
+    }
+  };
+
+  const handleFixDuplicateAdmissionNumbers = async () => {
+    setFeedbackModal({
+      isOpen: true,
+      type: 'loading',
+      title: 'Fixing Duplicate Admission Numbers...',
+      message: 'Reassigning unique sequential admission numbers to all affected students...',
+    });
+
+    try {
+      const res = await fixDuplicateAdmissionNumbersAction();
+      if (res.success) {
+        setFeedbackModal({
+          isOpen: true,
+          type: 'success',
+          title: 'Admission Numbers Fixed!',
+          message: res.details,
+        });
+        router.refresh();
+        handleScanDuplicates();
+      } else {
+        setFeedbackModal({
+          isOpen: true,
+          type: 'error',
+          title: 'Error Fixing Admission Numbers',
+          message: res.error || 'Failed to reassign admission numbers.',
+        });
+      }
+    } catch {
+      setFeedbackModal({
+        isOpen: true,
+        type: 'error',
+        title: 'Error',
+        message: 'An unexpected error occurred while reassigning admission numbers.',
       });
     }
   };
@@ -4371,6 +4397,14 @@ export default function AdminControl({ students }: AdminControlProps) {
               </div>
 
               <div className="flex items-center gap-3">
+                <button
+                  onClick={handleFixDuplicateAdmissionNumbers}
+                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs rounded-xl flex items-center gap-1.5 shadow-md transition-all cursor-pointer shrink-0"
+                  title="Reassign unique admission numbers to all students sharing duplicate admission numbers"
+                >
+                  <RefreshCw className="w-4 h-4 text-white" />
+                  <span>⚡ Fix Duplicate Adm Numbers</span>
+                </button>
                 {duplicateModal.groups.length > 0 && !duplicateModal.isLoading && (
                   <button
                     onClick={handleRemoveAllDuplicates}

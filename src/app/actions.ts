@@ -25,9 +25,10 @@ import {
   bulkDeleteStudents,
   getStudentsByIds,
   bulkUpdateStudentClasses,
+  fixDuplicateAndMissingAdmissionNumbers,
 } from '@/lib/db';
 import { Student, Parent, SchoolSettings } from '@/types';
-import { getStudentClassArm } from '@/lib/classUtils';
+import { getStudentClassArm, getStudentAdmissionNumber } from '@/lib/classUtils';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Parent Actions
@@ -669,11 +670,12 @@ export async function findDuplicateStudentsAction(): Promise<{ success: boolean;
     }
   });
 
-  // 3. Group by Admission Number (if assigned)
+  // 3. Group by Admission Number (check both saved and computed admission numbers)
   const admMap = new Map<string, Student[]>();
   allStudents.forEach(s => {
-    if (!s.admissionNumber) return;
-    const key = s.admissionNumber.trim().toLowerCase();
+    const admNo = getStudentAdmissionNumber(s);
+    if (!admNo) return;
+    const key = admNo.trim().toLowerCase();
     if (!admMap.has(key)) admMap.set(key, []);
     admMap.get(key)!.push(s);
   });
@@ -682,9 +684,10 @@ export async function findDuplicateStudentsAction(): Promise<{ success: boolean;
     if (students.length > 1) {
       const alreadyInGroup = groups.some(g => g.students.some(s => s.id === students[0].id));
       if (!alreadyInGroup) {
+        const admNo = getStudentAdmissionNumber(students[0]);
         groups.push({
           reason: 'Duplicate Official Admission Number',
-          key: students[0].admissionNumber!,
+          key: admNo,
           students
         });
       }
@@ -760,10 +763,21 @@ export async function adminCreateStudentAction(studentData: Omit<Student, 'id' |
   studentData.intendedClass = resolvedClass;
 
   const newId = `stud-${Date.now()}`;
+  
+  // Ensure new student receives a unique admission number if not provided
+  let admissionNumber = studentData.admissionNumber;
+  if (!admissionNumber) {
+    const currentYearShort = new Date().getFullYear().toString().slice(-2);
+    const seq = await getNextAdmissionSequence(currentYearShort);
+    const nextNum = String(seq).padStart(3, '0');
+    admissionNumber = `AIAA-B${currentYearShort}-${nextNum}`;
+  }
+
   const newStudent: Student = {
     id: newId,
     parentId: studentData.parentId || '',
     ...studentData,
+    admissionNumber,
     verificationStatus: studentData.verificationStatus || 'pending',
   };
 
@@ -968,5 +982,37 @@ export async function updateSchoolSettingsAction(settings: SchoolSettings): Prom
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : 'Failed to update settings';
     return { success: false, error: msg };
+  }
+}
+
+export async function fixDuplicateAdmissionNumbersAction(): Promise<{
+  success: boolean;
+  fixedCount: number;
+  details: string;
+  error?: string;
+}> {
+  try {
+    const res = await fixDuplicateAndMissingAdmissionNumbers();
+    if (res.fixedCount > 0) {
+      await addAuditLog({
+        action: 'UPDATE',
+        actor: 'School Administrator',
+        details: `Reassigned unique admission numbers to ${res.fixedCount} students to resolve duplicates`,
+      });
+    }
+    return {
+      success: true,
+      fixedCount: res.fixedCount,
+      details: res.fixedCount > 0
+        ? `Fixed ${res.fixedCount} duplicate/missing admission numbers: ${res.updatedStudents.map(s => `${s.name} (${s.oldAdm} ➔ ${s.newAdm})`).join(', ')}`
+        : 'All students already have unique admission numbers. No changes needed.'
+    };
+  } catch (err: unknown) {
+    return {
+      success: false,
+      fixedCount: 0,
+      details: '',
+      error: err instanceof Error ? err.message : 'Failed to fix admission numbers'
+    };
   }
 }
