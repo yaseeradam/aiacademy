@@ -19,9 +19,10 @@ import PrintClassRosterModal from './PrintClassRosterModal';
 
 interface AdminControlProps {
   students: Student[];
+  initialStaff?: Staff[];
 }
 
-export default function AdminControl({ students }: AdminControlProps) {
+export default function AdminControl({ students, initialStaff = [] }: AdminControlProps) {
   const router = useRouter();
 
   const compressImage = (file: File, maxDim = 1000, quality = 0.70): Promise<string> => {
@@ -139,7 +140,7 @@ export default function AdminControl({ students }: AdminControlProps) {
   const [subgroupSortOrder, setSubgroupSortOrder] = useState<'most_populated' | 'alphabetical' | 'capacity'>('most_populated');
 
   // Staff Directory state
-  const [staffList, setStaffList] = useState<Staff[]>([]);
+  const [staffList, setStaffList] = useState<Staff[]>(initialStaff);
   const [isLoadingStaff, setIsLoadingStaff] = useState<boolean>(false);
   const [staffSearchQuery, setStaffSearchQuery] = useState<string>('');
   const [staffSectionFilter, setStaffSectionFilter] = useState<string>('all');
@@ -894,10 +895,15 @@ export default function AdminControl({ students }: AdminControlProps) {
   }, [activeTab]);
 
   const loadStaff = async () => {
-    setIsLoadingStaff(true);
+    // Only show loading spinner if we have no staff loaded yet
+    if (staffList.length === 0) {
+      setIsLoadingStaff(true);
+    }
     try {
       const list = await getAllStaffAction();
-      setStaffList(list);
+      if (Array.isArray(list) && list.length > 0) {
+        setStaffList(list);
+      }
     } catch (err) {
       console.error('Failed to load staff list:', err);
     } finally {
@@ -906,14 +912,18 @@ export default function AdminControl({ students }: AdminControlProps) {
   };
 
   useEffect(() => {
-    loadStaff();
-  }, []);
-
-  useEffect(() => {
-    if (activeTab === 'staff') {
+    if (initialStaff && initialStaff.length > 0) {
+      setStaffList(initialStaff);
+    } else {
       loadStaff();
     }
-  }, [activeTab]);
+  }, [initialStaff]);
+
+  useEffect(() => {
+    if (activeTab === 'staff' && staffList.length === 0) {
+      loadStaff();
+    }
+  }, [activeTab, staffList.length]);
 
   const staffSections = useMemo(() => {
     const defaults = ['Nursery', 'Primary', 'Administration', 'Security', 'Accounts / Bursary', 'Maintenance'];

@@ -1030,10 +1030,13 @@ export async function fixDuplicateAdmissionNumbersAction(): Promise<{
 
 export async function getAllStaffAction(): Promise<Staff[]> {
   try {
-    return await getAllStaff();
+    const timeoutPromise = new Promise<Staff[]>((_, reject) =>
+      setTimeout(() => reject(new Error('Staff query timed out')), 5000)
+    );
+    return await Promise.race([getAllStaff(), timeoutPromise]);
   } catch (err) {
-    console.error('Failed to get staff list:', err);
-    return [];
+    console.error('Failed to get staff list in action, falling back to INITIAL_STAFF:', err);
+    return INITIAL_STAFF;
   }
 }
 

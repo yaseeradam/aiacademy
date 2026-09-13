@@ -98,8 +98,16 @@ async function ensureSeeded() {
       for (const s of INITIAL_STUDENTS) {
         await db.collection<Student>(STUDENTS_COL).updateOne({ id: s.id }, { $setOnInsert: s }, { upsert: true });
       }
-      for (const st of INITIAL_STAFF) {
-        await db.collection<Staff>(STAFF_COL).updateOne({ idNumber: st.idNumber }, { $setOnInsert: st }, { upsert: true });
+      // Ensure initial staff exist via fast bulkWrite
+      if (INITIAL_STAFF.length > 0) {
+        const staffBulkOps = INITIAL_STAFF.map(st => ({
+          updateOne: {
+            filter: { idNumber: st.idNumber },
+            update: { $setOnInsert: st },
+            upsert: true
+          }
+        }));
+        await db.collection(STAFF_COL).bulkWrite(staffBulkOps, { ordered: false }).catch(() => {});
       }
 
       // Fix migration: only run class-name migrations once (skip on subsequent cold starts)
@@ -133,13 +141,6 @@ async function ensureSeeded() {
       }
 
       if (migrationVersion < 3) {
-        for (const st of INITIAL_STAFF) {
-          await db.collection<Staff>(STAFF_COL).updateOne(
-            { idNumber: st.idNumber },
-            { $setOnInsert: st },
-            { upsert: true }
-          );
-        }
         await db.collection(SETTINGS_COL).updateOne(
           { id: 'migration_version' },
           { $set: { id: 'migration_version', version: 3 } },
@@ -605,14 +606,45 @@ export async function getNextStaffSequence(): Promise<number> {
 }
 
 export async function getAllStaff(): Promise<Staff[]> {
-  await ensureSeeded();
-  const db = await getDB();
-  const rawList = await db.collection(STAFF_COL).find({}).toArray();
-  return rawList.map(doc => {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { _id, ...staff } = doc as unknown as Staff & { _id?: unknown };
-    return staff;
-  });
+  try {
+    const db = await getDB();
+    const rawList = await db.collection(STAFF_COL).find({}).toArray();
+
+    if (!rawList || rawList.length === 0) {
+      if (INITIAL_STAFF.length > 0) {
+        const ops = INITIAL_STAFF.map(st => ({
+          updateOne: {
+            filter: { idNumber: st.idNumber },
+            update: { $setOnInsert: st },
+            upsert: true
+          }
+        }));
+        await db.collection(STAFF_COL).bulkWrite(ops, { ordered: false }).catch(() => {});
+      }
+      return INITIAL_STAFF;
+    }
+
+    return rawList.map(doc => {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { _id, ...staff } = doc as unknown as Staff & { _id?: unknown };
+      return {
+        id: String(staff.id || `staff_${doc._id}`),
+        name: String(staff.name || ''),
+        phone: String(staff.phone || ''),
+        idNumber: String(staff.idNumber || ''),
+        section: String(staff.section || 'General'),
+        classAllocated: String(staff.classAllocated || ''),
+        role: String(staff.role || 'Teacher'),
+        bankName: String(staff.bankName || ''),
+        accountNumber: String(staff.accountNumber || ''),
+        salary: String(staff.salary || ''),
+        createdAt: String(staff.createdAt || new Date().toISOString()),
+      };
+    });
+  } catch (err) {
+    console.error('Error fetching staff from DB, falling back to INITIAL_STAFF:', err);
+    return INITIAL_STAFF;
+  }
 }
 
 export async function getStaffById(id: string): Promise<Staff | null> {

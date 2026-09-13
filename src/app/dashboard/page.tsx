@@ -1,6 +1,6 @@
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { getParentByPhone, getStudentsByParentId, getAllStudents, getSchoolSettings } from '@/lib/db';
+import { getParentByPhone, getStudentsByParentId, getAllStudents, getSchoolSettings, getAllStaff, INITIAL_STAFF } from '@/lib/db';
 import VerificationCard from '@/components/VerificationCard';
 import AdminControl from '@/components/AdminControl';
 import { logoutAction } from '../actions';
@@ -20,14 +20,15 @@ export default async function DashboardPage() {
   const displayPhone = phone || '';
 
   if (isAdmin) {
-    // Run settings + students in parallel — they are independent
-    const [, allStudents] = await Promise.all([
+    // Run settings + students + staff in parallel — they are independent
+    const [, allStudents, allStaff] = await Promise.all([
       getSchoolSettings(),
       getAllStudents(),
+      getAllStaff().catch(() => INITIAL_STAFF),
     ]);
     return (
       <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
-        <AdminControl students={allStudents} />
+        <AdminControl students={allStudents} initialStaff={allStaff || INITIAL_STAFF} />
       </div>
     );
   }
