@@ -12,7 +12,7 @@ import {
   Loader2, Scan, History, MessageSquare, Camera, FileText, CheckCircle2, CreditCard, Printer,
   GraduationCap, Folder, FolderOpen, Edit3, Briefcase, Phone
 } from 'lucide-react';
-import { logoutAction, adminUpdateStudentAction, adminDeleteStudentAction, adminDeleteMultipleStudentsAction, unassignStudentFromSubclassAction, unassignMultipleStudentsFromSubclassAction, assignMultipleStudentsToSubclassAction, restoreMissingSeedStudentsAction, clearAllDatabaseDataAction, adminCreateStudentAction, adminVerifyAction, adminTogglePaymentStatusAction, getAuditLogsAction, scanAdmissionFormOCRAction, getSchoolSettingsAction, updateSchoolSettingsAction, findDuplicateStudentsAction, fixDuplicateAdmissionNumbersAction, DuplicateGroup, getAllStaffAction, adminCreateStaffAction, adminUpdateStaffAction, adminDeleteStaffAction } from '@/app/actions';
+import { logoutAction, adminUpdateStudentAction, adminDeleteStudentAction, adminDeleteMultipleStudentsAction, unassignStudentFromSubclassAction, unassignMultipleStudentsFromSubclassAction, assignMultipleStudentsToSubclassAction, restoreMissingSeedStudentsAction, clearAllDatabaseDataAction, adminCreateStudentAction, adminVerifyAction, adminTogglePaymentStatusAction, getAuditLogsAction, scanAdmissionFormOCRAction, getSchoolSettingsAction, updateSchoolSettingsAction, findDuplicateStudentsAction, fixDuplicateAdmissionNumbersAction, DuplicateGroup, getAllStaffAction, adminCreateStaffAction, adminUpdateStaffAction, adminDeleteStaffAction, adminImportStaffCSVAction, adminSeedStaffFromExcelAction } from '@/app/actions';
 import AdmissionLetterModal, { printBulkAdmissionLetters, printPaidStudentsPDF, getStudentClassArm, getStudentAdmissionNumber } from './AdmissionLetterModal';
 import PickupIDCardModal from './PickupIDCardModal';
 import PrintClassRosterModal from './PrintClassRosterModal';
@@ -143,6 +143,7 @@ export default function AdminControl({ students }: AdminControlProps) {
   const [isLoadingStaff, setIsLoadingStaff] = useState<boolean>(false);
   const [staffSearchQuery, setStaffSearchQuery] = useState<string>('');
   const [staffSectionFilter, setStaffSectionFilter] = useState<string>('all');
+  const [staffClassFilter, setStaffClassFilter] = useState<string>('all');
   const [isStaffModalOpen, setIsStaffModalOpen] = useState<boolean>(false);
   const [editingStaff, setEditingStaff] = useState<Staff | null>(null);
   const [staffFormData, setStaffFormData] = useState<{
@@ -150,15 +151,39 @@ export default function AdminControl({ students }: AdminControlProps) {
     phone: string;
     idNumber: string;
     section: string;
+    classAllocated: string;
     role: string;
+    bankName: string;
+    accountNumber: string;
+    salary: string;
   }>({
     name: '',
     phone: '',
     idNumber: '',
     section: 'Primary',
+    classAllocated: '',
     role: 'Teacher',
+    bankName: '',
+    accountNumber: '',
+    salary: '',
   });
   const [isStaffSubmitting, setIsStaffSubmitting] = useState<boolean>(false);
+
+  // Staff Import CSV/Excel state
+  const [isImportStaffModalOpen, setIsImportStaffModalOpen] = useState<boolean>(false);
+  const [importedStaffPreview, setImportedStaffPreview] = useState<Array<{
+    name: string;
+    phone?: string;
+    idNumber?: string;
+    section?: string;
+    classAllocated?: string;
+    role?: string;
+    bankName?: string;
+    accountNumber?: string;
+    salary?: string;
+  }>>([]);
+  const [isStaffImporting, setIsStaffImporting] = useState<boolean>(false);
+  const [staffImportFile, setStaffImportFile] = useState<File | null>(null);
 
   const setActiveTab = (tab: AdminTabType) => {
     setActiveTabState(tab);
@@ -904,14 +929,18 @@ export default function AdminControl({ students }: AdminControlProps) {
         (staff.phone && staff.phone.includes(q)) ||
         (staff.idNumber && staff.idNumber.toLowerCase().includes(q)) ||
         (staff.section && staff.section.toLowerCase().includes(q)) ||
+        (staff.classAllocated && staff.classAllocated.toLowerCase().includes(q)) ||
         (staff.role && staff.role.toLowerCase().includes(q));
 
       const matchesSection = staffSectionFilter === 'all' ||
         (staff.section && staff.section.toLowerCase() === staffSectionFilter.toLowerCase());
 
-      return matchesSearch && matchesSection;
+      const matchesClass = staffClassFilter === 'all' ||
+        (staffClassFilter === 'unallocated' ? (!staff.classAllocated || staff.classAllocated.trim() === '') : (staff.classAllocated === staffClassFilter));
+
+      return matchesSearch && matchesSection && matchesClass;
     });
-  }, [staffList, staffSearchQuery, staffSectionFilter]);
+  }, [staffList, staffSearchQuery, staffSectionFilter, staffClassFilter]);
 
   const handleOpenAddStaff = () => {
     setEditingStaff(null);
@@ -920,7 +949,11 @@ export default function AdminControl({ students }: AdminControlProps) {
       phone: '',
       idNumber: '',
       section: 'Primary',
+      classAllocated: '',
       role: 'Teacher',
+      bankName: '',
+      accountNumber: '',
+      salary: '',
     });
     setIsStaffModalOpen(true);
   };
@@ -932,7 +965,11 @@ export default function AdminControl({ students }: AdminControlProps) {
       phone: staff.phone,
       idNumber: staff.idNumber,
       section: staff.section,
+      classAllocated: staff.classAllocated || '',
       role: staff.role || 'Teacher',
+      bankName: staff.bankName || '',
+      accountNumber: staff.accountNumber || '',
+      salary: staff.salary || '',
     });
     setIsStaffModalOpen(true);
   };
@@ -941,10 +978,6 @@ export default function AdminControl({ students }: AdminControlProps) {
     e.preventDefault();
     if (!staffFormData.name.trim()) {
       alert('Staff Name is required.');
-      return;
-    }
-    if (!staffFormData.phone.trim()) {
-      alert('Phone Number is required.');
       return;
     }
 
@@ -956,7 +989,11 @@ export default function AdminControl({ students }: AdminControlProps) {
           phone: staffFormData.phone.trim(),
           idNumber: staffFormData.idNumber.trim(),
           section: staffFormData.section.trim() || 'General',
+          classAllocated: staffFormData.classAllocated.trim(),
           role: staffFormData.role.trim() || 'Staff',
+          bankName: staffFormData.bankName.trim(),
+          accountNumber: staffFormData.accountNumber.trim(),
+          salary: staffFormData.salary.trim(),
         });
         if (!res.success) {
           alert(res.error || 'Failed to update staff record.');
@@ -968,7 +1005,11 @@ export default function AdminControl({ students }: AdminControlProps) {
           phone: staffFormData.phone.trim(),
           idNumber: staffFormData.idNumber.trim() || undefined,
           section: staffFormData.section.trim() || 'General',
+          classAllocated: staffFormData.classAllocated.trim(),
           role: staffFormData.role.trim() || 'Staff',
+          bankName: staffFormData.bankName.trim(),
+          accountNumber: staffFormData.accountNumber.trim(),
+          salary: staffFormData.salary.trim(),
         });
         if (!res.success) {
           alert(res.error || 'Failed to create staff record.');
@@ -983,6 +1024,272 @@ export default function AdminControl({ students }: AdminControlProps) {
     } finally {
       setIsStaffSubmitting(false);
     }
+  };
+
+  const handleProcessStaffFile = async (file: File) => {
+    setStaffImportFile(file);
+    setIsStaffImporting(true);
+    try {
+      const parsedRows: Array<{
+        name: string;
+        phone?: string;
+        idNumber?: string;
+        section?: string;
+        classAllocated?: string;
+        role?: string;
+        bankName?: string;
+        accountNumber?: string;
+        salary?: string;
+      }> = [];
+
+      const fileName = file.name.toLowerCase();
+
+      if (fileName.endsWith('.xlsx') || fileName.endsWith('.xls')) {
+        const zip = await JSZip.loadAsync(file);
+        const sharedStrings: string[] = [];
+        const sharedStringsXml = zip.file('xl/sharedStrings.xml');
+        if (sharedStringsXml) {
+          const strText = await sharedStringsXml.async('text');
+          const doc = new DOMParser().parseFromString(strText, 'application/xml');
+          const siElements = doc.querySelectorAll('si');
+          siElements.forEach(si => {
+            let t = '';
+            si.querySelectorAll('t').forEach(node => { t += node.textContent || ''; });
+            sharedStrings.push(t);
+          });
+        }
+
+        const sheet1Xml = zip.file('xl/worksheets/sheet1.xml');
+        if (sheet1Xml) {
+          const sheetText = await sheet1Xml.async('text');
+          const doc = new DOMParser().parseFromString(sheetText, 'application/xml');
+          const rowNodes = doc.querySelectorAll('row');
+          const rawTable: string[][] = [];
+
+          rowNodes.forEach(row => {
+            const rowCells: string[] = [];
+            row.querySelectorAll('c').forEach(c => {
+              const type = c.getAttribute('t');
+              const v = c.querySelector('v')?.textContent || '';
+              if (type === 's' && v && !isNaN(Number(v))) {
+                rowCells.push(sharedStrings[Number(v)] || '');
+              } else {
+                rowCells.push(v);
+              }
+            });
+            if (rowCells.some(cell => cell.trim())) {
+              rawTable.push(rowCells);
+            }
+          });
+
+          let headerIdx = -1;
+          for (let i = 0; i < Math.min(rawTable.length, 10); i++) {
+            const line = rawTable[i].map(c => c.toLowerCase());
+            if (line.some(c => c.includes('name') || c.includes('staff') || c.includes('id'))) {
+              headerIdx = i;
+              break;
+            }
+          }
+
+          if (headerIdx !== -1) {
+            const headers = rawTable[headerIdx].map(h => h.toLowerCase().trim());
+            const nameIdx = headers.findIndex(h => h.includes('name') && !h.includes('bank'));
+            const idIdx = headers.findIndex(h => h.includes('id') || h.includes('sn') || h.includes('staff id') || h.includes('staffid'));
+            const phoneIdx = headers.findIndex(h => h.includes('phone') || h.includes('mobile') || h.includes('tel') || h.includes('contact'));
+            const sectionIdx = headers.findIndex(h => h.includes('section') || h.includes('dept') || h.includes('department'));
+            const classIdx = headers.findIndex(h => h.includes('class') || h.includes('arm') || h.includes('allocated'));
+            const roleIdx = headers.findIndex(h => h.includes('role') || h.includes('designation') || h.includes('position'));
+            const bankIdx = headers.findIndex(h => h.includes('bank'));
+            const accIdx = headers.findIndex(h => h.includes('account') || h.includes('acc'));
+            const salaryIdx = headers.findIndex(h => h.includes('salary') || h.includes('pay') || h.includes('amount'));
+
+            for (let i = headerIdx + 1; i < rawTable.length; i++) {
+              const row = rawTable[i];
+              const name = nameIdx !== -1 ? row[nameIdx]?.trim() : (row[1]?.trim() || '');
+              if (!name || name.toLowerCase().includes('total') || name.toLowerCase().includes('average')) continue;
+
+              const staffId = idIdx !== -1 ? (row[idIdx]?.trim() || '') : (row[2]?.trim() || '');
+              let section = sectionIdx !== -1 ? (row[sectionIdx]?.trim() || '') : '';
+              if (!section) {
+                if (staffId.includes('/P')) section = 'Primary';
+                else if (staffId.includes('/N')) section = 'Nursery';
+                else if (staffId.includes('/DIR')) section = 'Administration';
+                else section = 'Primary';
+              }
+
+              const role = roleIdx !== -1 ? (row[roleIdx]?.trim() || 'Teacher') : (name.toLowerCase().includes('director') || staffId.includes('DIR') ? 'Director' : 'Teacher');
+
+              parsedRows.push({
+                name: name.replace(/\(Director\)/i, '').trim(),
+                idNumber: staffId,
+                phone: phoneIdx !== -1 ? (row[phoneIdx]?.trim() || '') : '',
+                section,
+                classAllocated: classIdx !== -1 ? (row[classIdx]?.trim() || '') : '',
+                role,
+                bankName: bankIdx !== -1 ? (row[bankIdx]?.trim() || '') : '',
+                accountNumber: accIdx !== -1 ? (row[accIdx]?.trim() || '') : '',
+                salary: salaryIdx !== -1 ? (row[salaryIdx]?.replace(/[^0-9]/g, '') || '') : '',
+              });
+            }
+          }
+        }
+      } else {
+        const text = await file.text();
+        const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+        if (lines.length > 1) {
+          const parseCsvLine = (line: string): string[] => {
+            const values: string[] = [];
+            let current = '';
+            let inQuotes = false;
+            for (let i = 0; i < line.length; i++) {
+              const char = line[i];
+              if (char === '"') {
+                inQuotes = !inQuotes;
+              } else if (char === ',' && !inQuotes) {
+                values.push(current.trim().replace(/^"|"$/g, ''));
+                current = '';
+              } else {
+                current += char;
+              }
+            }
+            values.push(current.trim().replace(/^"|"$/g, ''));
+            return values;
+          };
+
+          const headers = parseCsvLine(lines[0]).map(h => h.toLowerCase());
+          const nameIdx = headers.findIndex(h => h.includes('name') && !h.includes('bank'));
+          const idIdx = headers.findIndex(h => h.includes('id') || h.includes('staff id') || h.includes('staffid'));
+          const phoneIdx = headers.findIndex(h => h.includes('phone') || h.includes('mobile') || h.includes('tel'));
+          const sectionIdx = headers.findIndex(h => h.includes('section') || h.includes('dept'));
+          const classIdx = headers.findIndex(h => h.includes('class') || h.includes('arm') || h.includes('allocated'));
+          const roleIdx = headers.findIndex(h => h.includes('role') || h.includes('designation'));
+          const bankIdx = headers.findIndex(h => h.includes('bank'));
+          const accIdx = headers.findIndex(h => h.includes('account') || h.includes('acc'));
+          const salaryIdx = headers.findIndex(h => h.includes('salary'));
+
+          for (let i = 1; i < lines.length; i++) {
+            const row = parseCsvLine(lines[i]);
+            const name = nameIdx !== -1 ? row[nameIdx] : row[0];
+            if (!name || name.toLowerCase().includes('total') || name.toLowerCase().includes('average')) continue;
+
+            const staffId = idIdx !== -1 ? (row[idIdx] || '') : (row[1] || '');
+            let section = sectionIdx !== -1 ? (row[sectionIdx] || '') : '';
+            if (!section) {
+              if (staffId.includes('/P')) section = 'Primary';
+              else if (staffId.includes('/N')) section = 'Nursery';
+              else if (staffId.includes('/DIR')) section = 'Administration';
+              else section = 'Primary';
+            }
+
+            parsedRows.push({
+              name: name.replace(/\(Director\)/i, '').trim(),
+              idNumber: staffId,
+              phone: phoneIdx !== -1 ? (row[phoneIdx] || '') : '',
+              section,
+              classAllocated: classIdx !== -1 ? (row[classIdx] || '') : '',
+              role: roleIdx !== -1 ? (row[roleIdx] || 'Teacher') : 'Teacher',
+              bankName: bankIdx !== -1 ? (row[bankIdx] || '') : '',
+              accountNumber: accIdx !== -1 ? (row[accIdx] || '') : '',
+              salary: salaryIdx !== -1 ? (row[salaryIdx] || '') : '',
+            });
+          }
+        }
+      }
+
+      setImportedStaffPreview(parsedRows);
+    } catch (err: unknown) {
+      alert(err instanceof Error ? err.message : 'Failed to parse file.');
+    } finally {
+      setIsStaffImporting(false);
+    }
+  };
+
+  const handleConfirmImportStaff = async () => {
+    if (!importedStaffPreview || importedStaffPreview.length === 0) {
+      alert('No staff records to import.');
+      return;
+    }
+    setIsStaffImporting(true);
+    try {
+      const res = await adminImportStaffCSVAction(importedStaffPreview);
+      if (res.success) {
+        alert(`Successfully imported / synced ${res.count} staff records!`);
+        setIsImportStaffModalOpen(false);
+        setImportedStaffPreview([]);
+        setStaffImportFile(null);
+        await loadStaff();
+      } else {
+        alert(res.error || 'Failed to import staff records.');
+      }
+    } catch (err: unknown) {
+      alert(err instanceof Error ? err.message : 'Error importing staff records');
+    } finally {
+      setIsStaffImporting(false);
+    }
+  };
+
+  const handleSyncOfficialStaff = async () => {
+    if (!confirm('Sync the 22 official staff members from the staff payroll schedule into the database?')) {
+      return;
+    }
+    setIsLoadingStaff(true);
+    try {
+      const res = await adminSeedStaffFromExcelAction();
+      if (res.success) {
+        alert(`Successfully synced ${res.count} staff members!`);
+        await loadStaff();
+      } else {
+        alert(res.error || 'Failed to sync staff records.');
+      }
+    } catch (err: unknown) {
+      alert(err instanceof Error ? err.message : 'Error syncing staff');
+    } finally {
+      setIsLoadingStaff(false);
+    }
+  };
+
+  const handleDownloadStaffTemplate = () => {
+    const csvContent = "Staff Name,Phone,Staff ID,Section,Class Allocated,Role,Bank Name,Account Number,Salary\n" +
+      "Yasir Kabir Adamu,08012345678,AIA/26/P002,Primary,Basic 1 Gold,Teacher,Jaiz Bank,0003974412,60000\n" +
+      "Hassana Sahabi,08098765432,AIA/26/N003,Nursery,Nursery 1 Silver,Teacher,Access Bank,1946222455,40000\n" +
+      "Isah Balarabe,08033334444,AIA/26/DIR001,Administration,,Director,UBA,2056831467,60000\n";
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', 'staff_import_template.csv');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleExportStaffCSV = () => {
+    if (staffList.length === 0) {
+      alert('No staff records to export.');
+      return;
+    }
+    const headers = ['S/N', 'Staff Name', 'Phone', 'Staff ID', 'Section', 'Class Allocated', 'Role', 'Bank Name', 'Account Number', 'Monthly Salary'];
+    const rows = staffList.map((s, idx) => [
+      idx + 1,
+      `"${(s.name || '').replace(/"/g, '""')}"`,
+      `"${s.phone || ''}"`,
+      `"${s.idNumber || ''}"`,
+      `"${s.section || ''}"`,
+      `"${s.classAllocated || ''}"`,
+      `"${s.role || ''}"`,
+      `"${s.bankName || ''}"`,
+      `"${s.accountNumber || ''}"`,
+      `"${s.salary || ''}"`,
+    ]);
+    const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `staff_directory_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   const handleDeleteStaff = async (staff: Staff) => {
@@ -4229,22 +4536,57 @@ export default function AdminControl({ students }: AdminControlProps) {
                 </p>
               </div>
 
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2.5 flex-wrap">
+                <button
+                  type="button"
+                  onClick={handleSyncOfficialStaff}
+                  disabled={isLoadingStaff}
+                  className="py-2.5 px-3.5 bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-800 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer shadow-xs disabled:opacity-50"
+                  title="Sync the 22 official staff members from the staff schedule"
+                >
+                  <ShieldCheck className="w-4 h-4 text-amber-600" />
+                  <span>Sync 22 Official Staff</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setImportedStaffPreview([]);
+                    setStaffImportFile(null);
+                    setIsImportStaffModalOpen(true);
+                  }}
+                  className="py-2.5 px-3.5 bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-800 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer shadow-xs"
+                  title="Import staff from CSV or Excel file"
+                >
+                  <Upload className="w-4 h-4 text-blue-600" />
+                  <span>Import CSV / Excel</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleExportStaffCSV}
+                  disabled={staffList.length === 0}
+                  className="py-2.5 px-3.5 bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer shadow-xs disabled:opacity-50"
+                  title="Export all staff records to CSV"
+                >
+                  <Download className="w-4 h-4 text-slate-600" />
+                  <span className="hidden md:inline">Export CSV</span>
+                </button>
+
                 <button
                   type="button"
                   onClick={loadStaff}
                   disabled={isLoadingStaff}
-                  className="py-2.5 px-3.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-black transition-all flex items-center gap-2 cursor-pointer shadow-xs disabled:opacity-50"
+                  className="py-2.5 px-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer shadow-xs disabled:opacity-50"
                   title="Refresh staff records"
                 >
                   <RefreshCw className={`w-4 h-4 ${isLoadingStaff ? 'animate-spin' : ''}`} />
-                  <span className="hidden sm:inline">Refresh</span>
                 </button>
 
                 <button
                   type="button"
                   onClick={handleOpenAddStaff}
-                  className="py-2.5 px-5 bg-gradient-to-r from-[#0f7343] to-emerald-600 hover:from-emerald-700 hover:to-[#0b5c34] text-white rounded-xl text-xs font-black transition-all flex items-center gap-2 cursor-pointer shadow-md active:scale-98 border border-emerald-400/40"
+                  className="py-2.5 px-4 bg-gradient-to-r from-[#0f7343] to-emerald-600 hover:from-emerald-700 hover:to-[#0b5c34] text-white rounded-xl text-xs font-black transition-all flex items-center gap-2 cursor-pointer shadow-md active:scale-98 border border-emerald-400/40"
                 >
                   <Plus className="w-4 h-4 text-amber-300 stroke-[3]" />
                   <span>Add New Staff</span>
@@ -4271,9 +4613,9 @@ export default function AdminControl({ students }: AdminControlProps) {
                 </p>
               </div>
               <div className="p-4 bg-white rounded-2xl border border-slate-200 shadow-xs">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Other Sections</span>
+                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Class Allocated</span>
                 <p className="text-2xl font-black text-emerald-700 mt-1">
-                  {staffList.filter(s => !s.section || (!s.section.toLowerCase().includes('nursery') && !s.section.toLowerCase().includes('primary'))).length}
+                  {staffList.filter(s => Boolean(s.classAllocated)).length}
                 </p>
               </div>
             </div>
@@ -4289,7 +4631,7 @@ export default function AdminControl({ students }: AdminControlProps) {
                     type="text"
                     value={staffSearchQuery}
                     onChange={(e) => setStaffSearchQuery(e.target.value)}
-                    placeholder="Search by Name, Phone, ID Number, or Section..."
+                    placeholder="Search Name, Phone, ID, Section, Class..."
                     className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-green-600 focus:bg-white transition-all font-semibold"
                   />
                 </div>
@@ -4303,6 +4645,18 @@ export default function AdminControl({ students }: AdminControlProps) {
                     <option value="all">All Sections</option>
                     {staffSections.map(sec => (
                       <option key={sec} value={sec}>{sec}</option>
+                    ))}
+                  </select>
+
+                  <select
+                    value={staffClassFilter}
+                    onChange={(e) => setStaffClassFilter(e.target.value)}
+                    className="py-3 px-4 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-600 focus:outline-none"
+                  >
+                    <option value="all">All Classes</option>
+                    <option value="unallocated">Unallocated / No Class</option>
+                    {classList.map(cls => (
+                      <option key={cls} value={cls}>{cls}</option>
                     ))}
                   </select>
 
@@ -4347,6 +4701,7 @@ export default function AdminControl({ students }: AdminControlProps) {
                         <th className="py-4 px-6">Phone</th>
                         <th className="py-4 px-6">ID Number</th>
                         <th className="py-4 px-6">Section</th>
+                        <th className="py-4 px-6">Class Allocated</th>
                         <th className="py-4 px-6 text-right">Actions</th>
                       </tr>
                     </thead>
@@ -4370,14 +4725,18 @@ export default function AdminControl({ students }: AdminControlProps) {
 
                           {/* Phone */}
                           <td className="py-4 px-6">
-                            <a
-                              href={`tel:${staff.phone}`}
-                              className="inline-flex items-center gap-2 font-mono font-bold text-slate-700 hover:text-emerald-700 transition-colors"
-                              title="Call staff"
-                            >
-                              <Phone className="w-3.5 h-3.5 text-emerald-600" />
-                              <span>{staff.phone}</span>
-                            </a>
+                            {staff.phone ? (
+                              <a
+                                href={`tel:${staff.phone}`}
+                                className="inline-flex items-center gap-2 font-mono font-bold text-slate-700 hover:text-emerald-700 transition-colors"
+                                title="Call staff"
+                              >
+                                <Phone className="w-3.5 h-3.5 text-emerald-600" />
+                                <span>{staff.phone}</span>
+                              </a>
+                            ) : (
+                              <span className="text-xs text-slate-300 italic">No phone</span>
+                            )}
                           </td>
 
                           {/* ID Number */}
@@ -4400,6 +4759,26 @@ export default function AdminControl({ students }: AdminControlProps) {
                             }`}>
                               {staff.section}
                             </span>
+                          </td>
+
+                          {/* Class Allocated */}
+                          <td className="py-4 px-6">
+                            {staff.classAllocated ? (
+                              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-emerald-50 text-emerald-800 border border-emerald-200 shadow-2xs">
+                                <GraduationCap className="w-3.5 h-3.5 text-emerald-600" />
+                                <span>{staff.classAllocated}</span>
+                              </span>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => handleOpenEditStaff(staff)}
+                                className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-400 hover:text-emerald-700 bg-slate-50 hover:bg-emerald-50 px-2.5 py-1 rounded-lg border border-slate-200 hover:border-emerald-200 transition-all cursor-pointer"
+                                title="Click to assign a class"
+                              >
+                                <span className="text-slate-400 italic text-[11px]">Unassigned</span>
+                                <span className="text-emerald-600 font-black text-[10px] bg-emerald-100/60 px-1 py-0.5 rounded">+ Assign</span>
+                              </button>
+                            )}
                           </td>
 
                           {/* Actions */}
@@ -4582,7 +4961,25 @@ export default function AdminControl({ students }: AdminControlProps) {
                 </div>
               </div>
 
-              {/* Field 5 (Bonus): Role / Designation */}
+              {/* Field 5: Class Allocated */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5 flex items-center justify-between">
+                  <span>Class Allocated</span>
+                  <span className="text-[11px] font-normal text-slate-400">Class assigned to teacher</span>
+                </label>
+                <select
+                  value={staffFormData.classAllocated}
+                  onChange={(e) => setStaffFormData(prev => ({ ...prev, classAllocated: e.target.value }))}
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold text-slate-800 focus:outline-none focus:border-green-600 focus:bg-white transition-all"
+                >
+                  <option value="">-- No Class Assigned / Unallocated --</option>
+                  {classList.map(cls => (
+                    <option key={cls} value={cls}>{cls}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Field 6 (Bonus): Role / Designation */}
               <div>
                 <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
                   Role / Designation
@@ -4594,6 +4991,45 @@ export default function AdminControl({ students }: AdminControlProps) {
                   placeholder="e.g. Class Teacher, Head of Nursery, Registrar"
                   className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold text-slate-800 focus:outline-none focus:border-green-600 focus:bg-white transition-all"
                 />
+              </div>
+
+              {/* Optional Payroll / Banking Section */}
+              <div className="pt-2 border-t border-slate-100">
+                <span className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">
+                  Payroll & Banking Details (Optional)
+                </span>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Bank Name</label>
+                    <input
+                      type="text"
+                      value={staffFormData.bankName}
+                      onChange={(e) => setStaffFormData(prev => ({ ...prev, bankName: e.target.value }))}
+                      placeholder="e.g. Jaiz Bank"
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Account Number</label>
+                    <input
+                      type="text"
+                      value={staffFormData.accountNumber}
+                      onChange={(e) => setStaffFormData(prev => ({ ...prev, accountNumber: e.target.value }))}
+                      placeholder="e.g. 0003974412"
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-mono font-semibold"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Monthly Salary (₦)</label>
+                    <input
+                      type="text"
+                      value={staffFormData.salary}
+                      onChange={(e) => setStaffFormData(prev => ({ ...prev, salary: e.target.value }))}
+                      placeholder="e.g. 60000"
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-mono font-semibold"
+                    />
+                  </div>
+                </div>
               </div>
 
               {/* Modal Actions */}
@@ -4624,6 +5060,186 @@ export default function AdminControl({ students }: AdminControlProps) {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* ================= IMPORT STAFF CSV / EXCEL MODAL OVERLAY ================= */}
+      {isImportStaffModalOpen && (
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-[2.5rem] p-6 md:p-8 w-full max-w-3xl shadow-2xl border border-slate-100 animate-slide-up max-h-[90vh] overflow-y-auto no-scrollbar">
+            {/* Modal Header */}
+            <div className="flex items-start justify-between mb-6 pb-4 border-b border-slate-100">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-700 flex items-center justify-center font-bold">
+                  <Upload className="w-6 h-6" />
+                </div>
+                <div>
+                  <h3 className="text-2xl font-black text-slate-800 tracking-tight leading-none">
+                    Import Staff Directory
+                  </h3>
+                  <p className="text-xs font-semibold text-slate-400 mt-1.5">
+                    Upload a CSV or Excel (.xlsx) file with staff names, IDs, phone numbers, sections, and allocated classes.
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsImportStaffModalOpen(false);
+                  setImportedStaffPreview([]);
+                  setStaffImportFile(null);
+                }}
+                className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 hover:bg-slate-200 transition-all cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Template Download & Instructions */}
+            <div className="mb-6 p-4 rounded-2xl bg-blue-50/60 border border-blue-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+              <div>
+                <h4 className="text-xs font-bold text-blue-900">Need a format template?</h4>
+                <p className="text-[11px] text-blue-700 mt-0.5">
+                  Download our pre-formatted CSV template with standard column headers.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={handleDownloadStaffTemplate}
+                className="px-3.5 py-2 bg-white hover:bg-blue-50 border border-blue-200 text-blue-800 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all shadow-2xs cursor-pointer shrink-0"
+              >
+                <Download className="w-3.5 h-3.5" />
+                <span>Download Sample Template</span>
+              </button>
+            </div>
+
+            {/* File Upload Area */}
+            <div className="mb-6">
+              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
+                Select CSV or Excel (.xlsx) File
+              </label>
+              <div className="border-2 border-dashed border-slate-200 hover:border-emerald-500 rounded-2xl p-6 text-center transition-all bg-slate-50/50 hover:bg-emerald-50/30">
+                <input
+                  type="file"
+                  id="staffFileInput"
+                  accept=".csv, .xlsx, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, text/csv"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) handleProcessStaffFile(file);
+                  }}
+                  className="hidden"
+                />
+                <label htmlFor="staffFileInput" className="cursor-pointer flex flex-col items-center gap-2">
+                  <div className="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center">
+                    <Upload className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <span className="text-xs font-bold text-slate-700 block">
+                      {staffImportFile ? staffImportFile.name : 'Click to browse or drag and drop file here'}
+                    </span>
+                    <span className="text-[11px] text-slate-400 block mt-0.5">
+                      Supports .csv and .xlsx files (up to 5MB)
+                    </span>
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            {/* Preview Table */}
+            {isStaffImporting && importedStaffPreview.length === 0 && (
+              <div className="p-8 text-center text-slate-400 flex flex-col items-center justify-center gap-2">
+                <Loader2 className="w-6 h-6 animate-spin text-emerald-600" />
+                <span className="text-xs font-bold">Reading and analyzing file data...</span>
+              </div>
+            )}
+
+            {importedStaffPreview.length > 0 && (
+              <div className="mb-6 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+                    Preview Data ({importedStaffPreview.length} staff records detected)
+                  </span>
+                  <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200">
+                    Ready to Import
+                  </span>
+                </div>
+
+                <div className="border border-slate-200 rounded-xl overflow-hidden max-h-60 overflow-y-auto">
+                  <table className="w-full text-left border-collapse text-xs">
+                    <thead>
+                      <tr className="bg-slate-50 border-b border-slate-200 text-[10px] font-black uppercase text-slate-500">
+                        <th className="py-2.5 px-3">#</th>
+                        <th className="py-2.5 px-3">Name</th>
+                        <th className="py-2.5 px-3">ID Number</th>
+                        <th className="py-2.5 px-3">Phone</th>
+                        <th className="py-2.5 px-3">Section</th>
+                        <th className="py-2.5 px-3">Class Allocated</th>
+                        <th className="py-2.5 px-3">Role</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 font-medium">
+                      {importedStaffPreview.map((row, idx) => (
+                        <tr key={idx} className="hover:bg-slate-50">
+                          <td className="py-2 px-3 text-slate-400 font-mono">{idx + 1}</td>
+                          <td className="py-2 px-3 font-bold text-slate-800">{row.name}</td>
+                          <td className="py-2 px-3 font-mono text-slate-600">{row.idNumber || 'Auto'}</td>
+                          <td className="py-2 px-3 font-mono text-slate-600">{row.phone || '—'}</td>
+                          <td className="py-2 px-3">
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700">
+                              {row.section || 'General'}
+                            </span>
+                          </td>
+                          <td className="py-2 px-3">
+                            {row.classAllocated ? (
+                              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                {row.classAllocated}
+                              </span>
+                            ) : (
+                              <span className="text-slate-300 italic text-[10px]">None</span>
+                            )}
+                          </td>
+                          <td className="py-2 px-3 text-slate-500 text-[11px]">{row.role || 'Teacher'}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {/* Modal Actions */}
+            <div className="pt-4 flex items-center justify-end gap-3 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsImportStaffModalOpen(false);
+                  setImportedStaffPreview([]);
+                  setStaffImportFile(null);
+                }}
+                className="px-5 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-50 transition-all cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmImportStaff}
+                disabled={importedStaffPreview.length === 0 || isStaffImporting}
+                className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-[#0f7343] to-emerald-600 hover:from-emerald-700 hover:to-[#0b5c34] text-white text-xs font-black transition-all flex items-center gap-2 cursor-pointer shadow-md active:scale-98 disabled:opacity-50"
+              >
+                {isStaffImporting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Importing...</span>
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2 className="w-4 h-4" />
+                    <span>Confirm & Import ({importedStaffPreview.length} Records)</span>
+                  </>
+                )}
+              </button>
+            </div>
           </div>
         </div>
       )}

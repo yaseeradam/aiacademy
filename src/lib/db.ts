@@ -21,6 +21,31 @@ function escapeRegex(str: string): string {
 const INITIAL_PARENTS: Parent[] = [];
 const INITIAL_STUDENTS: Student[] = [];
 
+export const INITIAL_STAFF: Staff[] = [
+  { id: 'staff_1', name: 'Yasir Kabir Adamu', idNumber: 'AIA/26/P002', phone: '', section: 'Primary', role: 'Teacher', classAllocated: '', bankName: 'Jaiz Bank', accountNumber: '0003974412', salary: '60000', createdAt: '2026-09-01T08:00:00.000Z' },
+  { id: 'staff_2', name: 'Ibrahim Musa Gulma', idNumber: 'AIA/26/P001', phone: '', section: 'Primary', role: 'Teacher', classAllocated: '', bankName: 'UBA', accountNumber: '2001511574', salary: '70000', createdAt: '2026-09-01T08:00:00.000Z' },
+  { id: 'staff_3', name: 'Hassana Sahabi', idNumber: 'AIA/26/N003', phone: '', section: 'Nursery', role: 'Teacher', classAllocated: '', bankName: 'Access Bank', accountNumber: '1946222455', salary: '40000', createdAt: '2026-09-01T08:00:00.000Z' },
+  { id: 'staff_4', name: 'Abida Abdullahi Kangiwa', idNumber: 'AIA/26/N006', phone: '', section: 'Nursery', role: 'Teacher', classAllocated: '', bankName: 'UBA', accountNumber: '2163468237', salary: '45000', createdAt: '2026-09-01T08:00:00.000Z' },
+  { id: 'staff_5', name: 'Aminu Yusuf', idNumber: 'AIA/26/P004', phone: '', section: 'Primary', role: 'Teacher', classAllocated: '', bankName: 'UBA', accountNumber: '2068642583', salary: '40000', createdAt: '2026-09-01T08:00:00.000Z' },
+  { id: 'staff_6', name: 'Amina Ismail Ibrahim', idNumber: 'AIA/26/P003', phone: '', section: 'Primary', role: 'Teacher', classAllocated: '', bankName: 'Unity Bank', accountNumber: '0004827117', salary: '50000', createdAt: '2026-09-01T08:00:00.000Z' },
+  { id: 'staff_7', name: 'Sakina Hussaini', idNumber: 'AIA/26/N010', phone: '', section: 'Nursery', role: 'Teacher', classAllocated: '', bankName: 'UBA', accountNumber: '2121712213', salary: '40000', createdAt: '2026-09-01T08:00:00.000Z' },
+  { id: 'staff_8', name: 'Victoria Dada', idNumber: 'AIA/26/N002', phone: '', section: 'Nursery', role: 'Teacher', classAllocated: '', bankName: 'UBA', accountNumber: '2130372770', salary: '60000', createdAt: '2026-09-01T08:00:00.000Z' },
+  { id: 'staff_9', name: 'Hafsat Aminu Musa', idNumber: 'AIA/26/N013', phone: '', section: 'Nursery', role: 'Teacher', classAllocated: '', bankName: 'UBA', accountNumber: '2202680754', salary: '40000', createdAt: '2026-09-01T08:00:00.000Z' },
+  { id: 'staff_10', name: 'Abdulmalik Muhammad', idNumber: 'AIA/26/N005', phone: '', section: 'Nursery', role: 'Teacher', classAllocated: '', bankName: 'UBA', accountNumber: '2048733867', salary: '50000', createdAt: '2026-09-01T08:00:00.000Z' },
+  { id: 'staff_11', name: "Muhd Rabi'u Sani", idNumber: 'AIA/26/P007', phone: '', section: 'Primary', role: 'Teacher', classAllocated: '', bankName: '', accountNumber: '', salary: '50000', createdAt: '2026-09-01T08:00:00.000Z' },
+  { id: 'staff_12', name: 'Muslim Abubakar Muhammad', idNumber: 'AIA/26/N007', phone: '', section: 'Nursery', role: 'Teacher', classAllocated: '', bankName: 'FCMB', accountNumber: '1035255516', salary: '40000', createdAt: '2026-09-01T08:00:00.000Z' },
+  { id: 'staff_13', name: 'Nafisa Abdullahi', idNumber: 'AIA/26/N008', phone: '', section: 'Nursery', role: 'Teacher', classAllocated: '', bankName: 'UBA', accountNumber: '2249713093', salary: '50000', createdAt: '2026-09-01T08:00:00.000Z' },
+  { id: 'staff_14', name: 'Isah Balarabe', idNumber: 'AIA/26/DIR001', phone: '', section: 'Administration', role: 'Director', classAllocated: '', bankName: 'UBA', accountNumber: '2056831467', salary: '60000', createdAt: '2026-09-01T08:00:00.000Z' },
+  { id: 'staff_15', name: 'Bashar Bala Musa', idNumber: 'AIA/26/P008', phone: '', section: 'Primary', role: 'Teacher', classAllocated: '', bankName: 'UBA', accountNumber: '2140813832', salary: '50000', createdAt: '2026-09-01T08:00:00.000Z' },
+  { id: 'staff_16', name: 'Abdullahi Suleiman', idNumber: 'AIA/26/P009', phone: '', section: 'Primary', role: 'Teacher', classAllocated: '', bankName: 'UBA', accountNumber: '2124151547', salary: '50000', createdAt: '2026-09-01T08:00:00.000Z' },
+  { id: 'staff_17', name: 'Wasila Ibrahim Alkali', idNumber: 'AIA/26/N009', phone: '', section: 'Nursery', role: 'Teacher', classAllocated: '', bankName: 'UBA', accountNumber: '2152648338', salary: '50000', createdAt: '2026-09-01T08:00:00.000Z' },
+  { id: 'staff_18', name: 'Muiza Aliyu', idNumber: 'AIA/26/N014', phone: '', section: 'Nursery', role: 'Teacher', classAllocated: '', bankName: 'UBA', accountNumber: '2221457784', salary: '50000', createdAt: '2026-09-01T08:00:00.000Z' },
+  { id: 'staff_19', name: 'Fauziyya Suleman Kalanda', idNumber: 'AIA/26/N015', phone: '', section: 'Nursery', role: 'Teacher', classAllocated: '', bankName: 'UBA', accountNumber: '2081005538', salary: '30000', createdAt: '2026-09-01T08:00:00.000Z' },
+  { id: 'staff_20', name: 'Hussaini Ibrahim', idNumber: 'AIA/26/P011', phone: '', section: 'Primary', role: 'Teacher', classAllocated: '', bankName: 'UBA', accountNumber: '2223472457', salary: '25000', createdAt: '2026-09-01T08:00:00.000Z' },
+  { id: 'staff_21', name: 'Mariya Ibrahim Illo', idNumber: 'AIA/26/N012', phone: '', section: 'Nursery', role: 'Teacher', classAllocated: '', bankName: 'GT Bank', accountNumber: '0262372744', salary: '50000', createdAt: '2026-09-01T08:00:00.000Z' },
+  { id: 'staff_22', name: 'Hussai Abubakar', idNumber: 'AIA/26/N016', phone: '', section: 'Nursery', role: 'Teacher', classAllocated: '', bankName: 'Eco bank', accountNumber: '5663062746', salary: '15000', createdAt: '2026-09-01T08:00:00.000Z' },
+];
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers
 // ─────────────────────────────────────────────────────────────────────────────
@@ -60,17 +85,21 @@ async function ensureSeeded() {
           db.collection(AUDIT_COL).createIndex({ timestamp: -1 }),
           db.collection(STAFF_COL).createIndex({ id: 1 }, { unique: true }),
           db.collection(STAFF_COL).createIndex({ idNumber: 1 }),
+          db.collection(STAFF_COL).createIndex({ classAllocated: 1 }),
         ]);
       } catch {
         /* ignore index conflict if already exists */
       }
 
-      // Ensure initial parents and students exist without overwriting modified data
+      // Ensure initial parents, students, and staff exist without overwriting modified data
       for (const p of INITIAL_PARENTS) {
         await db.collection<Parent>(PARENTS_COL).updateOne({ id: p.id }, { $setOnInsert: p }, { upsert: true });
       }
       for (const s of INITIAL_STUDENTS) {
         await db.collection<Student>(STUDENTS_COL).updateOne({ id: s.id }, { $setOnInsert: s }, { upsert: true });
+      }
+      for (const st of INITIAL_STAFF) {
+        await db.collection<Staff>(STAFF_COL).updateOne({ idNumber: st.idNumber }, { $setOnInsert: st }, { upsert: true });
       }
 
       // Fix migration: only run class-name migrations once (skip on subsequent cold starts)
@@ -99,6 +128,21 @@ async function ensureSeeded() {
         await db.collection(SETTINGS_COL).updateOne(
           { id: 'migration_version' },
           { $set: { id: 'migration_version', version: 2 } },
+          { upsert: true }
+        );
+      }
+
+      if (migrationVersion < 3) {
+        for (const st of INITIAL_STAFF) {
+          await db.collection<Staff>(STAFF_COL).updateOne(
+            { idNumber: st.idNumber },
+            { $setOnInsert: st },
+            { upsert: true }
+          );
+        }
+        await db.collection(SETTINGS_COL).updateOne(
+          { id: 'migration_version' },
+          { $set: { id: 'migration_version', version: 3 } },
           { upsert: true }
         );
       }
@@ -597,5 +641,78 @@ export async function deleteStaff(id: string): Promise<boolean> {
   const db = await getDB();
   const res = await db.collection(STAFF_COL).deleteOne({ id });
   return res.deletedCount > 0;
+}
+
+export async function bulkAddOrUpdateStaff(staffList: Staff[]): Promise<{ count: number }> {
+  await ensureSeeded();
+  const db = await getDB();
+  if (staffList.length === 0) return { count: 0 };
+
+  const ops = staffList.map(s => ({
+    updateOne: {
+      filter: { id: s.id },
+      update: { $set: s },
+      upsert: true,
+    }
+  }));
+
+  const res = await db.collection(STAFF_COL).bulkWrite(ops);
+  return { count: (res.upsertedCount || 0) + (res.modifiedCount || 0) };
+}
+
+export async function syncStaffFromExcelList(records: Array<{
+  name: string;
+  phone?: string;
+  idNumber?: string;
+  section?: string;
+  classAllocated?: string;
+  role?: string;
+  bankName?: string;
+  accountNumber?: string;
+  salary?: string;
+}>): Promise<{ importedCount: number; updatedStaff: Staff[] }> {
+  await ensureSeeded();
+  const db = await getDB();
+  let count = 0;
+  const updatedStaff: Staff[] = [];
+
+  for (const item of records) {
+    const name = (item.name || '').trim();
+    if (!name) continue;
+
+    const idNumber = (item.idNumber || '').trim();
+    let query: Record<string, unknown> = {};
+    if (idNumber) {
+      query = { idNumber };
+    } else {
+      query = { name: { $regex: new RegExp(`^${escapeRegex(name)}$`, 'i') } };
+    }
+
+    const existing = await db.collection<Staff>(STAFF_COL).findOne(query);
+
+    const staffData: Staff = {
+      id: existing ? existing.id : `staff_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+      name,
+      phone: item.phone !== undefined && item.phone.trim() !== '' ? item.phone.trim() : (existing?.phone || ''),
+      idNumber: idNumber || existing?.idNumber || '',
+      section: item.section && item.section.trim() !== '' ? item.section.trim() : (existing?.section || 'General'),
+      classAllocated: item.classAllocated !== undefined ? item.classAllocated.trim() : (existing?.classAllocated || ''),
+      role: item.role && item.role.trim() !== '' ? item.role.trim() : (existing?.role || 'Teacher'),
+      bankName: item.bankName !== undefined && item.bankName.trim() !== '' ? item.bankName.trim() : (existing?.bankName || ''),
+      accountNumber: item.accountNumber !== undefined && item.accountNumber.trim() !== '' ? item.accountNumber.trim() : (existing?.accountNumber || ''),
+      salary: item.salary !== undefined && item.salary.trim() !== '' ? item.salary.trim() : (existing?.salary || ''),
+      createdAt: existing?.createdAt || new Date().toISOString(),
+    };
+
+    await db.collection(STAFF_COL).updateOne(
+      { id: staffData.id },
+      { $set: staffData },
+      { upsert: true }
+    );
+    count++;
+    updatedStaff.push(staffData);
+  }
+
+  return { importedCount: count, updatedStaff };
 }
 

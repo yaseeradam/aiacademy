@@ -62,8 +62,12 @@ export interface Staff {
   id: string;
   name: string;
   phone: string;
-  idNumber: string; // Staff ID Number
+  idNumber: string; // Staff ID Number (e.g. AIA/26/P001)
   section: string;  // e.g. Nursery, Primary, Secondary, Administration, Security, etc.
-  role?: string;
+  classAllocated?: string; // e.g. 'Nursery 1 Gold', 'Basic 1 Silver', or unassigned
+  role?: string;    // e.g. Teacher, Director, Head Teacher
+  bankName?: string;
+  accountNumber?: string;
+  salary?: string;
   createdAt?: string;
 }

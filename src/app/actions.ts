@@ -31,6 +31,8 @@ import {
   deleteStaff,
   getNextStaffSequence,
   getStaffById,
+  syncStaffFromExcelList,
+  INITIAL_STAFF,
 } from '@/lib/db';
 import { Student, Parent, SchoolSettings, Staff } from '@/types';
 import { getStudentClassArm, getStudentAdmissionNumber } from '@/lib/classUtils';
@@ -1037,22 +1039,24 @@ export async function getAllStaffAction(): Promise<Staff[]> {
 
 export async function adminCreateStaffAction(data: {
   name: string;
-  phone: string;
+  phone?: string;
   idNumber?: string;
   section: string;
+  classAllocated?: string;
   role?: string;
+  bankName?: string;
+  accountNumber?: string;
+  salary?: string;
 }): Promise<{ success: boolean; staff?: Staff; error?: string }> {
   try {
     const name = (data.name || '').trim();
     const phone = (data.phone || '').trim();
     const section = (data.section || 'General').trim();
+    const classAllocated = (data.classAllocated || '').trim();
     let idNumber = (data.idNumber || '').trim();
 
     if (!name) {
       return { success: false, error: 'Staff name is required.' };
-    }
-    if (!phone) {
-      return { success: false, error: 'Staff phone number is required.' };
     }
 
     // Auto-generate staff ID number if not provided (e.g. AIA-STF-001)
@@ -1068,7 +1072,11 @@ export async function adminCreateStaffAction(data: {
       phone,
       idNumber,
       section,
-      role: data.role?.trim() || 'Staff',
+      classAllocated,
+      role: data.role?.trim() || 'Teacher',
+      bankName: data.bankName?.trim() || '',
+      accountNumber: data.accountNumber?.trim() || '',
+      salary: data.salary?.trim() || '',
       createdAt: new Date().toISOString(),
     };
 
@@ -1077,7 +1085,7 @@ export async function adminCreateStaffAction(data: {
     await addAuditLog({
       action: 'CREATE',
       actor: 'School Administrator',
-      details: `Created new staff record: ${name} (${idNumber}) in section ${section}`,
+      details: `Created new staff record: ${name} (${idNumber}) in section ${section}${classAllocated ? ` - Class: ${classAllocated}` : ''}`,
     });
 
     return { success: true, staff: newStaff };
@@ -1105,7 +1113,11 @@ export async function adminUpdateStaffAction(
       phone: data.phone !== undefined ? data.phone.trim() : existing.phone,
       idNumber: data.idNumber !== undefined ? data.idNumber.trim() : existing.idNumber,
       section: data.section !== undefined ? data.section.trim() : existing.section,
+      classAllocated: data.classAllocated !== undefined ? data.classAllocated.trim() : existing.classAllocated,
       role: data.role !== undefined ? data.role?.trim() : existing.role,
+      bankName: data.bankName !== undefined ? data.bankName?.trim() : existing.bankName,
+      accountNumber: data.accountNumber !== undefined ? data.accountNumber?.trim() : existing.accountNumber,
+      salary: data.salary !== undefined ? data.salary?.trim() : existing.salary,
     };
 
     await addOrUpdateStaff(updated);
@@ -1113,7 +1125,7 @@ export async function adminUpdateStaffAction(
     await addAuditLog({
       action: 'UPDATE',
       actor: 'School Administrator',
-      details: `Updated staff record: ${updated.name} (${updated.idNumber})`,
+      details: `Updated staff record: ${updated.name} (${updated.idNumber})${updated.classAllocated ? ` - Class: ${updated.classAllocated}` : ''}`,
     });
 
     return { success: true, staff: updated };
@@ -1145,6 +1157,64 @@ export async function adminDeleteStaffAction(
     return {
       success: false,
       error: err instanceof Error ? err.message : 'Failed to delete staff member',
+    };
+  }
+}
+
+export async function adminImportStaffCSVAction(records: Array<{
+  name: string;
+  phone?: string;
+  idNumber?: string;
+  section?: string;
+  classAllocated?: string;
+  role?: string;
+  bankName?: string;
+  accountNumber?: string;
+  salary?: string;
+}>): Promise<{ success: boolean; count: number; error?: string }> {
+  try {
+    if (!records || records.length === 0) {
+      return { success: false, count: 0, error: 'No staff records to import.' };
+    }
+
+    const res = await syncStaffFromExcelList(records);
+
+    await addAuditLog({
+      action: 'CREATE',
+      actor: 'School Administrator',
+      details: `Imported / updated ${res.importedCount} staff records via CSV/Excel upload`,
+    });
+
+    return { success: true, count: res.importedCount };
+  } catch (err: unknown) {
+    return {
+      success: false,
+      count: 0,
+      error: err instanceof Error ? err.message : 'Failed to import staff records',
+    };
+  }
+}
+
+export async function adminSeedStaffFromExcelAction(): Promise<{
+  success: boolean;
+  count: number;
+  error?: string;
+}> {
+  try {
+    const res = await syncStaffFromExcelList(INITIAL_STAFF);
+
+    await addAuditLog({
+      action: 'UPDATE',
+      actor: 'School Administrator',
+      details: `Synced ${res.importedCount} staff records from official staff schedule`,
+    });
+
+    return { success: true, count: res.importedCount };
+  } catch (err: unknown) {
+    return {
+      success: false,
+      count: 0,
+      error: err instanceof Error ? err.message : 'Failed to sync staff records',
     };
   }
 }
