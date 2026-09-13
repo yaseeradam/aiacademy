@@ -75,7 +75,7 @@ export default function PickupIDCardModal({
 
         const blob = await generateIDCardImageBlob(student, classArm, admissionNo, logoSrc);
         const sanitize = (str: string) => (str || '').replace(/[^\w.-]/g, '_');
-        const fileName = `${sanitize(student.firstName)}_${sanitize(student.lastName)}_${sanitize(student.formNumber || admissionNo)}.png`;
+        const fileName = `${sanitize(student.firstName)}_${sanitize(student.lastName)}_${sanitize(admissionNo)}.png`;
         folder?.file(fileName, blob);
       }
 
@@ -248,7 +248,6 @@ export default function PickupIDCardModal({
                     fn: student.firstName,
                     ln: student.lastName,
                     admNo: admissionNo,
-                    form: student.formNumber || '',
                     cls: classArm,
                     fa: student.fatherName || student.guardianName || 'N/A',
                     mo: student.motherName || 'N/A',
@@ -950,7 +949,6 @@ async function generateIDCardImageBlob(
     fn:   student.firstName,
     ln:   student.lastName,
     admNo: admNoStr,
-    form: safeStr(student.formNumber, ''),
     cls:  cls,
     fa:   parentName,
     ph:   phone

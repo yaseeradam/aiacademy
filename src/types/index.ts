@@ -57,3 +57,13 @@ export interface SchoolSettings {
   logo: string;
   geminiApiKey?: string;
 }
+
+export interface Staff {
+  id: string;
+  name: string;
+  phone: string;
+  idNumber: string; // Staff ID Number
+  section: string;  // e.g. Nursery, Primary, Secondary, Administration, Security, etc.
+  role?: string;
+  createdAt?: string;
+}

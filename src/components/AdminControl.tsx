@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { Student, AuditLog } from '@/types';
+import { Student, AuditLog, Staff } from '@/types';
 import { useRouter } from 'next/navigation';
 import JSZip from 'jszip';
 import { 
@@ -10,11 +10,12 @@ import {
   ShieldCheck, ChevronRight, ChevronDown, X, Menu,
   Grid, Settings, Plus, LogOut, Trash2, Save, BookOpen,
   Loader2, Scan, History, MessageSquare, Camera, FileText, CheckCircle2, CreditCard, Printer,
-  GraduationCap, Folder, FolderOpen, Edit3
+  GraduationCap, Folder, FolderOpen, Edit3, Briefcase, Phone
 } from 'lucide-react';
-import { logoutAction, adminUpdateStudentAction, adminDeleteStudentAction, adminDeleteMultipleStudentsAction, unassignStudentFromSubclassAction, unassignMultipleStudentsFromSubclassAction, assignMultipleStudentsToSubclassAction, restoreMissingSeedStudentsAction, clearAllDatabaseDataAction, adminCreateStudentAction, adminVerifyAction, adminTogglePaymentStatusAction, getAuditLogsAction, scanAdmissionFormOCRAction, getSchoolSettingsAction, updateSchoolSettingsAction, findDuplicateStudentsAction, fixDuplicateAdmissionNumbersAction, DuplicateGroup } from '@/app/actions';
+import { logoutAction, adminUpdateStudentAction, adminDeleteStudentAction, adminDeleteMultipleStudentsAction, unassignStudentFromSubclassAction, unassignMultipleStudentsFromSubclassAction, assignMultipleStudentsToSubclassAction, restoreMissingSeedStudentsAction, clearAllDatabaseDataAction, adminCreateStudentAction, adminVerifyAction, adminTogglePaymentStatusAction, getAuditLogsAction, scanAdmissionFormOCRAction, getSchoolSettingsAction, updateSchoolSettingsAction, findDuplicateStudentsAction, fixDuplicateAdmissionNumbersAction, DuplicateGroup, getAllStaffAction, adminCreateStaffAction, adminUpdateStaffAction, adminDeleteStaffAction } from '@/app/actions';
 import AdmissionLetterModal, { printBulkAdmissionLetters, printPaidStudentsPDF, getStudentClassArm, getStudentAdmissionNumber } from './AdmissionLetterModal';
 import PickupIDCardModal from './PickupIDCardModal';
+import PrintClassRosterModal from './PrintClassRosterModal';
 
 interface AdminControlProps {
   students: Student[];
@@ -71,7 +72,7 @@ export default function AdminControl({ students }: AdminControlProps) {
     );
   };
 
-  type AdminTabType = 'overview' | 'classes' | 'directory' | 'pending' | 'corrections' | 'settings' | 'new-verification' | 'audit-log' | 'admission-letters';
+  type AdminTabType = 'overview' | 'classes' | 'directory' | 'staff' | 'pending' | 'corrections' | 'settings' | 'new-verification' | 'audit-log' | 'admission-letters';
 
   // Helper functions to persist view state across router.refresh() re-renders
   const getInitialTab = (): AdminTabType => {
@@ -114,6 +115,7 @@ export default function AdminControl({ students }: AdminControlProps) {
   // Modal State for viewing Admission Letter
   const [letterModalStudent, setLetterModalStudent] = useState<Student | null>(null);
   const [isPickupModalOpen, setIsPickupModalOpen] = useState<boolean>(false);
+  const [isPrintClassModalOpen, setIsPrintClassModalOpen] = useState<boolean>(false);
   const [isTogglingFee, setIsTogglingFee] = useState<string | null>(null);
 
   // Audit Logs state
@@ -135,6 +137,28 @@ export default function AdminControl({ students }: AdminControlProps) {
   const [selectedSubgroupRoster, setSelectedSubgroupRosterState] = useState<string | null>(getInitialSubgroup);
   const [rosterSearch, setRosterSearch] = useState<string>('');
   const [subgroupSortOrder, setSubgroupSortOrder] = useState<'most_populated' | 'alphabetical' | 'capacity'>('most_populated');
+
+  // Staff Directory state
+  const [staffList, setStaffList] = useState<Staff[]>([]);
+  const [isLoadingStaff, setIsLoadingStaff] = useState<boolean>(false);
+  const [staffSearchQuery, setStaffSearchQuery] = useState<string>('');
+  const [staffSectionFilter, setStaffSectionFilter] = useState<string>('all');
+  const [isStaffModalOpen, setIsStaffModalOpen] = useState<boolean>(false);
+  const [editingStaff, setEditingStaff] = useState<Staff | null>(null);
+  const [staffFormData, setStaffFormData] = useState<{
+    name: string;
+    phone: string;
+    idNumber: string;
+    section: string;
+    role: string;
+  }>({
+    name: '',
+    phone: '',
+    idNumber: '',
+    section: 'Primary',
+    role: 'Teacher',
+  });
+  const [isStaffSubmitting, setIsStaffSubmitting] = useState<boolean>(false);
 
   const setActiveTab = (tab: AdminTabType) => {
     setActiveTabState(tab);
@@ -253,8 +277,7 @@ export default function AdminControl({ students }: AdminControlProps) {
     const headers = [
       'S/N',
       'Full Name',
-      'Admission Number',
-      'Form Number',
+      'Adm No',
       'Subclass Arm',
       'Gender',
       'Date of Birth',
@@ -272,7 +295,6 @@ export default function AdminControl({ students }: AdminControlProps) {
         idx + 1,
         `"${fullName.replace(/"/g, '""')}"`,
         `"${admNo.replace(/"/g, '""')}"`,
-        `"${(s.formNumber || '').replace(/"/g, '""')}"`,
         `"${subgroupName.replace(/"/g, '""')}"`,
         `"${(s.gender || '').replace(/"/g, '""')}"`,
         `"${(s.dateOfBirth || '').replace(/"/g, '""')}"`,
@@ -301,8 +323,7 @@ export default function AdminControl({ students }: AdminControlProps) {
       'S/N',
       'Subclass Arm',
       'Full Name',
-      'Admission Number',
-      'Form Number',
+      'Adm No',
       'Gender',
       'Parent / Guardian Name',
       'Phone Number',
@@ -324,7 +345,6 @@ export default function AdminControl({ students }: AdminControlProps) {
           `"${subgroupName.replace(/"/g, '""')}"`,
           `"${fullName.replace(/"/g, '""')}"`,
           `"${admNo.replace(/"/g, '""')}"`,
-          `"${(s.formNumber || '').replace(/"/g, '""')}"`,
           `"${(s.gender || '').replace(/"/g, '""')}"`,
           `"${parentName.replace(/"/g, '""')}"`,
           `"${(s.phone1 || '').replace(/"/g, '""')}"`,
@@ -848,6 +868,139 @@ export default function AdminControl({ students }: AdminControlProps) {
     }
   }, [activeTab]);
 
+  const loadStaff = async () => {
+    setIsLoadingStaff(true);
+    try {
+      const list = await getAllStaffAction();
+      setStaffList(list);
+    } catch (err) {
+      console.error('Failed to load staff list:', err);
+    } finally {
+      setIsLoadingStaff(false);
+    }
+  };
+
+  useEffect(() => {
+    loadStaff();
+  }, []);
+
+  useEffect(() => {
+    if (activeTab === 'staff') {
+      loadStaff();
+    }
+  }, [activeTab]);
+
+  const staffSections = useMemo(() => {
+    const defaults = ['Nursery', 'Primary', 'Administration', 'Security', 'Accounts / Bursary', 'Maintenance'];
+    const fromData = staffList.map(s => s.section).filter(Boolean);
+    return Array.from(new Set([...defaults, ...fromData]));
+  }, [staffList]);
+
+  const filteredStaff = useMemo(() => {
+    return staffList.filter(staff => {
+      const q = staffSearchQuery.toLowerCase().trim();
+      const matchesSearch = !q ||
+        (staff.name && staff.name.toLowerCase().includes(q)) ||
+        (staff.phone && staff.phone.includes(q)) ||
+        (staff.idNumber && staff.idNumber.toLowerCase().includes(q)) ||
+        (staff.section && staff.section.toLowerCase().includes(q)) ||
+        (staff.role && staff.role.toLowerCase().includes(q));
+
+      const matchesSection = staffSectionFilter === 'all' ||
+        (staff.section && staff.section.toLowerCase() === staffSectionFilter.toLowerCase());
+
+      return matchesSearch && matchesSection;
+    });
+  }, [staffList, staffSearchQuery, staffSectionFilter]);
+
+  const handleOpenAddStaff = () => {
+    setEditingStaff(null);
+    setStaffFormData({
+      name: '',
+      phone: '',
+      idNumber: '',
+      section: 'Primary',
+      role: 'Teacher',
+    });
+    setIsStaffModalOpen(true);
+  };
+
+  const handleOpenEditStaff = (staff: Staff) => {
+    setEditingStaff(staff);
+    setStaffFormData({
+      name: staff.name,
+      phone: staff.phone,
+      idNumber: staff.idNumber,
+      section: staff.section,
+      role: staff.role || 'Teacher',
+    });
+    setIsStaffModalOpen(true);
+  };
+
+  const handleSaveStaff = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!staffFormData.name.trim()) {
+      alert('Staff Name is required.');
+      return;
+    }
+    if (!staffFormData.phone.trim()) {
+      alert('Phone Number is required.');
+      return;
+    }
+
+    setIsStaffSubmitting(true);
+    try {
+      if (editingStaff) {
+        const res = await adminUpdateStaffAction(editingStaff.id, {
+          name: staffFormData.name.trim(),
+          phone: staffFormData.phone.trim(),
+          idNumber: staffFormData.idNumber.trim(),
+          section: staffFormData.section.trim() || 'General',
+          role: staffFormData.role.trim() || 'Staff',
+        });
+        if (!res.success) {
+          alert(res.error || 'Failed to update staff record.');
+          return;
+        }
+      } else {
+        const res = await adminCreateStaffAction({
+          name: staffFormData.name.trim(),
+          phone: staffFormData.phone.trim(),
+          idNumber: staffFormData.idNumber.trim() || undefined,
+          section: staffFormData.section.trim() || 'General',
+          role: staffFormData.role.trim() || 'Staff',
+        });
+        if (!res.success) {
+          alert(res.error || 'Failed to create staff record.');
+          return;
+        }
+      }
+      setIsStaffModalOpen(false);
+      setEditingStaff(null);
+      await loadStaff();
+    } catch (err: unknown) {
+      alert(err instanceof Error ? err.message : 'Error saving staff record.');
+    } finally {
+      setIsStaffSubmitting(false);
+    }
+  };
+
+  const handleDeleteStaff = async (staff: Staff) => {
+    if (!confirm(`Are you sure you want to remove staff member "${staff.name}" (${staff.idNumber})?`)) {
+      return;
+    }
+    try {
+      const res = await adminDeleteStaffAction(staff.id);
+      if (res.success) {
+        await loadStaff();
+      } else {
+        alert(res.error || 'Failed to delete staff member.');
+      }
+    } catch (err: unknown) {
+      alert(err instanceof Error ? err.message : 'Failed to delete staff member.');
+    }
+  };
+
   const handleScanOCR = async (file: File) => {
     setIsScanningOCR(true);
     setOcrProgress('Reading handwritten form with AI Vision...');
@@ -1341,8 +1494,9 @@ export default function AdminControl({ students }: AdminControlProps) {
         const rawPhoto = student.photo.trim();
         const cleanFirst = (student.firstName || 'Student').trim().replace(/[^a-zA-Z0-9]/g, '_');
         const cleanLast = (student.lastName || '').trim().replace(/[^a-zA-Z0-9]/g, '_');
-        const cleanForm = (student.formNumber || student.id).trim().replace(/[^a-zA-Z0-9]/g, '_');
-        const fileName = `${cleanFirst}_${cleanLast}_${cleanForm}`;
+        const admNo = getStudentAdmissionNumber(student);
+        const cleanAdm = admNo.replace(/[^a-zA-Z0-9]/g, '_');
+        const fileName = `${cleanFirst}_${cleanLast}_${cleanAdm}`;
 
         try {
           if (rawPhoto.includes(';base64,')) {
@@ -1531,6 +1685,21 @@ export default function AdminControl({ students }: AdminControlProps) {
                 </button>
                 <button 
                   onClick={() => {
+                    setIsPrintClassModalOpen(true);
+                    setIsMobileMenuOpen(false);
+                  }}
+                  className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl font-bold text-sm text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-all text-left cursor-pointer"
+                >
+                  <div className="flex items-center gap-3">
+                    <Printer className="w-4 h-4 text-[#0f7343]" />
+                    <span>Print Class Lists</span>
+                  </div>
+                  <span className="bg-emerald-100 text-[#0f7343] text-[10px] font-black px-2 py-0.5 rounded-full">
+                    A4 PDF
+                  </span>
+                </button>
+                <button 
+                  onClick={() => {
                     setActiveTab('directory');
                     setIsMobileMenuOpen(false);
                   }}
@@ -1542,6 +1711,25 @@ export default function AdminControl({ students }: AdminControlProps) {
                 >
                   <Users className="w-4 h-4" />
                   <span>Student Directory</span>
+                </button>
+                <button 
+                  onClick={() => {
+                    setActiveTab('staff');
+                    setIsMobileMenuOpen(false);
+                  }}
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl font-bold text-sm transition-all text-left cursor-pointer ${
+                    activeTab === 'staff' 
+                      ? 'bg-slate-900 text-white shadow-sm shadow-slate-900/10' 
+                      : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'
+                  }`}
+                >
+                  <Briefcase className="w-4 h-4 text-amber-500" />
+                  <span>Staff Directory</span>
+                  {staffList.length > 0 && (
+                    <span className="ml-auto bg-amber-500 text-white text-[10px] font-black px-1.5 py-0.5 rounded-full shrink-0">
+                      {staffList.length}
+                    </span>
+                  )}
                 </button>
                 <button 
                   onClick={() => {
@@ -1618,13 +1806,25 @@ export default function AdminControl({ students }: AdminControlProps) {
             </div>
 
             {/* Sidebar Bottom (Mobile Drawer Version) */}
-            <div className="space-y-4 pt-6 border-t border-slate-100">
+            <div className="space-y-2.5 pt-4 border-t border-slate-100">
+              <button 
+                type="button"
+                onClick={() => {
+                  setIsPrintClassModalOpen(true);
+                  setIsMobileMenuOpen(false);
+                }}
+                className="w-full flex items-center justify-center gap-2 py-2.5 px-3.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs transition-all cursor-pointer shadow-sm"
+              >
+                <Printer className="w-4 h-4 text-emerald-400" />
+                <span>Print Student Lists by Class</span>
+              </button>
+
               <button 
                 onClick={() => {
                   setActiveTab('new-verification');
                   setIsMobileMenuOpen(false);
                 }}
-                className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-[#0f7343] hover:bg-[#0b5c34] text-white font-bold text-sm transition-all cursor-pointer shadow-sm shadow-[#0f7343]/10"
+                className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-[#0f7343] hover:bg-[#0b5c34] text-white font-bold text-sm transition-all cursor-pointer shadow-sm shadow-[#0f7343]/10"
               >
                 <Plus className="w-4 h-4" />
                 <span>New Student</span>
@@ -1648,7 +1848,7 @@ export default function AdminControl({ students }: AdminControlProps) {
       )}
 
       {/* ================= LEFT SIDEBAR (Matches adm dashboard.png) ================= */}
-      <aside className="w-64 bg-white border-r border-slate-200/80 p-6 flex flex-col justify-between shrink-0 hidden md:flex">
+      <aside className="w-64 bg-white border-r border-slate-200/80 p-6 flex flex-col justify-between shrink-0 hidden md:flex h-screen sticky top-0 overflow-y-auto">
         <div className="space-y-8">
           {/* Brand Logo and Name */}
           <div className="flex items-center gap-3">
@@ -1700,6 +1900,24 @@ export default function AdminControl({ students }: AdminControlProps) {
               </span>
             </button>
 
+            {/* Prominent Print Class Lists Button in Sidebar */}
+            <div className="py-1">
+              <button 
+                type="button"
+                onClick={() => setIsPrintClassModalOpen(true)}
+                className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl bg-gradient-to-r from-[#0f7343] to-emerald-600 hover:from-[#0b5c34] hover:to-emerald-500 text-white font-black text-xs transition-all cursor-pointer shadow-md shadow-[#0f7343]/20 border border-emerald-400/40 group"
+                title="Print student names based on their classes (Official A4 Roster)"
+              >
+                <div className="flex items-center gap-2.5">
+                  <Printer className="w-4 h-4 text-amber-300 group-hover:scale-110 transition-transform shrink-0" />
+                  <span className="tracking-wide">Print Class Lists</span>
+                </div>
+                <span className="bg-amber-400 text-slate-950 text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider shadow-xs shrink-0">
+                  A4 Print
+                </span>
+              </button>
+            </div>
+
             {/* If a subclass page is active, show its active badge link */}
             {selectedSubgroupRoster && (
               <div className="pl-4 py-1">
@@ -1727,6 +1945,22 @@ export default function AdminControl({ students }: AdminControlProps) {
             >
               <Users className="w-4 h-4" />
               <span>Student Directory</span>
+            </button>
+            <button 
+              onClick={() => { setSelectedSubgroupRoster(null); setActiveTab('staff'); }}
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl font-bold text-sm transition-all text-left cursor-pointer ${
+                activeTab === 'staff' && !selectedSubgroupRoster
+                  ? 'bg-slate-900 text-white shadow-sm shadow-slate-900/10' 
+                  : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'
+              }`}
+            >
+              <Briefcase className="w-4 h-4 text-amber-500" />
+              <span>Staff Directory</span>
+              {staffList.length > 0 && (
+                <span className="ml-auto bg-amber-500 text-white text-[10px] font-black px-1.5 py-0.5 rounded-full shrink-0">
+                  {staffList.length}
+                </span>
+              )}
             </button>
             <button 
               onClick={() => { setSelectedSubgroupRoster(null); setActiveTab('admission-letters'); }}
@@ -1802,10 +2036,20 @@ export default function AdminControl({ students }: AdminControlProps) {
         </div>
 
         {/* Sidebar Bottom */}
-        <div className="space-y-4 pt-6 border-t border-slate-100">
+        <div className="space-y-2.5 pt-5 border-t border-slate-100">
+          <button 
+            type="button"
+            onClick={() => setIsPrintClassModalOpen(true)}
+            className="w-full flex items-center justify-center gap-2 py-2.5 px-3.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs transition-all cursor-pointer shadow-sm hover:shadow group"
+            title="Print student names based on their classes"
+          >
+            <Printer className="w-4 h-4 text-emerald-400 group-hover:scale-110 transition-transform" />
+            <span>Print Student Lists by Class</span>
+          </button>
+
           <button 
             onClick={() => setActiveTab('new-verification')}
-            className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-[#0f7343] hover:bg-[#0b5c34] text-white font-bold text-sm transition-all cursor-pointer shadow-sm shadow-[#0f7343]/10"
+            className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-[#0f7343] hover:bg-[#0b5c34] text-white font-bold text-sm transition-all cursor-pointer shadow-sm shadow-[#0f7343]/10"
           >
             <Plus className="w-4 h-4" />
             <span>New Student</span>
@@ -2003,6 +2247,36 @@ export default function AdminControl({ students }: AdminControlProps) {
                   </div>
                   <ChevronRight className="w-4 h-4 text-slate-400" />
                 </button>
+                <button 
+                  onClick={() => setIsPrintClassModalOpen(true)} 
+                  className="w-full flex items-center justify-between p-4 rounded-xl bg-emerald-50/60 border border-emerald-200/70 hover:bg-emerald-100/60 transition-all text-left cursor-pointer group"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-[#0f7343] text-white flex items-center justify-center font-bold shrink-0 shadow-xs">
+                      <Printer className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <span className="block text-xs font-black text-slate-800 group-hover:text-[#0f7343]">Print Students by Class</span>
+                      <span className="block text-[10px] text-emerald-700 font-bold">Official A4 class name rosters</span>
+                    </div>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-[#0f7343]" />
+                </button>
+                <button 
+                  onClick={() => setActiveTab('staff')} 
+                  className="w-full flex items-center justify-between p-4 rounded-xl bg-amber-50/60 border border-amber-200/70 hover:bg-amber-100/60 transition-all text-left cursor-pointer group"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-amber-500 text-white flex items-center justify-center font-bold shrink-0 shadow-xs">
+                      <Briefcase className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <span className="block text-xs font-black text-slate-800 group-hover:text-amber-700">Staff Directory</span>
+                      <span className="block text-[10px] text-amber-700 font-bold">Faculty, IDs & sections ({staffList.length})</span>
+                    </div>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-amber-500" />
+                </button>
                 <a href="/api/export-csv" className="w-full flex items-center justify-between p-4 rounded-xl bg-[#f8fafc] border border-slate-100 hover:bg-slate-100 transition-all text-left">
                   <div>
                     <span className="block text-xs font-bold text-slate-800">Export Report</span>
@@ -2032,6 +2306,16 @@ export default function AdminControl({ students }: AdminControlProps) {
                   </div>
 
                   <div className="flex flex-wrap items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setIsPrintClassModalOpen(true)}
+                      className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-emerald-600 to-[#0f7343] hover:from-emerald-500 hover:to-[#0b5c34] text-white font-black text-xs rounded-xl shadow-sm transition-all cursor-pointer border border-emerald-400/30"
+                      title="Print student names grouped by classes"
+                    >
+                      <Printer className="w-4 h-4 text-amber-300" />
+                      <span>Print Class Lists</span>
+                    </button>
+
                     <button
                       type="button"
                       onClick={() => printPaidStudentsPDF(students, schoolSettings.logo || '/logo.jpg')}
@@ -3932,6 +4216,222 @@ export default function AdminControl({ students }: AdminControlProps) {
             )}
           </div>
         )}
+
+        {/* TAB: STAFF DIRECTORY */}
+        {activeTab === 'staff' && (
+          <div className="space-y-6 animate-slide-down">
+            {/* Header */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <h1 className="text-3xl font-black text-slate-800 tracking-tight leading-none">Staff Directory</h1>
+                <p className="text-slate-500 text-sm font-semibold mt-2.5">
+                  Manage school staff records with full Name, Phone, ID Number, and Section details.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={loadStaff}
+                  disabled={isLoadingStaff}
+                  className="py-2.5 px-3.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-black transition-all flex items-center gap-2 cursor-pointer shadow-xs disabled:opacity-50"
+                  title="Refresh staff records"
+                >
+                  <RefreshCw className={`w-4 h-4 ${isLoadingStaff ? 'animate-spin' : ''}`} />
+                  <span className="hidden sm:inline">Refresh</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleOpenAddStaff}
+                  className="py-2.5 px-5 bg-gradient-to-r from-[#0f7343] to-emerald-600 hover:from-emerald-700 hover:to-[#0b5c34] text-white rounded-xl text-xs font-black transition-all flex items-center gap-2 cursor-pointer shadow-md active:scale-98 border border-emerald-400/40"
+                >
+                  <Plus className="w-4 h-4 text-amber-300 stroke-[3]" />
+                  <span>Add New Staff</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Quick Metrics Cards */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              <div className="p-4 bg-white rounded-2xl border border-slate-200 shadow-xs">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Total Staff</span>
+                <p className="text-2xl font-black text-slate-800 mt-1">{staffList.length}</p>
+              </div>
+              <div className="p-4 bg-white rounded-2xl border border-slate-200 shadow-xs">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Nursery Section</span>
+                <p className="text-2xl font-black text-purple-700 mt-1">
+                  {staffList.filter(s => s.section && s.section.toLowerCase().includes('nursery')).length}
+                </p>
+              </div>
+              <div className="p-4 bg-white rounded-2xl border border-slate-200 shadow-xs">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Primary Section</span>
+                <p className="text-2xl font-black text-blue-700 mt-1">
+                  {staffList.filter(s => s.section && s.section.toLowerCase().includes('primary')).length}
+                </p>
+              </div>
+              <div className="p-4 bg-white rounded-2xl border border-slate-200 shadow-xs">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Other Sections</span>
+                <p className="text-2xl font-black text-emerald-700 mt-1">
+                  {staffList.filter(s => !s.section || (!s.section.toLowerCase().includes('nursery') && !s.section.toLowerCase().includes('primary'))).length}
+                </p>
+              </div>
+            </div>
+
+            {/* Staff Search & Filter Box */}
+            <div className="soft-card bg-white rounded-[2rem] border border-slate-200 overflow-hidden shadow-sm">
+              <div className="p-6 border-b border-slate-100 flex flex-col md:flex-row gap-4 items-stretch md:items-center justify-between">
+                <div className="relative flex-1 max-w-md">
+                  <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                    <Search className="w-4 h-4" />
+                  </span>
+                  <input
+                    type="text"
+                    value={staffSearchQuery}
+                    onChange={(e) => setStaffSearchQuery(e.target.value)}
+                    placeholder="Search by Name, Phone, ID Number, or Section..."
+                    className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-green-600 focus:bg-white transition-all font-semibold"
+                  />
+                </div>
+
+                <div className="flex gap-3 items-center flex-wrap sm:flex-nowrap">
+                  <select
+                    value={staffSectionFilter}
+                    onChange={(e) => setStaffSectionFilter(e.target.value)}
+                    className="py-3 px-4 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-600 focus:outline-none"
+                  >
+                    <option value="all">All Sections</option>
+                    {staffSections.map(sec => (
+                      <option key={sec} value={sec}>{sec}</option>
+                    ))}
+                  </select>
+
+                  <span className="text-xs font-bold text-slate-400 bg-slate-100 py-2.5 px-3 rounded-xl shrink-0">
+                    Showing {filteredStaff.length} of {staffList.length}
+                  </span>
+                </div>
+              </div>
+
+              {/* Table / Cards View */}
+              {isLoadingStaff ? (
+                <div className="p-12 text-center text-slate-400 flex flex-col items-center justify-center gap-3">
+                  <Loader2 className="w-8 h-8 animate-spin text-emerald-600" />
+                  <span className="text-xs font-bold">Loading staff directory...</span>
+                </div>
+              ) : filteredStaff.length === 0 ? (
+                <div className="p-16 text-center text-slate-400 flex flex-col items-center justify-center">
+                  <div className="w-16 h-16 rounded-3xl bg-slate-100 flex items-center justify-center mb-4 text-slate-400">
+                    <Briefcase className="w-8 h-8" />
+                  </div>
+                  <h4 className="text-base font-bold text-slate-700">No Staff Records Found</h4>
+                  <p className="text-xs text-slate-400 max-w-sm mt-1">
+                    {staffSearchQuery || staffSectionFilter !== 'all'
+                      ? 'No staff members match your search criteria. Try clearing the filter.'
+                      : 'You have not added any staff members yet. Click the button below to register your first staff record.'}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={handleOpenAddStaff}
+                    className="mt-5 py-2.5 px-5 bg-[#0f7343] hover:bg-emerald-700 text-white rounded-xl text-xs font-black transition-all flex items-center gap-2 cursor-pointer shadow-md"
+                  >
+                    <Plus className="w-4 h-4 text-amber-300" />
+                    <span>Add First Staff Member</span>
+                  </button>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="bg-slate-50/80 border-b border-slate-100 text-[11px] font-black uppercase tracking-wider text-slate-500">
+                        <th className="py-4 px-6">Name</th>
+                        <th className="py-4 px-6">Phone</th>
+                        <th className="py-4 px-6">ID Number</th>
+                        <th className="py-4 px-6">Section</th>
+                        <th className="py-4 px-6 text-right">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 text-sm">
+                      {filteredStaff.map((staff) => (
+                        <tr key={staff.id} className="hover:bg-slate-50/60 transition-all group">
+                          {/* Name + Avatar */}
+                          <td className="py-4 px-6">
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-emerald-700 to-emerald-500 text-white flex items-center justify-center font-bold text-sm shrink-0 shadow-xs uppercase">
+                                {staff.name.slice(0, 2)}
+                              </div>
+                              <div>
+                                <span className="font-bold text-slate-800 block">{staff.name}</span>
+                                {staff.role && (
+                                  <span className="text-[11px] font-semibold text-slate-400 block">{staff.role}</span>
+                                )}
+                              </div>
+                            </div>
+                          </td>
+
+                          {/* Phone */}
+                          <td className="py-4 px-6">
+                            <a
+                              href={`tel:${staff.phone}`}
+                              className="inline-flex items-center gap-2 font-mono font-bold text-slate-700 hover:text-emerald-700 transition-colors"
+                              title="Call staff"
+                            >
+                              <Phone className="w-3.5 h-3.5 text-emerald-600" />
+                              <span>{staff.phone}</span>
+                            </a>
+                          </td>
+
+                          {/* ID Number */}
+                          <td className="py-4 px-6">
+                            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-slate-100 font-mono text-xs font-black text-slate-700 border border-slate-200/80">
+                              {staff.idNumber}
+                            </span>
+                          </td>
+
+                          {/* Section */}
+                          <td className="py-4 px-6">
+                            <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-black ${
+                              staff.section.toLowerCase().includes('nursery')
+                                ? 'bg-purple-50 text-purple-700 border border-purple-200'
+                                : staff.section.toLowerCase().includes('primary')
+                                ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                                : staff.section.toLowerCase().includes('security')
+                                ? 'bg-amber-50 text-amber-800 border border-amber-200'
+                                : 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+                            }`}>
+                              {staff.section}
+                            </span>
+                          </td>
+
+                          {/* Actions */}
+                          <td className="py-4 px-6 text-right">
+                            <div className="flex items-center justify-end gap-2">
+                              <button
+                                type="button"
+                                onClick={() => handleOpenEditStaff(staff)}
+                                className="p-2 rounded-xl text-slate-500 hover:text-blue-600 hover:bg-blue-50 transition-all cursor-pointer"
+                                title="Edit staff details"
+                              >
+                                <Edit3 className="w-4 h-4" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteStaff(staff)}
+                                className="p-2 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-all cursor-pointer"
+                                title="Remove staff record"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </main>
 
       {/* Official A4 Admission Letter Modal */}
@@ -3951,6 +4451,182 @@ export default function AdminControl({ students }: AdminControlProps) {
         students={students}
         logoSrc={schoolSettings.logo || '/logo.jpg'}
       />
+
+      {/* Official Class-by-Class Student Roster Print Modal */}
+      <PrintClassRosterModal
+        isOpen={isPrintClassModalOpen}
+        onClose={() => setIsPrintClassModalOpen(false)}
+        students={students}
+        classList={classList}
+        classStudentMap={classStudentMap}
+        schoolSettings={schoolSettings}
+      />
+
+      {/* ================= ADD / EDIT STAFF MODAL OVERLAY ================= */}
+      {isStaffModalOpen && (
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-[2.5rem] p-6 md:p-8 w-full max-w-lg shadow-2xl border border-slate-100 animate-slide-up max-h-[90vh] overflow-y-auto no-scrollbar">
+            {/* Modal Header */}
+            <div className="flex items-start justify-between mb-6 pb-4 border-b border-slate-100">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-[#0f7343] flex items-center justify-center font-bold">
+                  <Briefcase className="w-6 h-6" />
+                </div>
+                <div>
+                  <h3 className="text-2xl font-black text-slate-800 tracking-tight leading-none">
+                    {editingStaff ? 'Edit Staff Member' : 'Add New Staff'}
+                  </h3>
+                  <p className="text-xs font-semibold text-slate-400 mt-1.5">
+                    {editingStaff ? 'Update profile information for this staff member.' : 'Register a new staff member to the institution.'}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsStaffModalOpen(false)}
+                className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 hover:bg-slate-200 transition-all cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Modal Form */}
+            <form onSubmit={handleSaveStaff} className="space-y-4">
+              {/* Field 1: Name */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                  Name <span className="text-rose-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={staffFormData.name}
+                  onChange={(e) => setStaffFormData(prev => ({ ...prev, name: e.target.value }))}
+                  placeholder="e.g. Fatima Abubakar"
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold text-slate-800 focus:outline-none focus:border-green-600 focus:bg-white transition-all"
+                />
+              </div>
+
+              {/* Field 2: Phone */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                  Phone <span className="text-rose-500">*</span>
+                </label>
+                <input
+                  type="tel"
+                  required
+                  value={staffFormData.phone}
+                  onChange={(e) => setStaffFormData(prev => ({ ...prev, phone: e.target.value }))}
+                  placeholder="e.g. 08031234567"
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold text-slate-800 focus:outline-none focus:border-green-600 focus:bg-white transition-all font-mono"
+                />
+              </div>
+
+              {/* Field 3: ID Number */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                  ID Number
+                </label>
+                <input
+                  type="text"
+                  value={staffFormData.idNumber}
+                  onChange={(e) => setStaffFormData(prev => ({ ...prev, idNumber: e.target.value }))}
+                  placeholder="e.g. AIA-STF26-001 (Optional)"
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold text-slate-800 focus:outline-none focus:border-green-600 focus:bg-white transition-all font-mono"
+                />
+                <p className="text-[11px] text-slate-400 mt-1 font-medium">
+                  Leave blank to auto-generate sequentially (e.g. AIA-STF26-001).
+                </p>
+              </div>
+
+              {/* Field 4: Section */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                  Section <span className="text-rose-500">*</span>
+                </label>
+                <div className="space-y-2">
+                  <select
+                    value={
+                      ['Nursery', 'Primary', 'Administration', 'Security', 'Accounts / Bursary', 'Maintenance'].includes(staffFormData.section)
+                        ? staffFormData.section
+                        : 'custom'
+                    }
+                    onChange={(e) => {
+                      if (e.target.value !== 'custom') {
+                        setStaffFormData(prev => ({ ...prev, section: e.target.value }));
+                      } else {
+                        setStaffFormData(prev => ({ ...prev, section: '' }));
+                      }
+                    }}
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-700 focus:outline-none focus:border-green-600 focus:bg-white transition-all"
+                  >
+                    <option value="Nursery">Nursery Section</option>
+                    <option value="Primary">Primary Section</option>
+                    <option value="Administration">Administration</option>
+                    <option value="Security">Security</option>
+                    <option value="Accounts / Bursary">Accounts / Bursary</option>
+                    <option value="Maintenance">Maintenance</option>
+                    <option value="custom">Other / Custom Section...</option>
+                  </select>
+
+                  {(!['Nursery', 'Primary', 'Administration', 'Security', 'Accounts / Bursary', 'Maintenance'].includes(staffFormData.section) || staffFormData.section === '') && (
+                    <input
+                      type="text"
+                      required
+                      value={staffFormData.section}
+                      onChange={(e) => setStaffFormData(prev => ({ ...prev, section: e.target.value }))}
+                      placeholder="Type custom section name (e.g. Science Lab, Transport)"
+                      className="w-full px-4 py-3 bg-slate-50 border border-emerald-300 rounded-xl text-sm font-semibold text-slate-800 focus:outline-none focus:border-green-600 focus:bg-white transition-all"
+                    />
+                  )}
+                </div>
+              </div>
+
+              {/* Field 5 (Bonus): Role / Designation */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                  Role / Designation
+                </label>
+                <input
+                  type="text"
+                  value={staffFormData.role}
+                  onChange={(e) => setStaffFormData(prev => ({ ...prev, role: e.target.value }))}
+                  placeholder="e.g. Class Teacher, Head of Nursery, Registrar"
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold text-slate-800 focus:outline-none focus:border-green-600 focus:bg-white transition-all"
+                />
+              </div>
+
+              {/* Modal Actions */}
+              <div className="pt-4 flex items-center justify-end gap-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setIsStaffModalOpen(false)}
+                  className="px-5 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-50 transition-all cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isStaffSubmitting}
+                  className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-[#0f7343] to-emerald-600 hover:from-emerald-700 hover:to-[#0b5c34] text-white text-xs font-black transition-all flex items-center gap-2 cursor-pointer shadow-md active:scale-98 disabled:opacity-50"
+                >
+                  {isStaffSubmitting ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Saving...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Save className="w-4 h-4" />
+                      <span>{editingStaff ? 'Update Staff' : 'Save Staff'}</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* ================= EDIT STUDENT DETAILS MODAL OVERLAY (Matches students edit page.png) ================= */}
       {editingStudent && (

@@ -1,5 +1,5 @@
 import clientPromise from './mongodb';
-import { Parent, Student, VerificationStatus, AuditLog, SchoolSettings } from '../types';
+import { Parent, Student, VerificationStatus, AuditLog, SchoolSettings, Staff } from '../types';
 
 const DB_NAME = 'ai_academy';
 const PARENTS_COL = 'parents';
@@ -7,6 +7,7 @@ const STUDENTS_COL = 'students';
 const AUDIT_COL = 'audit_logs';
 const SETTINGS_COL = 'settings';
 const COUNTERS_COL = 'counters';
+const STAFF_COL = 'staff';
 
 // Escape a string so it is safe to embed inside a MongoDB $regex
 function escapeRegex(str: string): string {
@@ -57,6 +58,8 @@ async function ensureSeeded() {
           db.collection(SETTINGS_COL).createIndex({ id: 1 }, { unique: true }),
           db.collection(COUNTERS_COL).createIndex({ _id: 1 }),
           db.collection(AUDIT_COL).createIndex({ timestamp: -1 }),
+          db.collection(STAFF_COL).createIndex({ id: 1 }, { unique: true }),
+          db.collection(STAFF_COL).createIndex({ idNumber: 1 }),
         ]);
       } catch {
         /* ignore index conflict if already exists */
@@ -541,5 +544,58 @@ export async function fixDuplicateAndMissingAdmissionNumbers(): Promise<{
     fixedCount: updatedStudents.length,
     updatedStudents
   };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Staff Operations
+// ─────────────────────────────────────────────────────────────────────────────
+
+export async function getNextStaffSequence(): Promise<number> {
+  const db = await getDB();
+  const counter = await db.collection(COUNTERS_COL).findOneAndUpdate(
+    { _id: 'staff_sequence' as unknown as import('mongodb').ObjectId },
+    { $inc: { seq: 1 } },
+    { upsert: true, returnDocument: 'after' }
+  );
+  return counter?.seq || 1;
+}
+
+export async function getAllStaff(): Promise<Staff[]> {
+  await ensureSeeded();
+  const db = await getDB();
+  const rawList = await db.collection(STAFF_COL).find({}).toArray();
+  return rawList.map(doc => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { _id, ...staff } = doc as unknown as Staff & { _id?: unknown };
+    return staff;
+  });
+}
+
+export async function getStaffById(id: string): Promise<Staff | null> {
+  await ensureSeeded();
+  const db = await getDB();
+  const doc = await db.collection(STAFF_COL).findOne({ id });
+  if (!doc) return null;
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { _id, ...staff } = doc as unknown as Staff & { _id?: unknown };
+  return staff;
+}
+
+export async function addOrUpdateStaff(staff: Staff): Promise<Staff> {
+  await ensureSeeded();
+  const db = await getDB();
+  await db.collection(STAFF_COL).updateOne(
+    { id: staff.id },
+    { $set: staff },
+    { upsert: true }
+  );
+  return staff;
+}
+
+export async function deleteStaff(id: string): Promise<boolean> {
+  await ensureSeeded();
+  const db = await getDB();
+  const res = await db.collection(STAFF_COL).deleteOne({ id });
+  return res.deletedCount > 0;
 }
 

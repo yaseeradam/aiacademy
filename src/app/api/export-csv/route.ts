@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getAllStudents, getAllParents } from '@/lib/db';
+import { getStudentAdmissionNumber, getStudentClassArm } from '@/lib/classUtils';
 
 export async function GET() {
   try {
@@ -16,9 +17,9 @@ export async function GET() {
       return stringVal;
     };
 
-    // Columns/Headers
+    // Columns/Headers — Form Number removed, Adm No as primary identifier
     const headers = [
-      'Form Number',
+      'Adm No',
       'First Name',
       'Last Name',
       'Class',
@@ -36,7 +37,6 @@ export async function GET() {
       'Verification Status',
       'Correction Notes',
       'Payment Status',
-      'Admission Number',
       'Academic Session',
       'Resumption Date',
       'Admission Date',
@@ -47,12 +47,14 @@ export async function GET() {
     for (const student of students) {
       // Find parent just in case
       const parent = parents.find(p => p.id === student.parentId);
+      const admNo = getStudentAdmissionNumber(student);
+      const classArm = getStudentClassArm(student.intendedClass, student.id, students);
       
       const row = [
-        escapeCSV(student.formNumber),
+        escapeCSV(admNo),
         escapeCSV(student.firstName),
         escapeCSV(student.lastName),
-        escapeCSV(student.intendedClass),
+        escapeCSV(classArm || student.intendedClass),
         escapeCSV(student.gender),
         escapeCSV(student.dateOfBirth),
         escapeCSV(student.fatherName || parent?.parentName),
@@ -67,7 +69,6 @@ export async function GET() {
         escapeCSV(student.verificationStatus),
         escapeCSV(student.correctionNotes),
         escapeCSV(student.paymentStatus),
-        escapeCSV(student.admissionNumber),
         escapeCSV(student.academicSession),
         escapeCSV(student.resumptionDate),
         escapeCSV(student.admissionDate),

@@ -26,8 +26,13 @@ import {
   getStudentsByIds,
   bulkUpdateStudentClasses,
   fixDuplicateAndMissingAdmissionNumbers,
+  getAllStaff,
+  addOrUpdateStaff,
+  deleteStaff,
+  getNextStaffSequence,
+  getStaffById,
 } from '@/lib/db';
-import { Student, Parent, SchoolSettings } from '@/types';
+import { Student, Parent, SchoolSettings, Staff } from '@/types';
 import { getStudentClassArm, getStudentAdmissionNumber } from '@/lib/classUtils';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1013,6 +1018,133 @@ export async function fixDuplicateAdmissionNumbersAction(): Promise<{
       fixedCount: 0,
       details: '',
       error: err instanceof Error ? err.message : 'Failed to fix admission numbers'
+    };
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Staff Management Actions
+// ─────────────────────────────────────────────────────────────────────────────
+
+export async function getAllStaffAction(): Promise<Staff[]> {
+  try {
+    return await getAllStaff();
+  } catch (err) {
+    console.error('Failed to get staff list:', err);
+    return [];
+  }
+}
+
+export async function adminCreateStaffAction(data: {
+  name: string;
+  phone: string;
+  idNumber?: string;
+  section: string;
+  role?: string;
+}): Promise<{ success: boolean; staff?: Staff; error?: string }> {
+  try {
+    const name = (data.name || '').trim();
+    const phone = (data.phone || '').trim();
+    const section = (data.section || 'General').trim();
+    let idNumber = (data.idNumber || '').trim();
+
+    if (!name) {
+      return { success: false, error: 'Staff name is required.' };
+    }
+    if (!phone) {
+      return { success: false, error: 'Staff phone number is required.' };
+    }
+
+    // Auto-generate staff ID number if not provided (e.g. AIA-STF-001)
+    if (!idNumber) {
+      const seq = await getNextStaffSequence();
+      const currentYearShort = new Date().getFullYear().toString().slice(-2);
+      idNumber = `AIA-STF${currentYearShort}-${String(seq).padStart(3, '0')}`;
+    }
+
+    const newStaff: Staff = {
+      id: `staff_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+      name,
+      phone,
+      idNumber,
+      section,
+      role: data.role?.trim() || 'Staff',
+      createdAt: new Date().toISOString(),
+    };
+
+    await addOrUpdateStaff(newStaff);
+
+    await addAuditLog({
+      action: 'CREATE',
+      actor: 'School Administrator',
+      details: `Created new staff record: ${name} (${idNumber}) in section ${section}`,
+    });
+
+    return { success: true, staff: newStaff };
+  } catch (err: unknown) {
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : 'Failed to create staff member',
+    };
+  }
+}
+
+export async function adminUpdateStaffAction(
+  id: string,
+  data: Partial<Staff>
+): Promise<{ success: boolean; staff?: Staff; error?: string }> {
+  try {
+    const existing = await getStaffById(id);
+    if (!existing) {
+      return { success: false, error: 'Staff record not found.' };
+    }
+
+    const updated: Staff = {
+      ...existing,
+      name: data.name !== undefined ? data.name.trim() : existing.name,
+      phone: data.phone !== undefined ? data.phone.trim() : existing.phone,
+      idNumber: data.idNumber !== undefined ? data.idNumber.trim() : existing.idNumber,
+      section: data.section !== undefined ? data.section.trim() : existing.section,
+      role: data.role !== undefined ? data.role?.trim() : existing.role,
+    };
+
+    await addOrUpdateStaff(updated);
+
+    await addAuditLog({
+      action: 'UPDATE',
+      actor: 'School Administrator',
+      details: `Updated staff record: ${updated.name} (${updated.idNumber})`,
+    });
+
+    return { success: true, staff: updated };
+  } catch (err: unknown) {
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : 'Failed to update staff record',
+    };
+  }
+}
+
+export async function adminDeleteStaffAction(
+  id: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const existing = await getStaffById(id);
+    const success = await deleteStaff(id);
+
+    if (success && existing) {
+      await addAuditLog({
+        action: 'DELETE',
+        actor: 'School Administrator',
+        details: `Deleted staff record: ${existing.name} (${existing.idNumber})`,
+      });
+    }
+
+    return { success };
+  } catch (err: unknown) {
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : 'Failed to delete staff member',
     };
   }
 }
