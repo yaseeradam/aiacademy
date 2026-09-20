@@ -16,6 +16,7 @@ import { logoutAction, adminUpdateStudentAction, adminDeleteStudentAction, admin
 import AdmissionLetterModal, { printBulkAdmissionLetters, printPaidStudentsPDF, getStudentClassArm, getStudentAdmissionNumber } from './AdmissionLetterModal';
 import PickupIDCardModal from './PickupIDCardModal';
 import PrintClassRosterModal from './PrintClassRosterModal';
+import { printOfficialClassEnrolmentRoster } from '@/lib/printUtils';
 
 interface AdminControlProps {
   students: Student[];
@@ -138,6 +139,8 @@ export default function AdminControl({ students, initialStaff = [] }: AdminContr
   const [selectedSubgroupRoster, setSelectedSubgroupRosterState] = useState<string | null>(getInitialSubgroup);
   const [rosterSearch, setRosterSearch] = useState<string>('');
   const [subgroupSortOrder, setSubgroupSortOrder] = useState<'most_populated' | 'alphabetical' | 'capacity'>('most_populated');
+  const [exportDropdownArm, setExportDropdownArm] = useState<string | null>(null);
+  const [isHeroExportOpen, setIsHeroExportOpen] = useState<boolean>(false);
 
   // Staff Directory state
   const [staffList, setStaffList] = useState<Staff[]>(initialStaff);
@@ -340,6 +343,18 @@ export default function AdminControl({ students, initialStaff = [] }: AdminContr
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+  };
+
+  const handlePrintOfficialRosterPDF = (subgroupName: string, subgroupStudents: Student[]) => {
+    printOfficialClassEnrolmentRoster({
+      subgroupName,
+      students: subgroupStudents,
+      schoolName: schoolSettings.name || 'AI ACADEMY ARGUNGU',
+      logoSrc: schoolSettings.logo || '/logo.jpg',
+      academicSession: '2025/2026',
+      term: '1st Term Regular Roster',
+      directorate: 'Primary & Early Years Directorate',
+    });
   };
 
   const handleDownloadAllSubclassesFullNames = () => {
@@ -924,6 +939,18 @@ export default function AdminControl({ students, initialStaff = [] }: AdminContr
       loadStaff();
     }
   }, [activeTab, staffList.length]);
+
+  useEffect(() => {
+    const handleOutsideClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest('.export-dropdown-container')) {
+        setExportDropdownArm(null);
+        setIsHeroExportOpen(false);
+      }
+    };
+    document.addEventListener('click', handleOutsideClick);
+    return () => document.removeEventListener('click', handleOutsideClick);
+  }, []);
 
   const staffSections = useMemo(() => {
     const defaults = ['Nursery', 'Primary', 'Administration', 'Security', 'Accounts / Bursary', 'Maintenance'];
@@ -3000,15 +3027,62 @@ export default function AdminControl({ students, initialStaff = [] }: AdminContr
                               <span>View Roster ({count})</span>
                             </button>
                             
-                            <button
-                              onClick={() => handleDownloadSubclassFullNames(subgroupName, classStudents)}
-                              disabled={count === 0}
-                              className="py-2.5 px-3 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-800 border border-blue-200 font-extrabold text-xs transition-all flex items-center justify-center gap-1 cursor-pointer disabled:opacity-40"
-                              title="Download student full names CSV for this arm"
-                            >
-                              <Download className="w-4 h-4 text-blue-600" />
-                              <span className="hidden sm:inline">Download</span>
-                            </button>
+                            {/* Export Dropdown (PDF / Excel) */}
+                            <div className="relative export-dropdown-container" onClick={(e) => e.stopPropagation()}>
+                              <button
+                                type="button"
+                                onClick={() => setExportDropdownArm(exportDropdownArm === subgroupName ? null : subgroupName)}
+                                disabled={count === 0}
+                                className="py-2.5 px-3 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-800 border border-blue-200 font-extrabold text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-40 shadow-2xs"
+                                title="Export student roster as PDF or Excel / CSV"
+                              >
+                                <Download className="w-3.5 h-3.5 text-blue-600" />
+                                <span className="hidden sm:inline">Export</span>
+                                <ChevronDown className="w-3 h-3 text-blue-500" />
+                              </button>
+
+                              {exportDropdownArm === subgroupName && (
+                                <div className="absolute right-0 bottom-full mb-2 w-56 bg-white rounded-2xl shadow-xl border border-slate-200 p-1.5 z-50 animate-scale-in text-slate-800">
+                                  <div className="px-2.5 py-1.5 text-[10px] font-black text-slate-400 uppercase tracking-wider border-b border-slate-100">
+                                    Export {subgroupName}
+                                  </div>
+
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setExportDropdownArm(null);
+                                      handlePrintOfficialRosterPDF(subgroupName, classStudents);
+                                    }}
+                                    className="w-full text-left px-3 py-2 rounded-xl hover:bg-emerald-50 text-xs font-bold text-slate-800 flex items-center gap-2.5 transition-colors cursor-pointer group mt-0.5"
+                                  >
+                                    <div className="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-800 flex items-center justify-center shrink-0">
+                                      <FileText className="w-4 h-4 text-emerald-700" />
+                                    </div>
+                                    <div>
+                                      <span className="block font-black text-slate-900 leading-tight">Official Roster (PDF)</span>
+                                      <span className="text-[10px] text-slate-400 font-medium">A4 layout with signatures & stamp</span>
+                                    </div>
+                                  </button>
+
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setExportDropdownArm(null);
+                                      handleDownloadSubclassFullNames(subgroupName, classStudents);
+                                    }}
+                                    className="w-full text-left px-3 py-2 rounded-xl hover:bg-blue-50 text-xs font-bold text-slate-800 flex items-center gap-2.5 transition-colors cursor-pointer group mt-0.5"
+                                  >
+                                    <div className="w-7 h-7 rounded-lg bg-blue-100 text-blue-800 flex items-center justify-center shrink-0">
+                                      <Download className="w-4 h-4 text-blue-700" />
+                                    </div>
+                                    <div>
+                                      <span className="block font-black text-slate-900 leading-tight">Excel / CSV Spreadsheet</span>
+                                      <span className="text-[10px] text-slate-400 font-medium">Standard spreadsheet data</span>
+                                    </div>
+                                  </button>
+                                </div>
+                              )}
+                            </div>
 
                             <button
                               onClick={() => handleRemoveAllFromSubclass(subgroupName, classStudents)}
@@ -3138,15 +3212,73 @@ export default function AdminControl({ students, initialStaff = [] }: AdminContr
                             <span>Add Students to Arm</span>
                           </button>
 
+                          {/* Dual Export Dropdown (Official PDF / Excel CSV) */}
+                          <div className="relative export-dropdown-container" onClick={(e) => e.stopPropagation()}>
+                            <button
+                              type="button"
+                              onClick={() => setIsHeroExportOpen(!isHeroExportOpen)}
+                              disabled={enrolledCount === 0}
+                              className="px-4 py-2.5 bg-blue-700 hover:bg-blue-600 text-white rounded-xl font-bold text-xs flex items-center gap-2 border border-blue-600 shadow-sm transition-all cursor-pointer disabled:opacity-40"
+                              title="Export student roster as Official PDF or Excel / CSV"
+                            >
+                              <Download className="w-4 h-4 text-blue-200" />
+                              <span>Export Roster ({enrolledCount})</span>
+                              <ChevronDown className="w-3.5 h-3.5 text-blue-200" />
+                            </button>
+
+                            {isHeroExportOpen && (
+                              <div className="absolute left-0 top-full mt-2 w-64 bg-white rounded-2xl shadow-2xl border border-slate-200 p-2 z-50 animate-scale-in text-slate-800">
+                                <div className="px-3 py-1.5 text-[10px] font-black text-slate-400 uppercase tracking-wider border-b border-slate-100">
+                                  Export: {selectedSubgroupRoster}
+                                </div>
+
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setIsHeroExportOpen(false);
+                                    handlePrintOfficialRosterPDF(selectedSubgroupRoster, rosterStudents);
+                                  }}
+                                  className="w-full text-left px-3 py-2.5 rounded-xl hover:bg-emerald-50 text-xs font-bold text-slate-800 flex items-center gap-2.5 transition-colors cursor-pointer group mt-1"
+                                >
+                                  <div className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-800 flex items-center justify-center shrink-0">
+                                    <FileText className="w-4 h-4 text-emerald-700" />
+                                  </div>
+                                  <div>
+                                    <span className="block font-black text-slate-900 leading-tight">Official Roster (PDF)</span>
+                                    <span className="text-[10px] text-slate-400 font-medium">A4 layout with signatures & stamp</span>
+                                  </div>
+                                </button>
+
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setIsHeroExportOpen(false);
+                                    handleDownloadSubclassFullNames(selectedSubgroupRoster, rosterStudents);
+                                  }}
+                                  className="w-full text-left px-3 py-2.5 rounded-xl hover:bg-blue-50 text-xs font-bold text-slate-800 flex items-center gap-2.5 transition-colors cursor-pointer group mt-1"
+                                >
+                                  <div className="w-8 h-8 rounded-lg bg-blue-100 text-blue-800 flex items-center justify-center shrink-0">
+                                    <Download className="w-4 h-4 text-blue-700" />
+                                  </div>
+                                  <div>
+                                    <span className="block font-black text-slate-900 leading-tight">Excel / CSV Spreadsheet</span>
+                                    <span className="text-[10px] text-slate-400 font-medium">Download spreadsheet format</span>
+                                  </div>
+                                </button>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Quick Official Roster PDF Button */}
                           <button
                             type="button"
-                            onClick={() => handleDownloadSubclassFullNames(selectedSubgroupRoster, rosterStudents)}
+                            onClick={() => handlePrintOfficialRosterPDF(selectedSubgroupRoster, rosterStudents)}
                             disabled={enrolledCount === 0}
-                            className="px-4 py-2.5 bg-blue-700 hover:bg-blue-600 text-white rounded-xl font-bold text-xs flex items-center gap-2 border border-blue-600 shadow-sm transition-all cursor-pointer disabled:opacity-40"
-                            title="Download full list of student names as CSV"
+                            className="px-4 py-2.5 bg-[#0b2545] hover:bg-[#133a6b] text-white rounded-xl font-bold text-xs flex items-center gap-2 border border-[#1d4273] shadow-sm transition-all cursor-pointer disabled:opacity-40"
+                            title="Print Official Class Enrolment Roster PDF"
                           >
-                            <Download className="w-4 h-4 text-blue-200" />
-                            <span>Download Full Names ({enrolledCount})</span>
+                            <Printer className="w-4 h-4 text-amber-400" />
+                            <span>Official Roster PDF</span>
                           </button>
 
                           <button

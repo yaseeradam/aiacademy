@@ -7,7 +7,7 @@ import {
   Users, Filter, Eye, Phone, Sparkles 
 } from 'lucide-react';
 import { getStudentClassArm, getStudentAdmissionNumber } from '@/lib/classUtils';
-import { printStudentsByClassRoster } from '@/lib/printUtils';
+import { printStudentsByClassRoster, printOfficialClassEnrolmentRoster } from '@/lib/printUtils';
 
 interface PrintClassRosterModalProps {
   isOpen: boolean;
@@ -57,6 +57,22 @@ export default function PrintClassRosterModal({
       showPaymentStatus,
       showGender,
       academicSession: '2026/2027',
+    });
+  };
+
+  const handlePrintOfficialRoster = (armName: string) => {
+    const armStudents = students.filter(s => {
+      const arm = getStudentClassArm(s.intendedClass, s.id, students);
+      return arm === armName;
+    });
+    printOfficialClassEnrolmentRoster({
+      subgroupName: armName,
+      students: armStudents,
+      schoolName: schoolSettings.schoolName || schoolSettings.name || 'AI ACADEMY ARGUNGU',
+      logoSrc: schoolSettings.logo || '/logo.jpg',
+      academicSession: '2025/2026',
+      term: '1st Term Regular Roster',
+      directorate: 'Primary & Early Years Directorate',
     });
   };
 
@@ -259,15 +275,26 @@ export default function PrintClassRosterModal({
 
           <div className="flex items-center gap-2.5 w-full sm:w-auto">
             {selectedClass !== 'all' && (
-              <button
-                type="button"
-                onClick={() => handlePrint('all')}
-                className="flex-1 sm:flex-initial px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5"
-                title="Print all classes at once"
-              >
-                <Users className="w-4 h-4 text-emerald-400" />
-                <span>Print All ({students.length})</span>
-              </button>
+              <>
+                <button
+                  type="button"
+                  onClick={() => handlePrintOfficialRoster(selectedClass)}
+                  className="flex-1 sm:flex-initial px-4 py-2.5 bg-[#0b2545] hover:bg-[#133a6b] text-white font-bold text-xs rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 border border-[#1e487d] shadow-xs"
+                  title="Print Official A4 Roster with Signatures & Stamp"
+                >
+                  <Printer className="w-4 h-4 text-amber-400" />
+                  <span>Official PDF Roster</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handlePrint('all')}
+                  className="flex-1 sm:flex-initial px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5"
+                  title="Print all classes at once"
+                >
+                  <Users className="w-4 h-4 text-emerald-400" />
+                  <span>Print All ({students.length})</span>
+                </button>
+              </>
             )}
 
             <button
