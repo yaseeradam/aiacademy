@@ -1,5 +1,6 @@
 import clientPromise from './mongodb';
 import { Parent, Student, VerificationStatus, AuditLog, SchoolSettings, Staff } from '../types';
+import { normalizeAdmissionNumber } from './classUtils';
 
 const DB_NAME = 'ai_academy';
 const PARENTS_COL = 'parents';
@@ -147,6 +148,27 @@ async function ensureSeeded() {
           { upsert: true }
         );
       }
+
+      if (migrationVersion < 4) {
+        // Automatically normalize all legacy B2026 / 2026 / slash admission numbers in MongoDB to AIAA-B26-XXX
+        const allStudentsInDb = await db.collection<Student>(STUDENTS_COL).find({}).toArray();
+        for (const s of allStudentsInDb) {
+          if (s.admissionNumber && (s.admissionNumber.includes('2026') || s.admissionNumber.includes('/') || !/^AIAA-B26-\d{3,}$/i.test(s.admissionNumber))) {
+            const normalized = normalizeAdmissionNumber(s.admissionNumber);
+            if (normalized && normalized !== s.admissionNumber) {
+              await db.collection<Student>(STUDENTS_COL).updateOne(
+                { id: s.id },
+                { $set: { admissionNumber: normalized } }
+              );
+            }
+          }
+        }
+        await db.collection(SETTINGS_COL).updateOne(
+          { id: 'migration_version' },
+          { $set: { id: 'migration_version', version: 4 } },
+          { upsert: true }
+        );
+      }
     })().catch(err => {
       console.error('DB seed/index error (will not retry):', err);
       seedFailed = true;  // stop silent retry loop
@@ -280,6 +302,7 @@ export async function getStudentsByParentId(parentId: string): Promise<Student[]
     void _id;
     const s = rest as Student;
     if (/Primary/i.test(s.intendedClass)) s.intendedClass = 'Basic 1';
+    if (s.admissionNumber) s.admissionNumber = normalizeAdmissionNumber(s.admissionNumber);
     return s;
   });
 }
@@ -293,6 +316,7 @@ export async function getStudentById(studentId: string): Promise<Student | undef
   void _id;
   const s = rest as Student;
   if (/Primary/i.test(s.intendedClass)) s.intendedClass = 'Basic 1';
+  if (s.admissionNumber) s.admissionNumber = normalizeAdmissionNumber(s.admissionNumber);
   return s;
 }
 
@@ -307,6 +331,7 @@ export async function getStudentByFormNumber(formNumber: string): Promise<Studen
   void _id;
   const s = rest as Student;
   if (/Primary/i.test(s.intendedClass)) s.intendedClass = 'Basic 1';
+  if (s.admissionNumber) s.admissionNumber = normalizeAdmissionNumber(s.admissionNumber);
   return s;
 }
 
@@ -373,6 +398,7 @@ export async function getAllStudents(): Promise<Student[]> {
     void _id;
     const s = rest as Student;
     if (/Primary/i.test(s.intendedClass)) s.intendedClass = 'Basic 1';
+    if (s.admissionNumber) s.admissionNumber = normalizeAdmissionNumber(s.admissionNumber);
     return s;
   });
 }
@@ -549,6 +575,25 @@ export async function fixDuplicateAndMissingAdmissionNumbers(): Promise<{
 
     if (!rawAdm) {
       isDuplicateOrMissing = true;
+    } else if (rawAdm.includes('2026') || rawAdm.includes('/') || !/^AIAA-B26-\d{3,}$/i.test(rawAdm)) {
+      // Standardize to B26 format: AIAA-B26-XXX
+      const standardized = normalizeAdmissionNumber(rawAdm);
+      if (standardized && !seenAdmNumbers.has(standardized.toLowerCase())) {
+        seenAdmNumbers.add(standardized.toLowerCase());
+        await db.collection<Student>(STUDENTS_COL).updateOne(
+          { id: s.id },
+          { $set: { admissionNumber: standardized } }
+        );
+        updatedStudents.push({
+          id: s.id,
+          name: `${s.firstName} ${s.lastName || ''}`.trim(),
+          oldAdm: rawAdm,
+          newAdm: standardized
+        });
+        continue;
+      } else {
+        isDuplicateOrMissing = true;
+      }
     } else {
       const normalized = rawAdm.toLowerCase();
       if (seenAdmNumbers.has(normalized)) {

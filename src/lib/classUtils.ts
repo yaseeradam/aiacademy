@@ -50,23 +50,71 @@ export function getStudentClassArm(cls: string | undefined, studentId?: string, 
   return `${baseClass} Gold`;
 }
 
+/**
+ * Standardize any admission number to the official format: AIAA-B26-XXX
+ * Converts all variations (such as AIAA/B/2026/009, AIAA-B2026-009, AIAA/2026/009,
+ * AIAA/B/26/009, B2026/009) strictly to AIAA-B26-XXX.
+ */
+export function normalizeAdmissionNumber(adm: string | undefined | null): string {
+  if (!adm || typeof adm !== 'string') return '';
+  const trimmed = adm.trim();
+  if (!trimmed) return '';
+
+  // Already strictly in the official standard format: AIAA-B26-XXX
+  if (/^AIAA-B26-\d{3,}$/i.test(trimmed)) {
+    return trimmed.toUpperCase();
+  }
+
+  // Handle patterns containing B/2026, B2026, 2026 or 26 with serial digits
+  // e.g. AIAA/B/2026/009, AIAA-B2026-009, AIAA/2026/009, AIAA-2026-014, B2026-008
+  const match = trimmed.match(/(?:AIAA|AIA)?[\/\-_]?(?:B)?[\/\-_]?(?:2026|26)?[\/\-_]?(\d{1,4})$/i);
+  if (match && match[1]) {
+    const num = match[1].padStart(3, '0');
+    return `AIAA-B26-${num}`;
+  }
+
+  // If it has '2026' anywhere, extract the serial digits and format as AIAA-B26-XXX
+  if (trimmed.includes('2026') || trimmed.includes('B2026')) {
+    const digitsOnly = trimmed.replace(/\D/g, '');
+    const lastDigits = (digitsOnly.slice(-3) || '001').padStart(3, '0');
+    return `AIAA-B26-${lastDigits}`;
+  }
+
+  // If it contains AIAA prefix with numbers
+  if (/^AIAA/i.test(trimmed)) {
+    const digitsOnly = trimmed.replace(/\D/g, '');
+    if (digitsOnly.length > 0) {
+      const lastDigits = (digitsOnly.slice(-3) || '001').padStart(3, '0');
+      return `AIAA-B26-${lastDigits}`;
+    }
+  }
+
+  return trimmed;
+}
+
 export function getStudentAdmissionNumber(student: Student): string {
   if (student.admissionNumber && student.admissionNumber.trim().length > 0) {
-    return student.admissionNumber.trim();
+    return normalizeAdmissionNumber(student.admissionNumber);
   }
 
-  // If formNumber starts with AIAA-B or AIAA/, use that as admission number
+  // If formNumber starts with AIAA-B or AIAA/, normalize that
   if (student.formNumber && (student.formNumber.startsWith('AIAA-B') || student.formNumber.startsWith('AIAA/'))) {
-    return student.formNumber.trim();
+    return normalizeAdmissionNumber(student.formNumber);
   }
 
-  const currentYearShort = new Date().getFullYear().toString().slice(-2);
+  const currentYearShort = '26'; // Standard year prefix: B26
 
   // Extract number sequence from formNumber if present
   if (student.formNumber) {
+    const parts = student.formNumber.split(/[-_/]/);
+    const lastPart = parts[parts.length - 1]?.replace(/\D/g, '');
+    if (lastPart && lastPart.length > 0) {
+      const num = (lastPart.slice(-3) || '001').padStart(3, '0');
+      return `AIAA-B${currentYearShort}-${num}`;
+    }
     const digits = student.formNumber.replace(/\D/g, '');
     if (digits.length >= 3) {
-      const lastDigits = digits.length > 3 ? digits.slice(-4) : digits;
+      const lastDigits = digits.slice(-3);
       const num = String(parseInt(lastDigits, 10) || 1).padStart(3, '0');
       return `AIAA-B${currentYearShort}-${num}`;
     }
@@ -82,4 +130,5 @@ export function getStudentAdmissionNumber(student: Student): string {
   const uniqueNum = String(Math.abs(hash) % 899 + 100).padStart(3, '0');
   return `AIAA-B${currentYearShort}-${uniqueNum}`;
 }
+
 

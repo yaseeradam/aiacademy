@@ -35,7 +35,7 @@ import {
   INITIAL_STAFF,
 } from '@/lib/db';
 import { Student, Parent, SchoolSettings, Staff } from '@/types';
-import { getStudentClassArm, getStudentAdmissionNumber } from '@/lib/classUtils';
+import { getStudentClassArm, getStudentAdmissionNumber, normalizeAdmissionNumber } from '@/lib/classUtils';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Parent Actions
@@ -161,9 +161,9 @@ export async function adminTogglePaymentStatusAction(studentId: string, paymentS
   const currentYear = new Date().getFullYear();
 
   // Fix #5: Generate admission number atomically to prevent race-condition duplicates
-  let admissionNumber = student.admissionNumber;
+  let admissionNumber = student.admissionNumber ? normalizeAdmissionNumber(student.admissionNumber) : undefined;
   if (paymentStatus === 'paid' && !admissionNumber) {
-    const currentYearShort = currentYear.toString().slice(-2); // e.g. '26'
+    const currentYearShort = '26';
     const seq = await getNextAdmissionSequence(currentYearShort);
     const nextNum = String(seq).padStart(3, '0');
     admissionNumber = `AIAA-B${currentYearShort}-${nextNum}`;
@@ -172,7 +172,7 @@ export async function adminTogglePaymentStatusAction(studentId: string, paymentS
   const updatedStudent: Student = {
     ...student,
     paymentStatus,
-    admissionNumber: paymentStatus === 'paid' ? admissionNumber : student.admissionNumber,
+    admissionNumber: paymentStatus === 'paid' ? admissionNumber : (student.admissionNumber ? normalizeAdmissionNumber(student.admissionNumber) : undefined),
     admissionDate: student.admissionDate || todayStr,
     academicSession: student.academicSession || `${currentYear}/${currentYear + 1}`,
     resumptionDate: student.resumptionDate || '14th September, 2026',
@@ -772,9 +772,9 @@ export async function adminCreateStudentAction(studentData: Omit<Student, 'id' |
   const newId = `stud-${Date.now()}`;
   
   // Ensure new student receives a unique admission number if not provided
-  let admissionNumber = studentData.admissionNumber;
+  let admissionNumber = studentData.admissionNumber ? normalizeAdmissionNumber(studentData.admissionNumber) : undefined;
   if (!admissionNumber) {
-    const currentYearShort = new Date().getFullYear().toString().slice(-2);
+    const currentYearShort = '26';
     const seq = await getNextAdmissionSequence(currentYearShort);
     const nextNum = String(seq).padStart(3, '0');
     admissionNumber = `AIAA-B${currentYearShort}-${nextNum}`;
@@ -1004,15 +1004,15 @@ export async function fixDuplicateAdmissionNumbersAction(): Promise<{
       await addAuditLog({
         action: 'UPDATE',
         actor: 'School Administrator',
-        details: `Reassigned unique admission numbers to ${res.fixedCount} students to resolve duplicates`,
+        details: `Standardized and verified unique admission numbers for ${res.fixedCount} students (enforced AIAA-B26-XXX format)`,
       });
     }
     return {
       success: true,
       fixedCount: res.fixedCount,
       details: res.fixedCount > 0
-        ? `Fixed ${res.fixedCount} duplicate/missing admission numbers: ${res.updatedStudents.map(s => `${s.name} (${s.oldAdm} ➔ ${s.newAdm})`).join(', ')}`
-        : 'All students already have unique admission numbers. No changes needed.'
+        ? `Standardized ${res.fixedCount} admission number(s) to official AIAA-B26-XXX format: ${res.updatedStudents.map(s => `${s.name} (${s.oldAdm} ➔ ${s.newAdm})`).join(', ')}`
+        : 'All students already have valid, unique AIAA-B26-XXX admission numbers. No changes needed.'
     };
   } catch (err: unknown) {
     return {
