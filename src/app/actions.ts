@@ -39,6 +39,10 @@ import {
   getSurveyResponseByPhone,
   getAllSurveyResponses,
   deleteSurveyResponse,
+  getAllSurveys,
+  saveSurveyConfig,
+  setActiveSurvey,
+  deleteSurveyConfig,
 } from '@/lib/db';
 import { Student, Parent, SchoolSettings, Staff, SurveyConfig, SurveyQuestion, SurveyResponse } from '@/types';
 import { getStudentClassArm, getStudentAdmissionNumber, normalizeAdmissionNumber } from '@/lib/classUtils';
@@ -1232,7 +1236,7 @@ export async function adminSeedStaffFromExcelAction(): Promise<{
 // Parent Survey & Feedback Actions
 // ─────────────────────────────────────────────────────────────────────────────
 
-export async function getPublicSurveyDataAction(phone?: string): Promise<{
+export async function getPublicSurveyDataAction(phone?: string, surveyId?: string): Promise<{
   success: boolean;
   config: SurveyConfig;
   parent: { name: string; phone: string; studentNames: string[]; classes: string[] } | null;
@@ -1240,7 +1244,7 @@ export async function getPublicSurveyDataAction(phone?: string): Promise<{
   error?: string;
 }> {
   try {
-    const config = await getSurveyConfig();
+    const config = await getSurveyConfig(surveyId);
     let parentInfo: { name: string; phone: string; studentNames: string[]; classes: string[] } | null = null;
     let existingResponse: SurveyResponse | null = null;
 
@@ -1258,7 +1262,7 @@ export async function getPublicSurveyDataAction(phone?: string): Promise<{
           classes,
         };
       }
-      existingResponse = await getSurveyResponseByPhone(cleanPhone);
+      existingResponse = await getSurveyResponseByPhone(cleanPhone, config.id);
     }
 
     return {
@@ -1286,7 +1290,8 @@ export async function getPublicSurveyDataAction(phone?: string): Promise<{
 
 export async function submitParentSurveyAction(
   phone: string,
-  answers: Record<string, string | number>
+  answers: Record<string, string | number>,
+  surveyId?: string
 ): Promise<{ success: boolean; message: string; response?: SurveyResponse; error?: string }> {
   try {
     if (!phone || !phone.trim()) {
@@ -1294,7 +1299,7 @@ export async function submitParentSurveyAction(
     }
 
     const cleanPhone = phone.trim();
-    const config = await getSurveyConfig();
+    const config = await getSurveyConfig(surveyId);
     if (!config.isActive) {
       return { success: false, message: '', error: 'The parent feedback survey is currently closed.' };
     }
@@ -1325,11 +1330,12 @@ export async function submitParentSurveyAction(
       }
     }
 
-    const existing = await getSurveyResponseByPhone(cleanPhone);
+    const existing = await getSurveyResponseByPhone(cleanPhone, config.id);
     const responseId = existing ? existing.id : `resp_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
 
     const surveyResponse: SurveyResponse = {
       id: responseId,
+      surveyId: config.id,
       parentPhone: cleanPhone,
       parentName,
       studentNames,
@@ -1345,7 +1351,7 @@ export async function submitParentSurveyAction(
     await addAuditLog({
       action: 'UPDATE',
       actor: `Parent (${cleanPhone})`,
-      details: `Parent (${parentName}) submitted feedback for ${config.term || '1st Term'} survey`,
+      details: `Parent (${parentName}) submitted feedback for "${config.title}" survey`,
     });
 
     return {
@@ -1364,8 +1370,9 @@ export async function submitParentSurveyAction(
   }
 }
 
-export async function adminGetSurveyDataAction(): Promise<{
+export async function adminGetSurveyDataAction(surveyId?: string): Promise<{
   success: boolean;
+  allSurveys: SurveyConfig[];
   config: SurveyConfig;
   responses: SurveyResponse[];
   analytics: {
@@ -1382,8 +1389,10 @@ export async function adminGetSurveyDataAction(): Promise<{
   error?: string;
 }> {
   try {
-    const config = await getSurveyConfig();
-    const responses = await getAllSurveyResponses();
+    const allSurveys = await getAllSurveys();
+    const targetSurveyId = surveyId || allSurveys.find(s => s.isActive)?.id || allSurveys[0]?.id;
+    const config = await getSurveyConfig(targetSurveyId);
+    const responses = await getAllSurveyResponses(config.id);
 
     const ratingsBreakdown: Record<string, { avg: number; count: number; stars: Record<number, number> }> = {};
     const choiceBreakdown: Record<string, Record<string, number>> = {};
@@ -1473,6 +1482,7 @@ export async function adminGetSurveyDataAction(): Promise<{
 
     return {
       success: true,
+      allSurveys,
       config,
       responses,
       analytics: {
@@ -1490,6 +1500,7 @@ export async function adminGetSurveyDataAction(): Promise<{
   } catch (err: unknown) {
     return {
       success: false,
+      allSurveys: [],
       config: {
         id: 'survey_default',
         title: '',
@@ -1514,13 +1525,55 @@ export async function adminGetSurveyDataAction(): Promise<{
   }
 }
 
-export async function adminUpdateSurveyConfigAction(configData: Partial<SurveyConfig>): Promise<{ success: boolean; error?: string }> {
+export async function adminSaveSurveyAction(survey: SurveyConfig): Promise<{ success: boolean; error?: string }> {
   try {
-    await updateSurveyConfig(configData);
+    await saveSurveyConfig(survey);
     await addAuditLog({
       action: 'UPDATE',
       actor: 'School Administrator',
-      details: 'Updated parent survey questions and configuration settings',
+      details: `Created/Updated survey: "${survey.title}" with ${survey.questions.length} questions`,
+    });
+    return { success: true };
+  } catch (err: unknown) {
+    return { success: false, error: err instanceof Error ? err.message : 'Failed to save survey' };
+  }
+}
+
+export async function adminSetActiveSurveyAction(surveyId: string): Promise<{ success: boolean; error?: string }> {
+  try {
+    const success = await setActiveSurvey(surveyId);
+    await addAuditLog({
+      action: 'UPDATE',
+      actor: 'School Administrator',
+      details: `Set survey "${surveyId}" as the default active survey`,
+    });
+    return { success };
+  } catch (err: unknown) {
+    return { success: false, error: err instanceof Error ? err.message : 'Failed to set active survey' };
+  }
+}
+
+export async function adminDeleteSurveyAction(surveyId: string): Promise<{ success: boolean; error?: string }> {
+  try {
+    const success = await deleteSurveyConfig(surveyId);
+    await addAuditLog({
+      action: 'DELETE',
+      actor: 'School Administrator',
+      details: `Deleted survey "${surveyId}" and its response data`,
+    });
+    return { success };
+  } catch (err: unknown) {
+    return { success: false, error: err instanceof Error ? err.message : 'Failed to delete survey' };
+  }
+}
+
+export async function adminUpdateSurveyConfigAction(configData: Partial<SurveyConfig>, surveyId?: string): Promise<{ success: boolean; error?: string }> {
+  try {
+    await updateSurveyConfig(configData, surveyId || configData.id || 'survey_default');
+    await addAuditLog({
+      action: 'UPDATE',
+      actor: 'School Administrator',
+      details: 'Updated parent survey configuration settings',
     });
     return { success: true };
   } catch (err: unknown) {

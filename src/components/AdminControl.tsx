@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { Student, AuditLog, Staff, SurveyConfig, SurveyResponse } from '@/types';
+import { Student, AuditLog, Staff, SurveyConfig, SurveyQuestion, SurveyResponse } from '@/types';
 import { useRouter } from 'next/navigation';
 import JSZip from 'jszip';
 import { 
@@ -10,9 +10,10 @@ import {
   ShieldCheck, ChevronRight, ChevronDown, X, Menu,
   Grid, Settings, Plus, LogOut, Trash2, Save, BookOpen,
   Loader2, Scan, History, MessageSquare, Camera, FileText, CheckCircle2, CreditCard, Printer,
-  GraduationCap, Folder, FolderOpen, Edit3, Briefcase, Phone, MessageSquareHeart, Star, ThumbsUp, ExternalLink, Copy
+  GraduationCap, Folder, FolderOpen, Edit3, Briefcase, Phone, MessageSquareHeart, Star, ThumbsUp, ExternalLink, Copy, Check,
+  ArrowUp, ArrowDown, Sparkles, CheckSquare, Layers
 } from 'lucide-react';
-import { logoutAction, adminUpdateStudentAction, adminDeleteStudentAction, adminDeleteMultipleStudentsAction, unassignStudentFromSubclassAction, unassignMultipleStudentsFromSubclassAction, assignMultipleStudentsToSubclassAction, restoreMissingSeedStudentsAction, clearAllDatabaseDataAction, adminCreateStudentAction, adminVerifyAction, adminTogglePaymentStatusAction, getAuditLogsAction, scanAdmissionFormOCRAction, getSchoolSettingsAction, updateSchoolSettingsAction, findDuplicateStudentsAction, fixDuplicateAdmissionNumbersAction, DuplicateGroup, getAllStaffAction, adminCreateStaffAction, adminUpdateStaffAction, adminDeleteStaffAction, adminImportStaffCSVAction, adminSeedStaffFromExcelAction, adminGetSurveyDataAction, adminUpdateSurveyConfigAction, adminDeleteSurveyResponseAction } from '@/app/actions';
+import { logoutAction, adminUpdateStudentAction, adminDeleteStudentAction, adminDeleteMultipleStudentsAction, unassignStudentFromSubclassAction, unassignMultipleStudentsFromSubclassAction, assignMultipleStudentsToSubclassAction, restoreMissingSeedStudentsAction, clearAllDatabaseDataAction, adminCreateStudentAction, adminVerifyAction, adminTogglePaymentStatusAction, getAuditLogsAction, scanAdmissionFormOCRAction, getSchoolSettingsAction, updateSchoolSettingsAction, findDuplicateStudentsAction, fixDuplicateAdmissionNumbersAction, DuplicateGroup, getAllStaffAction, adminCreateStaffAction, adminUpdateStaffAction, adminDeleteStaffAction, adminImportStaffCSVAction, adminSeedStaffFromExcelAction, adminGetSurveyDataAction, adminUpdateSurveyConfigAction, adminDeleteSurveyResponseAction, adminSaveSurveyAction, adminSetActiveSurveyAction, adminDeleteSurveyAction } from '@/app/actions';
 import AdmissionLetterModal, { printBulkAdmissionLetters, printPaidStudentsPDF, getStudentClassArm, getStudentAdmissionNumber } from './AdmissionLetterModal';
 import AppointmentLetterModal, { printBulkAppointmentLetters } from './AppointmentLetterModal';
 import PickupIDCardModal from './PickupIDCardModal';
@@ -192,6 +193,21 @@ export default function AdminControl({ students, initialStaff = [] }: AdminContr
   const [staffImportFile, setStaffImportFile] = useState<File | null>(null);
 
   // Parent Survey State & Actions
+  // Parent Survey State & Actions
+  const [allSurveys, setAllSurveys] = useState<SurveyConfig[]>([]);
+  const [selectedSurveyId, setSelectedSurveyId] = useState<string>('survey_default');
+  const [isSurveyModalOpen, setIsSurveyModalOpen] = useState<boolean>(false);
+  const [isSavingSurvey, setIsSavingSurvey] = useState<boolean>(false);
+  const [surveyFormData, setSurveyFormData] = useState<SurveyConfig>({
+    id: '',
+    title: '',
+    description: '',
+    isActive: true,
+    term: '1st Term',
+    session: '2025/2026',
+    questions: [],
+  });
+
   const [surveyData, setSurveyData] = useState<{
     config: SurveyConfig | null;
     responses: SurveyResponse[];
@@ -214,11 +230,16 @@ export default function AdminControl({ students, initialStaff = [] }: AdminContr
   const [isUpdatingSurveyActive, setIsUpdatingSurveyActive] = useState<boolean>(false);
   const [copiedSurveyLink, setCopiedSurveyLink] = useState<boolean>(false);
 
-  const fetchSurveys = async () => {
+  const fetchSurveys = async (targetId?: unknown) => {
     setIsLoadingSurveys(true);
     try {
-      const res = await adminGetSurveyDataAction();
+      const idToFetch = typeof targetId === 'string' ? targetId : selectedSurveyId;
+      const res = await adminGetSurveyDataAction(idToFetch);
       if (res.success) {
+        setAllSurveys(res.allSurveys || []);
+        if (res.config) {
+          setSelectedSurveyId(res.config.id);
+        }
         setSurveyData({
           config: res.config,
           responses: res.responses,
@@ -238,17 +259,330 @@ export default function AdminControl({ students, initialStaff = [] }: AdminContr
     }
   }, [activeTab, surveyData]);
 
+  const handleSelectSurvey = async (surveyId: string) => {
+    setSelectedSurveyId(surveyId);
+    await fetchSurveys(surveyId);
+  };
+
+  const handleOpenCreateSurvey = () => {
+    setSurveyFormData({
+      id: `survey_${Date.now()}`,
+      title: 'New Parent Feedback Survey',
+      description: 'Dear Parents & Guardians, your feedback is crucial in shaping our academy and providing the best education and care for your children.',
+      isActive: false,
+      term: '1st Term',
+      session: '2025/2026',
+      questions: [
+        {
+          id: `q_${Date.now()}_1`,
+          question: 'Overall, how satisfied are you with academic learning progress?',
+          type: 'rating_5',
+          category: 'Academics',
+          required: true,
+        },
+        {
+          id: `q_${Date.now()}_2`,
+          question: 'How would you rate the communication from teachers and the school administration?',
+          type: 'single_choice',
+          options: ['Excellent - Very responsive & clear', 'Good - Satisfactory updates', 'Fair - Could be more frequent', 'Poor - Difficult to get info'],
+          category: 'Communication',
+          required: true,
+        },
+        {
+          id: `q_${Date.now()}_3`,
+          question: 'How likely are you to recommend AI Integrated Academy to friends and relatives?',
+          type: 'nps_10',
+          category: 'Recommendation',
+          required: true,
+        },
+        {
+          id: `q_${Date.now()}_4`,
+          question: 'What is one thing we can improve to serve your child better?',
+          type: 'text',
+          category: 'Feedback',
+          required: false,
+        }
+      ],
+    });
+    setIsSurveyModalOpen(true);
+  };
+
+  const handleOpenEditSurvey = (survey?: SurveyConfig) => {
+    const target = survey || surveyData?.config;
+    if (!target) return;
+    setSurveyFormData({
+      ...target,
+      questions: JSON.parse(JSON.stringify(target.questions || [])),
+    });
+    setIsSurveyModalOpen(true);
+  };
+
+  const handleSaveSurvey = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!surveyFormData.title.trim()) {
+      alert('Please enter a survey title.');
+      return;
+    }
+    if (!surveyFormData.questions || surveyFormData.questions.length === 0) {
+      alert('Please add at least one question to the survey.');
+      return;
+    }
+    for (let i = 0; i < surveyFormData.questions.length; i++) {
+      const q = surveyFormData.questions[i];
+      if (!q.question.trim()) {
+        alert(`Question #${i + 1} has an empty question prompt.`);
+        return;
+      }
+      if (q.type === 'single_choice' && (!q.options || q.options.length < 2)) {
+        alert(`Multiple choice question #${i + 1} must have at least 2 options.`);
+        return;
+      }
+    }
+
+    setIsSavingSurvey(true);
+    try {
+      const res = await adminSaveSurveyAction(surveyFormData);
+      if (res.success) {
+        setIsSurveyModalOpen(false);
+        await fetchSurveys(surveyFormData.id);
+      } else {
+        alert(res.error || 'Failed to save survey.');
+      }
+    } catch (err) {
+      console.error('Failed to save survey:', err);
+      alert('An unexpected error occurred while saving.');
+    } finally {
+      setIsSavingSurvey(false);
+    }
+  };
+
+  const handleSetActiveSurvey = async (surveyId: string) => {
+    try {
+      const res = await adminSetActiveSurveyAction(surveyId);
+      if (res.success) {
+        await fetchSurveys(surveyId);
+      }
+    } catch (err) {
+      console.error('Failed to set active survey:', err);
+    }
+  };
+
+  const handleDeleteSurvey = async (surveyId: string, title: string) => {
+    if (!window.confirm(`Are you sure you want to delete survey "${title}" and all its recorded responses? This cannot be undone.`)) {
+      return;
+    }
+    try {
+      const res = await adminDeleteSurveyAction(surveyId);
+      if (res.success) {
+        await fetchSurveys();
+      } else {
+        alert(res.error || 'Failed to delete survey.');
+      }
+    } catch (err) {
+      console.error('Failed to delete survey:', err);
+    }
+  };
+
+  const handleAddQuestion = () => {
+    const newQ: SurveyQuestion = {
+      id: `q_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+      question: '',
+      type: 'rating_5',
+      category: 'General',
+      required: true,
+    };
+    setSurveyFormData(prev => ({
+      ...prev,
+      questions: [...prev.questions, newQ],
+    }));
+  };
+
+  const handleRemoveQuestion = (idx: number) => {
+    setSurveyFormData(prev => ({
+      ...prev,
+      questions: prev.questions.filter((_, i) => i !== idx),
+    }));
+  };
+
+  const handleMoveQuestion = (idx: number, direction: 'up' | 'down') => {
+    const targetIdx = direction === 'up' ? idx - 1 : idx + 1;
+    if (targetIdx < 0 || targetIdx >= surveyFormData.questions.length) return;
+    const newQuestions = [...surveyFormData.questions];
+    const temp = newQuestions[idx];
+    newQuestions[idx] = newQuestions[targetIdx];
+    newQuestions[targetIdx] = temp;
+    setSurveyFormData(prev => ({ ...prev, questions: newQuestions }));
+  };
+
+  const handleQuestionChange = (idx: number, field: keyof SurveyQuestion, value: any) => {
+    setSurveyFormData(prev => {
+      const updated = [...prev.questions];
+      const q = { ...updated[idx], [field]: value };
+      if (field === 'type' && value === 'single_choice' && (!q.options || q.options.length === 0)) {
+        q.options = ['Excellent', 'Good', 'Needs Improvement'];
+      }
+      updated[idx] = q;
+      return { ...prev, questions: updated };
+    });
+  };
+
+  const handleAddOption = (qIdx: number) => {
+    setSurveyFormData(prev => {
+      const updated = [...prev.questions];
+      const q = { ...updated[qIdx] };
+      q.options = [...(q.options || []), `Option ${(q.options?.length || 0) + 1}`];
+      updated[qIdx] = q;
+      return { ...prev, questions: updated };
+    });
+  };
+
+  const handleRemoveOption = (qIdx: number, optIdx: number) => {
+    setSurveyFormData(prev => {
+      const updated = [...prev.questions];
+      const q = { ...updated[qIdx] };
+      q.options = (q.options || []).filter((_, i) => i !== optIdx);
+      updated[qIdx] = q;
+      return { ...prev, questions: updated };
+    });
+  };
+
+  const handleOptionChange = (qIdx: number, optIdx: number, val: string) => {
+    setSurveyFormData(prev => {
+      const updated = [...prev.questions];
+      const q = { ...updated[qIdx] };
+      const options = [...(q.options || [])];
+      options[optIdx] = val;
+      q.options = options;
+      updated[qIdx] = q;
+      return { ...prev, questions: updated };
+    });
+  };
+
+  const handleLoadTemplate = (templateType: 'evaluation' | 'transport' | 'blank') => {
+    if (templateType === 'blank') {
+      setSurveyFormData(prev => ({
+        ...prev,
+        questions: [
+          {
+            id: `q_${Date.now()}_1`,
+            question: '',
+            type: 'rating_5',
+            category: 'General',
+            required: true,
+          }
+        ]
+      }));
+    } else if (templateType === 'transport') {
+      setSurveyFormData(prev => ({
+        ...prev,
+        title: 'School Bus & Transport Service Survey',
+        description: 'Please rate our school bus transportation, route timing, driver courtesy, and vehicle safety.',
+        questions: [
+          {
+            id: `q_bus_punctuality`,
+            question: 'How satisfied are you with bus pick-up and drop-off punctuality?',
+            type: 'rating_5',
+            category: 'Punctuality',
+            required: true,
+          },
+          {
+            id: `q_bus_safety`,
+            question: 'How would you rate vehicle cleanliness and seat safety for your child?',
+            type: 'rating_5',
+            category: 'Safety & Hygiene',
+            required: true,
+          },
+          {
+            id: `q_driver_conduct`,
+            question: 'How satisfied are you with driver and bus attendant professionalism?',
+            type: 'single_choice',
+            options: ['Very Satisfied', 'Satisfied', 'Neutral', 'Dissatisfied'],
+            category: 'Staff Conduct',
+            required: true,
+          },
+          {
+            id: `q_transport_feedback`,
+            question: 'Any suggestions or routes that need improvement?',
+            type: 'text',
+            category: 'Suggestions',
+            required: false,
+          }
+        ]
+      }));
+    } else {
+      setSurveyFormData(prev => ({
+        ...prev,
+        title: 'Parent Satisfaction & Experience Survey',
+        description: 'Dear Parents & Guardians, your feedback is crucial in shaping our academy and providing the best education and care for your children.',
+        questions: [
+          {
+            id: 'q_academics',
+            question: "How satisfied are you with your child's academic learning progress and classroom teaching?",
+            type: 'rating_5',
+            category: 'Academics & Teaching',
+            required: true,
+          },
+          {
+            id: 'q_communication',
+            question: 'How would you rate the communication from teachers and the school administration?',
+            type: 'single_choice',
+            options: ['Excellent - Very responsive & clear', 'Good - Satisfactory updates', 'Fair - Could be more frequent', 'Poor - Difficult to get info'],
+            category: 'Communication',
+            required: true,
+          },
+          {
+            id: 'q_environment',
+            question: 'How would you rate the school environment, cleanliness, safety, and child care?',
+            type: 'rating_5',
+            category: 'Safety & Environment',
+            required: true,
+          },
+          {
+            id: 'q_discipline',
+            question: 'How satisfied are you with moral guidance, student discipline, and Islamic & character values at AI Academy?',
+            type: 'single_choice',
+            options: ['Very Satisfied', 'Satisfied', 'Neutral', 'Needs Improvement'],
+            category: 'Discipline & Values',
+            required: true,
+          },
+          {
+            id: 'q_nps',
+            question: 'How likely are you to recommend AI Integrated Academy to friends, relatives, and colleagues?',
+            type: 'nps_10',
+            category: 'General Recommendation',
+            required: true,
+          },
+          {
+            id: 'q_doing_well',
+            question: 'What is one thing you love most about AI Academy or that the school is doing very well?',
+            type: 'text',
+            category: 'Feedback',
+            required: false,
+          },
+          {
+            id: 'q_improvements',
+            question: 'What is one area where the school can improve to serve your child better?',
+            type: 'text',
+            category: 'Feedback',
+            required: false,
+          },
+        ]
+      }));
+    }
+  };
+
   const handleToggleSurveyActive = async () => {
     if (!surveyData?.config) return;
     const newActive = !surveyData.config.isActive;
     setIsUpdatingSurveyActive(true);
     try {
-      const res = await adminUpdateSurveyConfigAction({ isActive: newActive });
+      const res = await adminUpdateSurveyConfigAction({ isActive: newActive }, surveyData.config.id);
       if (res.success) {
         setSurveyData(prev => prev ? {
           ...prev,
           config: { ...prev.config!, isActive: newActive }
         } : null);
+        await fetchSurveys(surveyData.config.id);
       }
     } catch (err) {
       console.error('Failed to toggle survey active status:', err);
@@ -327,9 +661,11 @@ export default function AdminControl({ students, initialStaff = [] }: AdminContr
     document.body.removeChild(link);
   };
 
-  const handleCopySurveyLink = () => {
+  const handleCopySurveyLink = (customId?: unknown) => {
     if (typeof window !== 'undefined') {
-      const url = `${window.location.origin}/survey`;
+      const targetId = typeof customId === 'string' ? customId : surveyData?.config?.id;
+      // If it's the active survey, the root /survey URL works, but appending ?id= ensures direct access
+      const url = targetId ? `${window.location.origin}/survey?id=${targetId}` : `${window.location.origin}/survey`;
       navigator.clipboard.writeText(url);
       setCopiedSurveyLink(true);
       setTimeout(() => setCopiedSurveyLink(false), 2500);
@@ -5246,7 +5582,7 @@ export default function AdminControl({ students, initialStaff = [] }: AdminContr
 
                 <button
                   type="button"
-                  onClick={fetchSurveys}
+                  onClick={() => fetchSurveys()}
                   disabled={isLoadingSurveys}
                   className="py-2 px-3 bg-white hover:bg-slate-50 border border-slate-200 text-slate-600 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs"
                   title="Refresh responses"
@@ -5264,6 +5600,96 @@ export default function AdminControl({ students, initialStaff = [] }: AdminContr
                   <Download className="w-3.5 h-3.5" />
                   <span>Export CSV</span>
                 </button>
+              </div>
+            </div>
+
+            {/* Survey Switcher & Creator Toolbar */}
+            <div className="p-4 md:p-5 bg-gradient-to-r from-emerald-950 via-slate-900 to-emerald-900 text-white rounded-3xl shadow-lg border border-emerald-800/40">
+              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-[10px] font-black tracking-widest uppercase px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center gap-1">
+                      <Layers className="w-3 h-3 text-emerald-400" />
+                      Survey Studio
+                    </span>
+                    <span className="text-xs text-slate-300 font-medium">
+                      Select survey to inspect analytics or customize questions
+                    </span>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-3">
+                    <div className="relative min-w-[260px] sm:min-w-[340px]">
+                      <select
+                        value={selectedSurveyId}
+                        onChange={(e) => handleSelectSurvey(e.target.value)}
+                        className="w-full pl-3.5 pr-9 py-2.5 bg-slate-800/90 text-white font-bold text-sm rounded-xl border border-slate-700 hover:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/40 appearance-none cursor-pointer"
+                      >
+                        {allSurveys.map((s) => (
+                          <option key={s.id} value={s.id} className="bg-slate-900 text-white">
+                            {s.title} {s.isActive ? '⭐ (Active Public Survey)' : ''}
+                          </option>
+                        ))}
+                      </select>
+                      <ChevronDown className="w-4 h-4 text-slate-400 absolute right-3 top-3.5 pointer-events-none" />
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-semibold px-2.5 py-1 rounded-lg bg-slate-800/80 border border-slate-700 text-slate-300">
+                        {surveyData?.config?.questions?.length || 0} Questions
+                      </span>
+                      {surveyData?.config?.term && (
+                        <span className="text-xs font-semibold px-2.5 py-1 rounded-lg bg-slate-800/80 border border-slate-700 text-slate-300">
+                          {surveyData.config.term}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2 pt-2 lg:pt-0 border-t lg:border-t-0 border-slate-800">
+                  <button
+                    type="button"
+                    onClick={handleOpenCreateSurvey}
+                    className="py-2.5 px-4 bg-emerald-500 hover:bg-emerald-400 text-slate-950 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer shadow-md hover:scale-102"
+                    title="Create a new survey questionnaire"
+                  >
+                    <Plus className="w-4 h-4 stroke-[3]" />
+                    <span>Create Survey</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleOpenEditSurvey()}
+                    className="py-2.5 px-3.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer border border-slate-700 shadow-sm"
+                    title="Edit questions and options for this survey"
+                  >
+                    <Edit3 className="w-3.5 h-3.5 text-emerald-400" />
+                    <span>Edit Form</span>
+                  </button>
+
+                  {!surveyData?.config?.isActive && (
+                    <button
+                      type="button"
+                      onClick={() => handleSetActiveSurvey(selectedSurveyId)}
+                      className="py-2.5 px-3.5 bg-emerald-700/40 hover:bg-emerald-600/50 border border-emerald-500/40 text-emerald-200 rounded-xl text-xs font-bold transition-all flex items-center gap-1 cursor-pointer"
+                      title="Set this survey as the default active survey for parents"
+                    >
+                      <Check className="w-3.5 h-3.5 text-emerald-400" />
+                      <span>Set as Active</span>
+                    </button>
+                  )}
+
+                  {allSurveys.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteSurvey(surveyData?.config?.id || selectedSurveyId, surveyData?.config?.title || 'Survey')}
+                      className="py-2.5 px-3 bg-rose-500/10 hover:bg-rose-500/25 text-rose-300 border border-rose-500/30 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer"
+                      title="Delete this survey and its feedback responses"
+                    >
+                      <Trash2 className="w-3.5 h-3.5 text-rose-400" />
+                      <span>Delete</span>
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -5913,6 +6339,363 @@ export default function AdminControl({ students, initialStaff = [] }: AdminContr
                 Close
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ================= SURVEY BUILDER / EDITOR MODAL OVERLAY ================= */}
+      {isSurveyModalOpen && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-3 md:p-6 overflow-hidden">
+          <div className="bg-white rounded-[2rem] w-full max-w-4xl shadow-2xl border border-slate-100 flex flex-col max-h-[92vh] animate-slide-up">
+            
+            {/* Header */}
+            <div className="flex items-center justify-between p-6 border-b border-slate-100">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-[#0f7343] flex items-center justify-center font-bold">
+                  <Sparkles className="w-6 h-6" />
+                </div>
+                <div>
+                  <h3 className="text-2xl font-black text-slate-800 tracking-tight leading-none">
+                    {allSurveys.some(s => s.id === surveyFormData.id) ? 'Edit Survey Questionnaire' : 'Create New Survey'}
+                  </h3>
+                  <p className="text-xs font-semibold text-slate-400 mt-1.5">
+                    Build custom feedback forms, customize question types, scales, and multiple choice options.
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setIsSurveyModalOpen(false)}
+                className="w-10 h-10 rounded-2xl bg-slate-50 hover:bg-slate-100 text-slate-400 hover:text-slate-600 flex items-center justify-center transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Scrollable Form Body */}
+            <form onSubmit={handleSaveSurvey} className="flex-1 overflow-y-auto p-6 space-y-6 no-scrollbar">
+              
+              {/* Template Quick Starters */}
+              <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200/80">
+                <div className="flex items-center justify-between gap-2 mb-2.5">
+                  <span className="text-xs font-black uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                    Quick Start Templates
+                  </span>
+                  <span className="text-[11px] font-semibold text-slate-400">Clicking replaces existing draft questions</span>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handleLoadTemplate('evaluation')}
+                    className="py-1.5 px-3 bg-white hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-300 border border-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-2xs"
+                  >
+                    🎓 General School Evaluation
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleLoadTemplate('transport')}
+                    className="py-1.5 px-3 bg-white hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-300 border border-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-2xs"
+                  >
+                    🚌 School Bus & Transport
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleLoadTemplate('blank')}
+                    className="py-1.5 px-3 bg-white hover:bg-slate-100 border border-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-2xs"
+                  >
+                    📄 Start from Blank
+                  </button>
+                </div>
+              </div>
+
+              {/* General Survey Details */}
+              <div className="space-y-4">
+                <h4 className="text-xs font-black uppercase tracking-wider text-slate-400">Survey Details</h4>
+                
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                    Survey Title <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={surveyFormData.title}
+                    onChange={(e) => setSurveyFormData({ ...surveyFormData, title: e.target.value })}
+                    placeholder="e.g. Term 1 Parent Satisfaction Survey"
+                    className="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 font-semibold text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                    Survey Instructions & Greeting
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={surveyFormData.description || ''}
+                    onChange={(e) => setSurveyFormData({ ...surveyFormData, description: e.target.value })}
+                    placeholder="Message displayed to parents before they begin answering questions..."
+                    className="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 font-semibold text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all resize-none"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                      Academic Term
+                    </label>
+                    <input
+                      type="text"
+                      value={surveyFormData.term || ''}
+                      onChange={(e) => setSurveyFormData({ ...surveyFormData, term: e.target.value })}
+                      placeholder="e.g. 2nd Term"
+                      className="w-full px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 font-semibold text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                      Session
+                    </label>
+                    <input
+                      type="text"
+                      value={surveyFormData.session || ''}
+                      onChange={(e) => setSurveyFormData({ ...surveyFormData, session: e.target.value })}
+                      placeholder="e.g. 2024/2025"
+                      className="w-full px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 font-semibold text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
+                    />
+                  </div>
+
+                  <div className="flex flex-col justify-end">
+                    <label className="flex items-center gap-2 p-2.5 rounded-xl bg-slate-50 border border-slate-200 cursor-pointer hover:bg-slate-100 transition-colors">
+                      <input
+                        type="checkbox"
+                        checked={surveyFormData.isActive}
+                        onChange={(e) => setSurveyFormData({ ...surveyFormData, isActive: e.target.checked })}
+                        className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 cursor-pointer"
+                      />
+                      <span className="text-xs font-bold text-slate-700">Set as Active Live Survey</span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              {/* Questions Section */}
+              <div className="space-y-4 pt-4 border-t border-slate-100">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4 className="text-xs font-black uppercase tracking-wider text-slate-700">
+                      Questions List ({surveyFormData.questions.length})
+                    </h4>
+                    <p className="text-xs text-slate-400 font-medium">
+                      Configure question types, ratings, and choices in the order parents will see them.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleAddQuestion}
+                    className="py-2 px-3.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Add Question</span>
+                  </button>
+                </div>
+
+                {surveyFormData.questions.length === 0 ? (
+                  <div className="p-8 text-center bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200">
+                    <HelpCircle className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+                    <p className="text-sm font-bold text-slate-600">No questions in this survey</p>
+                    <p className="text-xs text-slate-400 mt-1">Click &ldquo;Add Question&rdquo; or pick a template above.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {surveyFormData.questions.map((q, idx) => (
+                      <div
+                        key={q.id || idx}
+                        className="p-5 rounded-2xl border border-slate-200 bg-white hover:border-slate-300 transition-all shadow-xs space-y-4"
+                      >
+                        {/* Question Top Row: Number, Type, Ordering, Delete */}
+                        <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-100">
+                          <div className="flex items-center gap-2">
+                            <span className="w-7 h-7 rounded-lg bg-slate-900 text-white font-black text-xs flex items-center justify-center">
+                              {idx + 1}
+                            </span>
+                            <span className="text-xs font-black text-slate-500 uppercase">Question #{idx + 1}</span>
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            {/* Type Selector */}
+                            <select
+                              value={q.type}
+                              onChange={(e) => handleQuestionChange(idx, 'type', e.target.value)}
+                              className="px-3 py-1.5 bg-slate-50 border border-slate-200 font-bold text-xs rounded-xl text-slate-700 focus:outline-none focus:ring-1 focus:ring-emerald-500 cursor-pointer"
+                            >
+                              <option value="rating_5">⭐ 5-Star Rating</option>
+                              <option value="single_choice">🔘 Multiple Choice</option>
+                              <option value="nps_10">📊 NPS Scale (0-10)</option>
+                              <option value="text">📝 Open Text Comment</option>
+                            </select>
+
+                            {/* Move Up */}
+                            <button
+                              type="button"
+                              disabled={idx === 0}
+                              onClick={() => handleMoveQuestion(idx, 'up')}
+                              className="w-7 h-7 rounded-lg bg-slate-100 hover:bg-slate-200 disabled:opacity-30 text-slate-600 flex items-center justify-center cursor-pointer transition-colors"
+                              title="Move Up"
+                            >
+                              <ArrowUp className="w-3.5 h-3.5" />
+                            </button>
+
+                            {/* Move Down */}
+                            <button
+                              type="button"
+                              disabled={idx === surveyFormData.questions.length - 1}
+                              onClick={() => handleMoveQuestion(idx, 'down')}
+                              className="w-7 h-7 rounded-lg bg-slate-100 hover:bg-slate-200 disabled:opacity-30 text-slate-600 flex items-center justify-center cursor-pointer transition-colors"
+                              title="Move Down"
+                            >
+                              <ArrowDown className="w-3.5 h-3.5" />
+                            </button>
+
+                            {/* Delete */}
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveQuestion(idx)}
+                              className="w-7 h-7 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 flex items-center justify-center cursor-pointer transition-colors"
+                              title="Delete Question"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Question Prompt */}
+                        <div>
+                          <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                            Question Prompt <span className="text-rose-500">*</span>
+                          </label>
+                          <input
+                            type="text"
+                            required
+                            value={q.question || q.title || ''}
+                            onChange={(e) => handleQuestionChange(idx, 'question', e.target.value)}
+                            placeholder="e.g. How satisfied are you with our teachers' communication?"
+                            className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 font-semibold text-slate-800 text-sm focus:outline-none focus:border-emerald-500 transition-all"
+                          />
+                        </div>
+
+                        {/* Category & Required */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          <div>
+                            <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                              Category / Section
+                            </label>
+                            <input
+                              type="text"
+                              value={q.category || ''}
+                              onChange={(e) => handleQuestionChange(idx, 'category', e.target.value)}
+                              placeholder="e.g. Academics, Facilities, Transport..."
+                              className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 font-medium text-slate-800 text-xs focus:outline-none focus:border-emerald-500"
+                            />
+                          </div>
+
+                          <div className="flex items-center pt-5">
+                            <label className="flex items-center gap-2 cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={q.required !== false}
+                                onChange={(e) => handleQuestionChange(idx, 'required', e.target.checked)}
+                                className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 cursor-pointer"
+                              />
+                              <span className="text-xs font-bold text-slate-600">Answer is Mandatory (Required)</span>
+                            </label>
+                          </div>
+                        </div>
+
+                        {/* Multiple Choice Options Editor */}
+                        {q.type === 'single_choice' && (
+                          <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-2.5">
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs font-bold text-slate-600 flex items-center gap-1.5">
+                                <CheckSquare className="w-3.5 h-3.5 text-emerald-600" />
+                                Choices & Options ({q.options?.length || 0})
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => handleAddOption(idx)}
+                                className="text-[11px] font-bold text-emerald-700 hover:text-emerald-800 hover:underline flex items-center gap-1 cursor-pointer"
+                              >
+                                <Plus className="w-3 h-3" />
+                                Add Option
+                              </button>
+                            </div>
+
+                            <div className="space-y-2">
+                              {(q.options || []).map((opt, optIdx) => (
+                                <div key={optIdx} className="flex items-center gap-2">
+                                  <span className="text-slate-400 font-bold text-xs">○</span>
+                                  <input
+                                    type="text"
+                                    value={opt}
+                                    onChange={(e) => handleOptionChange(idx, optIdx, e.target.value)}
+                                    placeholder={`Option ${optIdx + 1}`}
+                                    className="flex-1 px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-800 focus:outline-none focus:border-emerald-500"
+                                  />
+                                  {(q.options || []).length > 2 && (
+                                    <button
+                                      type="button"
+                                      onClick={() => handleRemoveOption(idx, optIdx)}
+                                      className="w-6 h-6 rounded-md hover:bg-rose-100 text-rose-500 flex items-center justify-center transition-colors cursor-pointer"
+                                      title="Remove option"
+                                    >
+                                      <X className="w-3 h-3" />
+                                    </button>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Action Buttons in footer */}
+              <div className="pt-4 border-t border-slate-100 flex items-center justify-between gap-3 sticky bottom-0 bg-white pb-2">
+                <button
+                  type="button"
+                  onClick={() => setIsSurveyModalOpen(false)}
+                  className="py-2.5 px-5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition-all cursor-pointer"
+                >
+                  Cancel
+                </button>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    type="submit"
+                    disabled={isSavingSurvey}
+                    className="py-2.5 px-6 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-black text-xs rounded-xl shadow-md transition-all flex items-center gap-2 cursor-pointer"
+                  >
+                    {isSavingSurvey ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span>Saving Survey...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Save className="w-4 h-4" />
+                        <span>Save & Publish Survey</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </form>
           </div>
         </div>
       )}

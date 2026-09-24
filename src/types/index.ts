@@ -90,11 +90,13 @@ export interface SurveyConfig {
   term?: string;
   session?: string;
   questions: SurveyQuestion[];
+  createdAt?: string;
   updatedAt?: string;
 }
 
 export interface SurveyResponse {
   id: string;
+  surveyId?: string;
   parentPhone: string;
   parentName?: string;
   studentNames?: string[];

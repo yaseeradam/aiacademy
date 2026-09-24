@@ -853,15 +853,51 @@ export const DEFAULT_SURVEY_QUESTIONS: SurveyQuestion[] = [
   },
 ];
 
-export async function getSurveyConfig(): Promise<SurveyConfig> {
+export async function getAllSurveys(): Promise<SurveyConfig[]> {
   await ensureSeeded();
   const db = await getDB();
-  const doc = await db.collection<SurveyConfig>(SURVEY_CONFIG_COL).findOne({ id: 'survey_default' });
-  if (doc) {
-    const { _id, ...rest } = doc as any;
+  const docs = await db.collection<SurveyConfig>(SURVEY_CONFIG_COL).find({}).sort({ updatedAt: -1 }).toArray();
+  if (docs.length === 0) {
+    const defaultSurvey: SurveyConfig = {
+      id: 'survey_default',
+      title: 'Parent Satisfaction & Experience Survey',
+      description: 'Dear Parents & Guardians, your feedback is crucial in shaping our academy and providing the best education and care for your children. Please take 2 minutes to answer these questions.',
+      isActive: true,
+      term: '1st Term',
+      session: '2025/2026',
+      questions: DEFAULT_SURVEY_QUESTIONS,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    await db.collection<SurveyConfig>(SURVEY_CONFIG_COL).insertOne(defaultSurvey);
+    return [defaultSurvey];
+  }
+  return docs.map(({ _id, ...rest }: any) => rest as SurveyConfig);
+}
+
+export async function getSurveyConfig(surveyId?: string): Promise<SurveyConfig> {
+  await ensureSeeded();
+  const db = await getDB();
+  if (surveyId) {
+    const doc = await db.collection<SurveyConfig>(SURVEY_CONFIG_COL).findOne({ id: surveyId });
+    if (doc) {
+      const { _id, ...rest } = doc as any;
+      return rest as SurveyConfig;
+    }
+  }
+  // Try to find the active survey
+  const activeDoc = await db.collection<SurveyConfig>(SURVEY_CONFIG_COL).findOne({ isActive: true });
+  if (activeDoc) {
+    const { _id, ...rest } = activeDoc as any;
     return rest as SurveyConfig;
   }
-  return {
+  // Fallback to any survey or default
+  const anyDoc = await db.collection<SurveyConfig>(SURVEY_CONFIG_COL).findOne({});
+  if (anyDoc) {
+    const { _id, ...rest } = anyDoc as any;
+    return rest as SurveyConfig;
+  }
+  const defaultSurvey: SurveyConfig = {
     id: 'survey_default',
     title: 'Parent Satisfaction & Experience Survey',
     description: 'Dear Parents & Guardians, your feedback is crucial in shaping our academy and providing the best education and care for your children. Please take 2 minutes to answer these questions.',
@@ -869,18 +905,87 @@ export async function getSurveyConfig(): Promise<SurveyConfig> {
     term: '1st Term',
     session: '2025/2026',
     questions: DEFAULT_SURVEY_QUESTIONS,
+    createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   };
-}
-
-export async function updateSurveyConfig(config: Partial<SurveyConfig>): Promise<void> {
-  await ensureSeeded();
-  const db = await getDB();
   await db.collection<SurveyConfig>(SURVEY_CONFIG_COL).updateOne(
     { id: 'survey_default' },
-    { $set: { ...config, id: 'survey_default', updatedAt: new Date().toISOString() } },
+    { $set: defaultSurvey },
     { upsert: true }
   );
+  return defaultSurvey;
+}
+
+export async function saveSurveyConfig(survey: SurveyConfig): Promise<void> {
+  await ensureSeeded();
+  const db = await getDB();
+  const id = survey.id || `survey_${Date.now()}`;
+  const now = new Date().toISOString();
+  const configToSave: SurveyConfig = {
+    ...survey,
+    id,
+    createdAt: survey.createdAt || now,
+    updatedAt: now,
+  };
+  if (configToSave.isActive) {
+    await db.collection<SurveyConfig>(SURVEY_CONFIG_COL).updateMany(
+      { id: { $ne: id } },
+      { $set: { isActive: false, updatedAt: now } }
+    );
+  }
+  await db.collection<SurveyConfig>(SURVEY_CONFIG_COL).updateOne(
+    { id },
+    { $set: configToSave },
+    { upsert: true }
+  );
+}
+
+export async function updateSurveyConfig(config: Partial<SurveyConfig>, surveyId: string = 'survey_default'): Promise<void> {
+  await ensureSeeded();
+  const db = await getDB();
+  const targetId = config.id || surveyId;
+  const now = new Date().toISOString();
+  if (config.isActive) {
+    await db.collection<SurveyConfig>(SURVEY_CONFIG_COL).updateMany(
+      { id: { $ne: targetId } },
+      { $set: { isActive: false, updatedAt: now } }
+    );
+  }
+  await db.collection<SurveyConfig>(SURVEY_CONFIG_COL).updateOne(
+    { id: targetId },
+    { $set: { ...config, id: targetId, updatedAt: now } },
+    { upsert: true }
+  );
+}
+
+export async function setActiveSurvey(surveyId: string): Promise<boolean> {
+  await ensureSeeded();
+  const db = await getDB();
+  const now = new Date().toISOString();
+  await db.collection<SurveyConfig>(SURVEY_CONFIG_COL).updateMany(
+    {},
+    { $set: { isActive: false } }
+  );
+  const res = await db.collection<SurveyConfig>(SURVEY_CONFIG_COL).updateOne(
+    { id: surveyId },
+    { $set: { isActive: true, updatedAt: now } }
+  );
+  return res.modifiedCount > 0;
+}
+
+export async function deleteSurveyConfig(surveyId: string): Promise<boolean> {
+  await ensureSeeded();
+  const db = await getDB();
+  const res = await db.collection(SURVEY_CONFIG_COL).deleteOne({ id: surveyId });
+  await db.collection(SURVEY_RESPONSES_COL).deleteMany({ surveyId });
+  const remainingActive = await db.collection<SurveyConfig>(SURVEY_CONFIG_COL).findOne({ isActive: true });
+  if (!remainingActive) {
+    const latest = await db.collection<SurveyConfig>(SURVEY_CONFIG_COL).findOne({}, { sort: { updatedAt: -1 } });
+    if (latest) {
+      await db.collection<SurveyConfig>(SURVEY_CONFIG_COL).updateOne({ id: latest.id }, { $set: { isActive: true } });
+    }
+  }
+  return res.deletedCount > 0;
 }
 
 export async function saveSurveyResponse(response: SurveyResponse): Promise<void> {
@@ -893,26 +998,42 @@ export async function saveSurveyResponse(response: SurveyResponse): Promise<void
   );
 }
 
-export async function getSurveyResponseByPhone(phone: string): Promise<SurveyResponse | null> {
+export async function getSurveyResponseByPhone(phone: string, surveyId?: string): Promise<SurveyResponse | null> {
   await ensureSeeded();
   const db = await getDB();
   const normalized = normalizePhone(phone);
-  const doc = await db.collection<SurveyResponse>(SURVEY_RESPONSES_COL).findOne({
-    $or: [
-      { parentPhone: phone },
-      { parentPhone: normalized },
-      { parentPhone: { $regex: new RegExp(`${escapeRegex(normalized)}$`) } }
-    ]
-  });
+  const phoneQueries = [
+    { parentPhone: phone },
+    { parentPhone: normalized },
+    { parentPhone: { $regex: new RegExp(`${escapeRegex(normalized)}$`) } }
+  ];
+
+  let query: any;
+  if (surveyId) {
+    query = {
+      $and: [
+        { $or: phoneQueries },
+        { $or: [{ surveyId: surveyId }, { surveyId: { $exists: false } }] }
+      ]
+    };
+  } else {
+    query = { $or: phoneQueries };
+  }
+
+  const doc = await db.collection<SurveyResponse>(SURVEY_RESPONSES_COL).findOne(query);
   if (!doc) return null;
   const { _id, ...rest } = doc as any;
   return rest as SurveyResponse;
 }
 
-export async function getAllSurveyResponses(): Promise<SurveyResponse[]> {
+export async function getAllSurveyResponses(surveyId?: string): Promise<SurveyResponse[]> {
   await ensureSeeded();
   const db = await getDB();
-  const docs = await db.collection<SurveyResponse>(SURVEY_RESPONSES_COL).find({}).sort({ submittedAt: -1 }).toArray();
+  const query: any = {};
+  if (surveyId) {
+    query.$or = [{ surveyId: surveyId }, { surveyId: { $exists: false } }];
+  }
+  const docs = await db.collection<SurveyResponse>(SURVEY_RESPONSES_COL).find(query).sort({ submittedAt: -1 }).toArray();
   return docs.map(({ _id, ...rest }: any) => rest as SurveyResponse);
 }
 

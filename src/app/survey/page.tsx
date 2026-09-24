@@ -14,6 +14,7 @@ import { SurveyConfig, SurveyQuestion, SurveyResponse } from '@/types';
 function SurveyContent() {
   const searchParams = useSearchParams();
   const urlPhone = searchParams.get('phone') || '';
+  const urlSurveyId = searchParams.get('id') || '';
 
   const [phone, setPhone] = useState<string>(urlPhone);
   const [phoneSubmitted, setPhoneSubmitted] = useState<boolean>(false);
@@ -49,13 +50,13 @@ function SurveyContent() {
     } else {
       loadSurvey();
     }
-  }, [urlPhone]);
+  }, [urlPhone, urlSurveyId]);
 
   const loadSurvey = async (lookupPhone?: string) => {
     setIsLoading(true);
     setErrorMessage('');
     try {
-      const res = await getPublicSurveyDataAction(lookupPhone);
+      const res = await getPublicSurveyDataAction(lookupPhone, urlSurveyId || undefined);
       if (res.success && res.config) {
         setConfig(res.config);
         if (res.parent) {
@@ -85,7 +86,7 @@ function SurveyContent() {
     setErrorMessage('');
     setIsLoading(true);
     try {
-      const res = await getPublicSurveyDataAction(phone.trim());
+      const res = await getPublicSurveyDataAction(phone.trim(), urlSurveyId || undefined);
       if (res.success) {
         setConfig(res.config);
         if (res.parent) {
@@ -131,7 +132,7 @@ function SurveyContent() {
     if (config?.questions) {
       for (const q of config.questions) {
         if (q.required && (answers[q.id] === undefined || answers[q.id] === '')) {
-          setErrorMessage(`Please answer required question: "${q.question}"`);
+          setErrorMessage(`Please answer required question: "${q.question || q.title}"`);
           return;
         }
       }
@@ -140,7 +141,7 @@ function SurveyContent() {
     setErrorMessage('');
     setIsSubmitting(true);
     try {
-      const res = await submitParentSurveyAction(phone.trim(), answers);
+      const res = await submitParentSurveyAction(phone.trim(), answers, config?.id);
       if (res.success) {
         setSubmitSuccess(true);
         setStatusMessage(res.message);
