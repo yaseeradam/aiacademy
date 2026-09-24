@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { logoutAction, adminUpdateStudentAction, adminDeleteStudentAction, adminDeleteMultipleStudentsAction, unassignStudentFromSubclassAction, unassignMultipleStudentsFromSubclassAction, assignMultipleStudentsToSubclassAction, restoreMissingSeedStudentsAction, clearAllDatabaseDataAction, adminCreateStudentAction, adminVerifyAction, adminTogglePaymentStatusAction, getAuditLogsAction, scanAdmissionFormOCRAction, getSchoolSettingsAction, updateSchoolSettingsAction, findDuplicateStudentsAction, fixDuplicateAdmissionNumbersAction, DuplicateGroup, getAllStaffAction, adminCreateStaffAction, adminUpdateStaffAction, adminDeleteStaffAction, adminImportStaffCSVAction, adminSeedStaffFromExcelAction } from '@/app/actions';
 import AdmissionLetterModal, { printBulkAdmissionLetters, printPaidStudentsPDF, getStudentClassArm, getStudentAdmissionNumber } from './AdmissionLetterModal';
+import AppointmentLetterModal, { printBulkAppointmentLetters } from './AppointmentLetterModal';
 import PickupIDCardModal from './PickupIDCardModal';
 import PrintClassRosterModal from './PrintClassRosterModal';
 import { printOfficialClassEnrolmentRoster } from '@/lib/printUtils';
@@ -114,8 +115,9 @@ export default function AdminControl({ students, initialStaff = [] }: AdminContr
   const [activeTab, setActiveTabState] = useState<AdminTabType>(getInitialTab);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  // Modal State for viewing Admission Letter
+  // Modal State for viewing Admission Letter & Appointment Letter
   const [letterModalStudent, setLetterModalStudent] = useState<Student | null>(null);
+  const [appointmentModalStaff, setAppointmentModalStaff] = useState<Staff | null>(null);
   const [isPickupModalOpen, setIsPickupModalOpen] = useState<boolean>(false);
   const [isPrintClassModalOpen, setIsPrintClassModalOpen] = useState<boolean>(false);
   const [isTogglingFee, setIsTogglingFee] = useState<string | null>(null);
@@ -4717,6 +4719,28 @@ export default function AdminControl({ students, initialStaff = [] }: AdminContr
 
                 <button
                   type="button"
+                  onClick={() => {
+                    if (!staffList || staffList.length === 0) {
+                      alert('No staff records available to print.');
+                      return;
+                    }
+                    printBulkAppointmentLetters(staffList, schoolSettings.logo || '/logo.jpg', {
+                      name: schoolSettings.name,
+                      address: schoolSettings.address,
+                      phone: schoolSettings.tel1 ? `${schoolSettings.tel1}, ${schoolSettings.tel2}` : undefined,
+                      email: schoolSettings.email,
+                    });
+                  }}
+                  disabled={staffList.length === 0}
+                  className="py-2.5 px-3.5 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-800 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer shadow-xs disabled:opacity-50"
+                  title="Print official A4 appointment letters for all staff"
+                >
+                  <FileText className="w-4 h-4 text-emerald-600" />
+                  <span>Print Appointment Letters ({staffList.length})</span>
+                </button>
+
+                <button
+                  type="button"
                   onClick={loadStaff}
                   disabled={isLoadingStaff}
                   className="py-2.5 px-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer shadow-xs disabled:opacity-50"
@@ -4928,6 +4952,15 @@ export default function AdminControl({ students, initialStaff = [] }: AdminContr
                             <div className="flex items-center justify-end gap-2">
                               <button
                                 type="button"
+                                onClick={() => setAppointmentModalStaff(staff)}
+                                className="py-1.5 px-3 rounded-xl text-xs font-bold bg-emerald-50 text-emerald-800 hover:bg-emerald-100 border border-emerald-200 transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                                title="Generate official Teacher Appointment Letter"
+                              >
+                                <FileText className="w-3.5 h-3.5 text-emerald-600" />
+                                <span>Appointment Letter</span>
+                              </button>
+                              <button
+                                type="button"
                                 onClick={() => handleOpenEditStaff(staff)}
                                 className="p-2 rounded-xl text-slate-500 hover:text-blue-600 hover:bg-blue-50 transition-all cursor-pointer"
                                 title="Edit staff details"
@@ -4962,6 +4995,23 @@ export default function AdminControl({ students, initialStaff = [] }: AdminContr
           isOpen={!!letterModalStudent}
           onClose={() => setLetterModalStudent(null)}
           allStudents={students}
+        />
+      )}
+
+      {/* Official Teacher Appointment Letter Modal */}
+      {appointmentModalStaff && (
+        <AppointmentLetterModal
+          staff={appointmentModalStaff}
+          isOpen={!!appointmentModalStaff}
+          onClose={() => setAppointmentModalStaff(null)}
+          allStaff={staffList}
+          schoolSettings={{
+            schoolName: schoolSettings.name,
+            motto: schoolSettings.motto,
+            address: schoolSettings.address,
+            phones: schoolSettings.tel1 ? `${schoolSettings.tel1}, ${schoolSettings.tel2}` : '08069676697, 07034784861',
+            logo: schoolSettings.logo || '/logo.jpg',
+          }}
         />
       )}
 
