@@ -33,8 +33,14 @@ import {
   getStaffById,
   syncStaffFromExcelList,
   INITIAL_STAFF,
+  getSurveyConfig,
+  updateSurveyConfig,
+  saveSurveyResponse,
+  getSurveyResponseByPhone,
+  getAllSurveyResponses,
+  deleteSurveyResponse,
 } from '@/lib/db';
-import { Student, Parent, SchoolSettings, Staff } from '@/types';
+import { Student, Parent, SchoolSettings, Staff, SurveyConfig, SurveyQuestion, SurveyResponse } from '@/types';
 import { getStudentClassArm, getStudentAdmissionNumber, normalizeAdmissionNumber } from '@/lib/classUtils';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1221,3 +1227,313 @@ export async function adminSeedStaffFromExcelAction(): Promise<{
     };
   }
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Parent Survey & Feedback Actions
+// ─────────────────────────────────────────────────────────────────────────────
+
+export async function getPublicSurveyDataAction(phone?: string): Promise<{
+  success: boolean;
+  config: SurveyConfig;
+  parent: { name: string; phone: string; studentNames: string[]; classes: string[] } | null;
+  existingResponse: SurveyResponse | null;
+  error?: string;
+}> {
+  try {
+    const config = await getSurveyConfig();
+    let parentInfo: { name: string; phone: string; studentNames: string[]; classes: string[] } | null = null;
+    let existingResponse: SurveyResponse | null = null;
+
+    if (phone && phone.trim()) {
+      const cleanPhone = phone.trim();
+      const parent = await getParentByPhone(cleanPhone);
+      if (parent) {
+        const children = await getStudentsByParentId(parent.id);
+        const studentNames = children.map(c => `${c.firstName} ${c.lastName}`.trim());
+        const classes = Array.from(new Set(children.map(c => getStudentClassArm(c.intendedClass, c.id, children))));
+        parentInfo = {
+          name: parent.parentName,
+          phone: parent.phoneNumber,
+          studentNames,
+          classes,
+        };
+      }
+      existingResponse = await getSurveyResponseByPhone(cleanPhone);
+    }
+
+    return {
+      success: true,
+      config,
+      parent: parentInfo,
+      existingResponse,
+    };
+  } catch (err: unknown) {
+    return {
+      success: false,
+      config: {
+        id: 'survey_default',
+        title: 'Parent Satisfaction & Experience Survey',
+        description: '',
+        isActive: false,
+        questions: [],
+      },
+      parent: null,
+      existingResponse: null,
+      error: err instanceof Error ? err.message : 'Failed to load survey data',
+    };
+  }
+}
+
+export async function submitParentSurveyAction(
+  phone: string,
+  answers: Record<string, string | number>
+): Promise<{ success: boolean; message: string; response?: SurveyResponse; error?: string }> {
+  try {
+    if (!phone || !phone.trim()) {
+      return { success: false, message: '', error: 'A valid parent phone number is required.' };
+    }
+
+    const cleanPhone = phone.trim();
+    const config = await getSurveyConfig();
+    if (!config.isActive) {
+      return { success: false, message: '', error: 'The parent feedback survey is currently closed.' };
+    }
+
+    // Lookup parent details from database
+    const parent = await getParentByPhone(cleanPhone);
+    let parentName = parent ? parent.parentName : 'Parent';
+    let studentNames: string[] = [];
+    let classes: string[] = [];
+
+    if (parent) {
+      const children = await getStudentsByParentId(parent.id);
+      studentNames = children.map(c => `${c.firstName} ${c.lastName}`.trim());
+      classes = Array.from(new Set(children.map(c => getStudentClassArm(c.intendedClass, c.id, children))));
+    } else {
+      // Check if student has this phone1 or phone2
+      const allStudents = await getAllStudents();
+      const matching = allStudents.filter(s => {
+        const p1 = s.phone1 ? normalizePhone(s.phone1) : '';
+        const p2 = s.phone2 ? normalizePhone(s.phone2) : '';
+        const norm = normalizePhone(cleanPhone);
+        return (norm && p1 === norm) || (norm && p2 === norm);
+      });
+      if (matching.length > 0) {
+        studentNames = matching.map(c => `${c.firstName} ${c.lastName}`.trim());
+        classes = Array.from(new Set(matching.map(c => getStudentClassArm(c.intendedClass, c.id, matching))));
+        parentName = matching[0].fatherName || matching[0].motherName || matching[0].guardianName || 'Parent';
+      }
+    }
+
+    const existing = await getSurveyResponseByPhone(cleanPhone);
+    const responseId = existing ? existing.id : `resp_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+
+    const surveyResponse: SurveyResponse = {
+      id: responseId,
+      parentPhone: cleanPhone,
+      parentName,
+      studentNames,
+      classes,
+      answers,
+      submittedAt: new Date().toISOString(),
+      term: config.term || '1st Term',
+      session: config.session || '2025/2026',
+    };
+
+    await saveSurveyResponse(surveyResponse);
+
+    await addAuditLog({
+      action: 'UPDATE',
+      actor: `Parent (${cleanPhone})`,
+      details: `Parent (${parentName}) submitted feedback for ${config.term || '1st Term'} survey`,
+    });
+
+    return {
+      success: true,
+      message: existing 
+        ? 'Your survey feedback has been successfully updated! Thank you for helping us improve AI Academy.' 
+        : 'Thank you! Your feedback has been received and will directly help us serve your child better.',
+      response: surveyResponse,
+    };
+  } catch (err: unknown) {
+    return {
+      success: false,
+      message: '',
+      error: err instanceof Error ? err.message : 'Failed to submit feedback. Please try again.',
+    };
+  }
+}
+
+export async function adminGetSurveyDataAction(): Promise<{
+  success: boolean;
+  config: SurveyConfig;
+  responses: SurveyResponse[];
+  analytics: {
+    totalResponses: number;
+    averageSatisfaction: number;
+    npsScore: number;
+    promotersCount: number;
+    passivesCount: number;
+    detractorsCount: number;
+    ratingsBreakdown: Record<string, { avg: number; count: number; stars: Record<number, number> }>;
+    choiceBreakdown: Record<string, Record<string, number>>;
+    textResponses: Record<string, Array<{ text: string; parentName?: string; phone?: string; classes?: string[]; date: string }>>;
+  };
+  error?: string;
+}> {
+  try {
+    const config = await getSurveyConfig();
+    const responses = await getAllSurveyResponses();
+
+    const ratingsBreakdown: Record<string, { avg: number; count: number; stars: Record<number, number> }> = {};
+    const choiceBreakdown: Record<string, Record<string, number>> = {};
+    const textResponses: Record<string, Array<{ text: string; parentName?: string; phone?: string; classes?: string[]; date: string }>> = {};
+
+    let totalSatisfactionSum = 0;
+    let totalSatisfactionCount = 0;
+    let promoters = 0;
+    let passives = 0;
+    let detractors = 0;
+    let npsTotal = 0;
+
+    // Initialize structures
+    config.questions.forEach(q => {
+      if (q.type === 'rating_5') {
+        ratingsBreakdown[q.id] = { avg: 0, count: 0, stars: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 } };
+      } else if (q.type === 'single_choice') {
+        choiceBreakdown[q.id] = {};
+        (q.options || []).forEach(opt => {
+          choiceBreakdown[q.id][opt] = 0;
+        });
+      } else if (q.type === 'text') {
+        textResponses[q.id] = [];
+      }
+    });
+
+    responses.forEach(r => {
+      Object.entries(r.answers || {}).forEach(([qId, ans]) => {
+        const question = config.questions.find(q => q.id === qId);
+        if (!question) return;
+
+        if (question.type === 'rating_5') {
+          const num = typeof ans === 'number' ? ans : parseInt(String(ans), 10);
+          if (!isNaN(num) && num >= 1 && num <= 5) {
+            ratingsBreakdown[qId].stars[num] = (ratingsBreakdown[qId].stars[num] || 0) + 1;
+            ratingsBreakdown[qId].count++;
+            totalSatisfactionSum += num;
+            totalSatisfactionCount++;
+          }
+        } else if (question.type === 'nps_10') {
+          const num = typeof ans === 'number' ? ans : parseInt(String(ans), 10);
+          if (!isNaN(num) && num >= 0 && num <= 10) {
+            npsTotal++;
+            if (num >= 9) promoters++;
+            else if (num >= 7) passives++;
+            else detractors++;
+          }
+        } else if (question.type === 'single_choice') {
+          const optStr = String(ans);
+          choiceBreakdown[qId] = choiceBreakdown[qId] || {};
+          choiceBreakdown[qId][optStr] = (choiceBreakdown[qId][optStr] || 0) + 1;
+        } else if (question.type === 'text') {
+          const str = String(ans || '').trim();
+          if (str) {
+            textResponses[qId] = textResponses[qId] || [];
+            textResponses[qId].push({
+              text: str,
+              parentName: r.parentName,
+              phone: r.parentPhone,
+              classes: r.classes,
+              date: r.submittedAt,
+            });
+          }
+        }
+      });
+    });
+
+    // Compute averages
+    Object.keys(ratingsBreakdown).forEach(qId => {
+      const data = ratingsBreakdown[qId];
+      if (data.count > 0) {
+        let sum = 0;
+        for (let star = 1; star <= 5; star++) {
+          sum += star * (data.stars[star] || 0);
+        }
+        data.avg = Number((sum / data.count).toFixed(1));
+      }
+    });
+
+    const averageSatisfaction = totalSatisfactionCount > 0 
+      ? Number((totalSatisfactionSum / totalSatisfactionCount).toFixed(1)) 
+      : 5.0;
+
+    const npsScore = npsTotal > 0 
+      ? Math.round(((promoters - detractors) / npsTotal) * 100) 
+      : 100;
+
+    return {
+      success: true,
+      config,
+      responses,
+      analytics: {
+        totalResponses: responses.length,
+        averageSatisfaction,
+        npsScore,
+        promotersCount: promoters,
+        passivesCount: passives,
+        detractorsCount: detractors,
+        ratingsBreakdown,
+        choiceBreakdown,
+        textResponses,
+      },
+    };
+  } catch (err: unknown) {
+    return {
+      success: false,
+      config: {
+        id: 'survey_default',
+        title: '',
+        description: '',
+        isActive: false,
+        questions: [],
+      },
+      responses: [],
+      analytics: {
+        totalResponses: 0,
+        averageSatisfaction: 0,
+        npsScore: 0,
+        promotersCount: 0,
+        passivesCount: 0,
+        detractorsCount: 0,
+        ratingsBreakdown: {},
+        choiceBreakdown: {},
+        textResponses: {},
+      },
+      error: err instanceof Error ? err.message : 'Failed to fetch survey analytics',
+    };
+  }
+}
+
+export async function adminUpdateSurveyConfigAction(configData: Partial<SurveyConfig>): Promise<{ success: boolean; error?: string }> {
+  try {
+    await updateSurveyConfig(configData);
+    await addAuditLog({
+      action: 'UPDATE',
+      actor: 'School Administrator',
+      details: 'Updated parent survey questions and configuration settings',
+    });
+    return { success: true };
+  } catch (err: unknown) {
+    return { success: false, error: err instanceof Error ? err.message : 'Failed to update survey configuration' };
+  }
+}
+
+export async function adminDeleteSurveyResponseAction(id: string): Promise<{ success: boolean; error?: string }> {
+  try {
+    const success = await deleteSurveyResponse(id);
+    return { success };
+  } catch (err: unknown) {
+    return { success: false, error: err instanceof Error ? err.message : 'Failed to delete survey response' };
+  }
+}
+

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { Student, AuditLog, Staff } from '@/types';
+import { Student, AuditLog, Staff, SurveyConfig, SurveyResponse } from '@/types';
 import { useRouter } from 'next/navigation';
 import JSZip from 'jszip';
 import { 
@@ -10,9 +10,9 @@ import {
   ShieldCheck, ChevronRight, ChevronDown, X, Menu,
   Grid, Settings, Plus, LogOut, Trash2, Save, BookOpen,
   Loader2, Scan, History, MessageSquare, Camera, FileText, CheckCircle2, CreditCard, Printer,
-  GraduationCap, Folder, FolderOpen, Edit3, Briefcase, Phone
+  GraduationCap, Folder, FolderOpen, Edit3, Briefcase, Phone, MessageSquareHeart, Star, ThumbsUp, ExternalLink, Copy
 } from 'lucide-react';
-import { logoutAction, adminUpdateStudentAction, adminDeleteStudentAction, adminDeleteMultipleStudentsAction, unassignStudentFromSubclassAction, unassignMultipleStudentsFromSubclassAction, assignMultipleStudentsToSubclassAction, restoreMissingSeedStudentsAction, clearAllDatabaseDataAction, adminCreateStudentAction, adminVerifyAction, adminTogglePaymentStatusAction, getAuditLogsAction, scanAdmissionFormOCRAction, getSchoolSettingsAction, updateSchoolSettingsAction, findDuplicateStudentsAction, fixDuplicateAdmissionNumbersAction, DuplicateGroup, getAllStaffAction, adminCreateStaffAction, adminUpdateStaffAction, adminDeleteStaffAction, adminImportStaffCSVAction, adminSeedStaffFromExcelAction } from '@/app/actions';
+import { logoutAction, adminUpdateStudentAction, adminDeleteStudentAction, adminDeleteMultipleStudentsAction, unassignStudentFromSubclassAction, unassignMultipleStudentsFromSubclassAction, assignMultipleStudentsToSubclassAction, restoreMissingSeedStudentsAction, clearAllDatabaseDataAction, adminCreateStudentAction, adminVerifyAction, adminTogglePaymentStatusAction, getAuditLogsAction, scanAdmissionFormOCRAction, getSchoolSettingsAction, updateSchoolSettingsAction, findDuplicateStudentsAction, fixDuplicateAdmissionNumbersAction, DuplicateGroup, getAllStaffAction, adminCreateStaffAction, adminUpdateStaffAction, adminDeleteStaffAction, adminImportStaffCSVAction, adminSeedStaffFromExcelAction, adminGetSurveyDataAction, adminUpdateSurveyConfigAction, adminDeleteSurveyResponseAction } from '@/app/actions';
 import AdmissionLetterModal, { printBulkAdmissionLetters, printPaidStudentsPDF, getStudentClassArm, getStudentAdmissionNumber } from './AdmissionLetterModal';
 import AppointmentLetterModal, { printBulkAppointmentLetters } from './AppointmentLetterModal';
 import PickupIDCardModal from './PickupIDCardModal';
@@ -75,7 +75,7 @@ export default function AdminControl({ students, initialStaff = [] }: AdminContr
     );
   };
 
-  type AdminTabType = 'overview' | 'classes' | 'directory' | 'staff' | 'pending' | 'corrections' | 'settings' | 'new-verification' | 'audit-log' | 'admission-letters';
+  type AdminTabType = 'overview' | 'classes' | 'directory' | 'staff' | 'surveys' | 'pending' | 'corrections' | 'settings' | 'new-verification' | 'audit-log' | 'admission-letters';
 
   // Helper functions to persist view state across router.refresh() re-renders
   const getInitialTab = (): AdminTabType => {
@@ -190,6 +190,167 @@ export default function AdminControl({ students, initialStaff = [] }: AdminContr
   }>>([]);
   const [isStaffImporting, setIsStaffImporting] = useState<boolean>(false);
   const [staffImportFile, setStaffImportFile] = useState<File | null>(null);
+
+  // Parent Survey State & Actions
+  const [surveyData, setSurveyData] = useState<{
+    config: SurveyConfig | null;
+    responses: SurveyResponse[];
+    analytics: {
+      totalResponses: number;
+      averageSatisfaction: number;
+      npsScore: number;
+      promotersCount: number;
+      passivesCount: number;
+      detractorsCount: number;
+      ratingsBreakdown: Record<string, { stars: Record<number, number>; count: number; avg?: number }>;
+      choiceBreakdown: Record<string, Record<string, number>>;
+      textResponses: Record<string, Array<{ text: string; parentName?: string; phone?: string; classes?: string[]; date: string }>>;
+    };
+  } | null>(null);
+  const [isLoadingSurveys, setIsLoadingSurveys] = useState<boolean>(false);
+  const [surveySearchQuery, setSurveySearchQuery] = useState<string>('');
+  const [surveyClassFilter, setSurveyClassFilter] = useState<string>('all');
+  const [selectedSurveyResponse, setSelectedSurveyResponse] = useState<SurveyResponse | null>(null);
+  const [isUpdatingSurveyActive, setIsUpdatingSurveyActive] = useState<boolean>(false);
+  const [copiedSurveyLink, setCopiedSurveyLink] = useState<boolean>(false);
+
+  const fetchSurveys = async () => {
+    setIsLoadingSurveys(true);
+    try {
+      const res = await adminGetSurveyDataAction();
+      if (res.success) {
+        setSurveyData({
+          config: res.config,
+          responses: res.responses,
+          analytics: res.analytics,
+        });
+      }
+    } catch (err) {
+      console.error('Failed to load survey data:', err);
+    } finally {
+      setIsLoadingSurveys(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === 'surveys' && !surveyData) {
+      fetchSurveys();
+    }
+  }, [activeTab, surveyData]);
+
+  const handleToggleSurveyActive = async () => {
+    if (!surveyData?.config) return;
+    const newActive = !surveyData.config.isActive;
+    setIsUpdatingSurveyActive(true);
+    try {
+      const res = await adminUpdateSurveyConfigAction({ isActive: newActive });
+      if (res.success) {
+        setSurveyData(prev => prev ? {
+          ...prev,
+          config: { ...prev.config!, isActive: newActive }
+        } : null);
+      }
+    } catch (err) {
+      console.error('Failed to toggle survey active status:', err);
+    } finally {
+      setIsUpdatingSurveyActive(false);
+    }
+  };
+
+  const handleDeleteSurveyResponse = async (id: string, parentName: string) => {
+    if (!window.confirm(`Are you sure you want to delete the feedback response from ${parentName || 'this parent'}?`)) {
+      return;
+    }
+    try {
+      const res = await adminDeleteSurveyResponseAction(id);
+      if (res.success) {
+        setSurveyData(prev => {
+          if (!prev) return null;
+          const updatedResponses = prev.responses.filter(r => r.id !== id);
+          return {
+            ...prev,
+            responses: updatedResponses,
+            analytics: {
+              ...prev.analytics,
+              totalResponses: updatedResponses.length
+            }
+          };
+        });
+        if (selectedSurveyResponse?.id === id) {
+          setSelectedSurveyResponse(null);
+        }
+      }
+    } catch (err) {
+      console.error('Failed to delete response:', err);
+    }
+  };
+
+  const handleExportSurveyCSV = () => {
+    if (!surveyData || !surveyData.responses || surveyData.responses.length === 0) {
+      alert('No survey responses available to export.');
+      return;
+    }
+
+    const questions = surveyData.config?.questions || [];
+    const headers = [
+      'Submission Date',
+      'Parent Name',
+      'Phone Number',
+      'Children Classes',
+      ...questions.map(q => `"${(q.question || q.title || '').replace(/"/g, '""')}"`)
+    ];
+
+    const rows = surveyData.responses.map(r => {
+      const dateStr = new Date(r.submittedAt).toLocaleString('en-GB');
+      const classesStr = (r.classes || []).join('; ');
+      const answersCols = questions.map(q => {
+        const val = r.answers?.[q.id];
+        if (val === undefined || val === null) return '""';
+        return `"${String(val).replace(/"/g, '""')}"`;
+      });
+      return [
+        `"${dateStr}"`,
+        `"${(r.parentName || '').replace(/"/g, '""')}"`,
+        `"${r.parentPhone || ''}"`,
+        `"${classesStr.replace(/"/g, '""')}"`,
+        ...answersCols
+      ].join(',');
+    });
+
+    const csvContent = 'data:text/csv;charset=utf-8,\uFEFF' + [headers.join(','), ...rows].join('\n');
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', `AIA_Parent_Survey_Responses_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleCopySurveyLink = () => {
+    if (typeof window !== 'undefined') {
+      const url = `${window.location.origin}/survey`;
+      navigator.clipboard.writeText(url);
+      setCopiedSurveyLink(true);
+      setTimeout(() => setCopiedSurveyLink(false), 2500);
+    }
+  };
+
+  const filteredSurveyResponses = useMemo(() => {
+    if (!surveyData?.responses) return [];
+    return surveyData.responses.filter(r => {
+      const q = surveySearchQuery.toLowerCase();
+      const matchesSearch = !q || 
+        (r.parentName || '').toLowerCase().includes(q) ||
+        (r.parentPhone || '').includes(q) ||
+        Object.values(r.answers || {}).some(val => String(val).toLowerCase().includes(q));
+
+      const matchesClass = surveyClassFilter === 'all' || 
+        (r.classes || []).some(cls => cls.toLowerCase().includes(surveyClassFilter.toLowerCase()));
+
+      return matchesSearch && matchesClass;
+    });
+  }, [surveyData?.responses, surveySearchQuery, surveyClassFilter]);
 
   const setActiveTab = (tab: AdminTabType) => {
     setActiveTabState(tab);
@@ -2079,6 +2240,25 @@ export default function AdminControl({ students, initialStaff = [] }: AdminContr
                 </button>
                 <button 
                   onClick={() => {
+                    setActiveTab('surveys');
+                    setIsMobileMenuOpen(false);
+                  }}
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl font-bold text-sm transition-all text-left cursor-pointer ${
+                    activeTab === 'surveys' 
+                      ? 'bg-slate-900 text-white shadow-sm shadow-slate-900/10' 
+                      : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'
+                  }`}
+                >
+                  <MessageSquareHeart className="w-4 h-4 text-rose-500" />
+                  <span>Parent Feedback</span>
+                  {Boolean(surveyData?.analytics?.totalResponses) && (
+                    <span className="ml-auto bg-rose-500 text-white text-[10px] font-black px-1.5 py-0.5 rounded-full shrink-0">
+                      {surveyData?.analytics?.totalResponses}
+                    </span>
+                  )}
+                </button>
+                <button 
+                  onClick={() => {
                     setActiveTab('admission-letters');
                     setIsMobileMenuOpen(false);
                   }}
@@ -2305,6 +2485,22 @@ export default function AdminControl({ students, initialStaff = [] }: AdminContr
               {staffList.length > 0 && (
                 <span className="ml-auto bg-amber-500 text-white text-[10px] font-black px-1.5 py-0.5 rounded-full shrink-0">
                   {staffList.length}
+                </span>
+              )}
+            </button>
+            <button 
+              onClick={() => { setSelectedSubgroupRoster(null); setActiveTab('surveys'); }}
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl font-bold text-sm transition-all text-left cursor-pointer ${
+                activeTab === 'surveys' && !selectedSubgroupRoster 
+                  ? 'bg-slate-900 text-white shadow-sm shadow-slate-900/10' 
+                  : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'
+              }`}
+            >
+              <MessageSquareHeart className="w-4 h-4 text-rose-500" />
+              <span>Parent Feedback</span>
+              {Boolean(surveyData?.analytics?.totalResponses) && (
+                <span className="ml-auto bg-rose-500 text-white text-[10px] font-black px-1.5 py-0.5 rounded-full shrink-0">
+                  {surveyData?.analytics?.totalResponses}
                 </span>
               )}
             </button>
@@ -4986,6 +5182,551 @@ export default function AdminControl({ students, initialStaff = [] }: AdminContr
             </div>
           </div>
         )}
+
+        {/* TAB: PARENT FEEDBACK & SURVEYS */}
+        {activeTab === 'surveys' && (
+          <div className="space-y-6 animate-slide-down">
+            {/* Header */}
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div>
+                <div className="flex items-center gap-2">
+                  <h1 className="text-3xl font-black text-slate-800 tracking-tight leading-none">Parent Feedback & Surveys</h1>
+                  {surveyData?.config?.isActive ? (
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-black bg-emerald-100 text-emerald-800 border border-emerald-200">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse"></span>
+                      Live
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-black bg-slate-100 text-slate-600 border border-slate-200">
+                      Paused
+                    </span>
+                  )}
+                </div>
+                <p className="text-slate-500 text-sm font-semibold mt-2.5">
+                  Monitor parent satisfaction, analyze Net Promoter Score (NPS), and review real-time feedback.
+                </p>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex flex-wrap items-center gap-2.5">
+                <button
+                  type="button"
+                  onClick={handleToggleSurveyActive}
+                  disabled={isUpdatingSurveyActive || !surveyData?.config}
+                  className={`py-2 px-3.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer border ${
+                    surveyData?.config?.isActive
+                      ? 'bg-amber-50 hover:bg-amber-100 text-amber-800 border-amber-200'
+                      : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border-emerald-200'
+                  }`}
+                  title="Toggle whether parents can submit survey responses"
+                >
+                  {surveyData?.config?.isActive ? 'Pause Survey' : 'Activate Survey'}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleCopySurveyLink}
+                  className="py-2 px-3.5 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                  title="Copy public link to share with parents on WhatsApp or SMS"
+                >
+                  <Copy className="w-3.5 h-3.5 text-slate-500" />
+                  <span>{copiedSurveyLink ? 'Link Copied!' : 'Copy Link'}</span>
+                </button>
+
+                <a
+                  href="/survey"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="py-2 px-3.5 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                  title="Open live survey preview"
+                >
+                  <ExternalLink className="w-3.5 h-3.5 text-slate-500" />
+                  <span>Preview</span>
+                </a>
+
+                <button
+                  type="button"
+                  onClick={fetchSurveys}
+                  disabled={isLoadingSurveys}
+                  className="py-2 px-3 bg-white hover:bg-slate-50 border border-slate-200 text-slate-600 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                  title="Refresh responses"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${isLoadingSurveys ? 'animate-spin text-emerald-600' : 'text-slate-500'}`} />
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleExportSurveyCSV}
+                  disabled={!surveyData?.responses?.length}
+                  className="py-2 px-4 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white rounded-xl text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer shadow-sm"
+                  title="Download all survey responses as CSV spreadsheet"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  <span>Export CSV</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Quick KPI Cards */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              {/* Card 1: Total Responses */}
+              <div className="p-5 bg-white rounded-2xl border border-slate-200 shadow-xs flex flex-col justify-between">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Total Feedback</span>
+                  <div className="w-8 h-8 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center">
+                    <MessageSquareHeart className="w-4 h-4" />
+                  </div>
+                </div>
+                <div className="mt-4">
+                  <span className="text-3xl font-black text-slate-800">{surveyData?.analytics?.totalResponses || 0}</span>
+                  <span className="block text-xs font-semibold text-slate-400 mt-0.5">Parent submissions</span>
+                </div>
+              </div>
+
+              {/* Card 2: Average Rating */}
+              <div className="p-5 bg-white rounded-2xl border border-slate-200 shadow-xs flex flex-col justify-between">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Avg Satisfaction</span>
+                  <div className="w-8 h-8 rounded-xl bg-amber-50 text-amber-500 flex items-center justify-center">
+                    <Star className="w-4 h-4 fill-amber-400" />
+                  </div>
+                </div>
+                <div className="mt-4">
+                  <div className="flex items-baseline gap-1.5">
+                    <span className="text-3xl font-black text-slate-800">
+                      {surveyData?.analytics?.averageSatisfaction ? surveyData.analytics.averageSatisfaction.toFixed(1) : '5.0'}
+                    </span>
+                    <span className="text-xs font-bold text-slate-400">/ 5.0</span>
+                  </div>
+                  <div className="flex items-center gap-0.5 mt-1 text-amber-400">
+                    {[1, 2, 3, 4, 5].map(star => (
+                      <Star
+                        key={star}
+                        className={`w-3.5 h-3.5 ${
+                          star <= Math.round(surveyData?.analytics?.averageSatisfaction || 5)
+                            ? 'fill-amber-400 text-amber-400'
+                            : 'text-slate-200'
+                        }`}
+                      />
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Card 3: NPS Score */}
+              <div className="p-5 bg-white rounded-2xl border border-slate-200 shadow-xs flex flex-col justify-between">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Net Promoter Score</span>
+                  <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                    <ThumbsUp className="w-4 h-4" />
+                  </div>
+                </div>
+                <div className="mt-4">
+                  <div className="flex items-baseline gap-2">
+                    <span className={`text-3xl font-black ${
+                      (surveyData?.analytics?.npsScore ?? 100) >= 50 ? 'text-emerald-700' : (surveyData?.analytics?.npsScore ?? 100) >= 0 ? 'text-amber-600' : 'text-rose-600'
+                    }`}>
+                      {surveyData?.analytics?.npsScore !== undefined ? `${surveyData.analytics.npsScore > 0 ? '+' : ''}${surveyData.analytics.npsScore}%` : '+100%'}
+                    </span>
+                    <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700">
+                      {(surveyData?.analytics?.npsScore ?? 100) >= 70 ? 'World-Class' : (surveyData?.analytics?.npsScore ?? 100) >= 50 ? 'Excellent' : 'Positive'}
+                    </span>
+                  </div>
+                  <span className="block text-[11px] font-semibold text-slate-400 mt-1">
+                    {surveyData?.analytics?.promotersCount || 0} Promoters vs {surveyData?.analytics?.detractorsCount || 0} Detractors
+                  </span>
+                </div>
+              </div>
+
+              {/* Card 4: Portal Direct Link */}
+              <div className="p-5 bg-gradient-to-br from-[#0f7343] to-emerald-800 text-white rounded-2xl shadow-sm flex flex-col justify-between">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-200">Parent Access</span>
+                  <span className="text-[10px] font-black bg-white/20 px-2 py-0.5 rounded-full">Automated</span>
+                </div>
+                <div className="mt-3">
+                  <p className="text-xs font-medium text-emerald-100 leading-snug">
+                    Parents can log in with their phone number via dashboard or directly at <span className="font-mono font-bold text-white underline">/survey</span>.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={handleCopySurveyLink}
+                    className="mt-3 w-full py-1.5 px-3 rounded-lg bg-white/20 hover:bg-white/30 text-white font-bold text-[11px] transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                  >
+                    <Copy className="w-3 h-3" />
+                    <span>{copiedSurveyLink ? 'Link Copied to Clipboard!' : 'Copy Shareable Link'}</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Questions Analytics Breakdown */}
+            {surveyData?.config?.questions && surveyData.config.questions.length > 0 && (
+              <div className="bg-white rounded-3xl border border-slate-200 p-6 md:p-8 space-y-6 shadow-xs">
+                <div>
+                  <h3 className="text-lg font-black text-slate-800 tracking-tight">Question Breakdown & Sentiment</h3>
+                  <p className="text-xs font-semibold text-slate-400 mt-0.5">
+                    Aggregated analytics across parent responses for each question in this term survey.
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {surveyData.config.questions.map((q, idx) => {
+                    const ratingData = surveyData.analytics?.ratingsBreakdown?.[q.id];
+                    const choiceData = surveyData.analytics?.choiceBreakdown?.[q.id];
+                    const textList = surveyData.analytics?.textResponses?.[q.id] || [];
+
+                    return (
+                      <div key={q.id} className="p-5 rounded-2xl bg-slate-50/70 border border-slate-200/80 space-y-4">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="space-y-1">
+                            <span className="inline-block text-[10px] font-black uppercase tracking-wider text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200/60">
+                              Q{idx + 1} • {q.category || 'General'}
+                            </span>
+                            <h4 className="font-bold text-slate-800 text-sm">{q.question || q.title}</h4>
+                          </div>
+
+                          {q.type === 'rating_5' && ratingData && (
+                            <div className="text-right shrink-0">
+                              <span className="text-lg font-black text-slate-800">{ratingData.avg || '5.0'}</span>
+                              <span className="text-xs text-slate-400 font-bold">/5</span>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* If 5-Star Rating Question */}
+                        {q.type === 'rating_5' && (
+                          <div className="space-y-2 pt-1">
+                            {[5, 4, 3, 2, 1].map(stars => {
+                              const count = ratingData?.stars?.[stars] || 0;
+                              const total = ratingData?.count || 0;
+                              const pct = total > 0 ? Math.round((count / total) * 100) : 0;
+                              return (
+                                <div key={stars} className="flex items-center gap-3 text-xs">
+                                  <div className="flex items-center gap-1 w-12 text-slate-600 font-bold shrink-0">
+                                    <span>{stars}</span>
+                                    <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
+                                  </div>
+                                  <div className="flex-1 h-2 rounded-full bg-slate-200 overflow-hidden">
+                                    <div
+                                      className={`h-full rounded-full transition-all ${
+                                        stars >= 4 ? 'bg-emerald-500' : stars === 3 ? 'bg-amber-400' : 'bg-rose-400'
+                                      }`}
+                                      style={{ width: `${pct}%` }}
+                                    ></div>
+                                  </div>
+                                  <span className="w-12 text-right text-slate-500 font-mono text-[11px] font-bold">
+                                    {count} ({pct}%)
+                                  </span>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+
+                        {/* If Single Choice Question */}
+                        {q.type === 'single_choice' && (
+                          <div className="space-y-2.5 pt-1">
+                            {(q.options || []).map(opt => {
+                              const count = choiceData?.[opt] || 0;
+                              const total = Object.values(choiceData || {}).reduce((acc, c) => acc + c, 0);
+                              const pct = total > 0 ? Math.round((count / total) * 100) : 0;
+                              return (
+                                <div key={opt} className="space-y-1">
+                                  <div className="flex items-center justify-between text-xs font-semibold text-slate-700">
+                                    <span className="truncate pr-2">{opt}</span>
+                                    <span className="font-mono text-[11px] text-slate-500 font-bold shrink-0">
+                                      {count} ({pct}%)
+                                    </span>
+                                  </div>
+                                  <div className="h-2 rounded-full bg-slate-200 overflow-hidden">
+                                    <div
+                                      className="h-full bg-emerald-600 rounded-full transition-all"
+                                      style={{ width: `${pct}%` }}
+                                    ></div>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+
+                        {/* If NPS 0-10 Question */}
+                        {q.type === 'nps_10' && (
+                          <div className="space-y-2.5 pt-1">
+                            <div className="grid grid-cols-11 gap-1">
+                              {Array.from({ length: 11 }, (_, i) => i).map(num => {
+                                const count = (surveyData.responses || []).filter(r => Number(r.answers?.[q.id]) === num).length;
+                                return (
+                                  <div
+                                    key={num}
+                                    className={`flex flex-col items-center justify-center p-1.5 rounded-lg border text-center ${
+                                      num >= 9
+                                        ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
+                                        : num >= 7
+                                        ? 'bg-amber-50 border-amber-200 text-amber-800'
+                                        : 'bg-rose-50 border-rose-200 text-rose-800'
+                                    }`}
+                                  >
+                                    <span className="text-xs font-black">{num}</span>
+                                    <span className="text-[10px] font-mono font-bold mt-0.5">{count}</span>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                            <div className="flex items-center justify-between text-[11px] font-bold text-slate-400 px-1">
+                              <span className="text-rose-600">0–6: Detractors</span>
+                              <span className="text-amber-600">7–8: Passives</span>
+                              <span className="text-emerald-600">9–10: Promoters</span>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* If Open Text Qualitative Feedback */}
+                        {q.type === 'text' && (
+                          <div className="space-y-2 pt-1">
+                            {textList.length === 0 ? (
+                              <p className="text-xs text-slate-400 italic">No written comments submitted yet.</p>
+                            ) : (
+                              <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+                                {textList.slice(0, 4).map((item, tIdx) => (
+                                  <div key={tIdx} className="bg-white p-3 rounded-xl border border-slate-200/70 text-xs shadow-2xs space-y-1">
+                                    <p className="text-slate-700 italic">"{item.text}"</p>
+                                    <div className="flex items-center justify-between text-[10px] text-slate-400 font-semibold pt-1 border-t border-slate-100">
+                                      <span>{item.parentName || item.phone || 'Parent'}</span>
+                                      <span>{new Date(item.date).toLocaleDateString('en-GB')}</span>
+                                    </div>
+                                  </div>
+                                ))}
+                                {textList.length > 4 && (
+                                  <span className="block text-center text-[11px] font-bold text-emerald-700 pt-1">
+                                    + {textList.length - 4} more comments (see table below)
+                                  </span>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Parent Responses Table */}
+            <div className="soft-card bg-white rounded-[2rem] border border-slate-200 overflow-hidden shadow-sm">
+              <div className="p-6 border-b border-slate-100 flex flex-col md:flex-row gap-4 items-stretch md:items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-black text-slate-800">All Feedback Submissions</h3>
+                  <p className="text-xs font-semibold text-slate-400 mt-0.5">
+                    Click any response to view full answers or contact parent.
+                  </p>
+                </div>
+
+                <div className="flex gap-3 items-center flex-wrap sm:flex-nowrap">
+                  <div className="relative flex-1 max-w-xs">
+                    <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                    <input
+                      type="text"
+                      placeholder="Search parent name, phone, or words..."
+                      value={surveySearchQuery}
+                      onChange={(e) => setSurveySearchQuery(e.target.value)}
+                      className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    />
+                  </div>
+
+                  <select
+                    value={surveyClassFilter}
+                    onChange={(e) => setSurveyClassFilter(e.target.value)}
+                    className="py-2.5 px-4 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:outline-none"
+                  >
+                    <option value="all">All Student Classes</option>
+                    {classList.map(cls => (
+                      <option key={cls} value={cls}>{cls}</option>
+                    ))}
+                  </select>
+
+                  <span className="text-xs font-bold text-slate-400 bg-slate-100 py-2.5 px-3 rounded-xl shrink-0">
+                    Showing {filteredSurveyResponses.length} of {surveyData?.responses?.length || 0}
+                  </span>
+                </div>
+              </div>
+
+              {/* Responses List / Table */}
+              {isLoadingSurveys ? (
+                <div className="p-16 text-center text-slate-400 flex flex-col items-center justify-center gap-3">
+                  <Loader2 className="w-8 h-8 animate-spin text-emerald-600" />
+                  <span className="text-xs font-bold">Loading survey responses...</span>
+                </div>
+              ) : filteredSurveyResponses.length === 0 ? (
+                <div className="p-16 text-center text-slate-400 flex flex-col items-center justify-center">
+                  <div className="w-16 h-16 rounded-3xl bg-slate-100 flex items-center justify-center mb-4 text-slate-400">
+                    <MessageSquareHeart className="w-8 h-8" />
+                  </div>
+                  <h4 className="text-base font-bold text-slate-700">No Feedback Responses Found</h4>
+                  <p className="text-xs text-slate-400 max-w-sm mt-1">
+                    {surveySearchQuery || surveyClassFilter !== 'all'
+                      ? 'No responses match your search filters. Try clearing your search.'
+                      : 'Parents have not submitted any feedback yet. Share the survey link on WhatsApp to collect their first reviews!'}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={handleCopySurveyLink}
+                    className="mt-5 py-2.5 px-5 bg-[#0f7343] hover:bg-emerald-700 text-white rounded-xl text-xs font-black transition-all flex items-center gap-2 cursor-pointer shadow-md"
+                  >
+                    <Copy className="w-4 h-4 text-amber-300" />
+                    <span>{copiedSurveyLink ? 'Link Copied!' : 'Copy Survey Link for WhatsApp'}</span>
+                  </button>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-sm text-slate-600">
+                    <thead className="bg-slate-50/75 border-b border-slate-100 text-slate-400 font-bold text-xs uppercase tracking-wider">
+                      <tr>
+                        <th className="py-4 px-6">Parent</th>
+                        <th className="py-4 px-6">Enrolled Children</th>
+                        <th className="py-4 px-6">Satisfaction</th>
+                        <th className="py-4 px-6">NPS Recommend</th>
+                        <th className="py-4 px-6">Date</th>
+                        <th className="py-4 px-6 text-right">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {filteredSurveyResponses.map((response) => {
+                        const satisfactionAns = response.answers?.['academics_rating'];
+                        const npsAns = response.answers?.['recommendation_nps'];
+                        const parentPhoneClean = (response.parentPhone || '').replace(/[^\d]/g, '');
+
+                        return (
+                          <tr key={response.id} className="hover:bg-slate-50/60 transition-colors">
+                            {/* Parent Name & Phone */}
+                            <td className="py-4 px-6">
+                              <div>
+                                <h4 className="font-extrabold text-slate-800">
+                                  {response.parentName || 'Anonymous Parent'}
+                                </h4>
+                                {response.parentPhone ? (
+                                  <a
+                                    href={`tel:${response.parentPhone}`}
+                                    className="text-xs text-slate-400 hover:text-emerald-700 font-mono flex items-center gap-1 mt-0.5"
+                                  >
+                                    <Phone className="w-3 h-3 text-emerald-600" />
+                                    <span>{response.parentPhone}</span>
+                                  </a>
+                                ) : (
+                                  <span className="text-xs text-slate-400 italic">No phone</span>
+                                )}
+                              </div>
+                            </td>
+
+                            {/* Enrolled Children Classes */}
+                            <td className="py-4 px-6">
+                              <div className="flex flex-wrap gap-1.5">
+                                {(response.classes && response.classes.length > 0) ? (
+                                  response.classes.map((cls, cIdx) => (
+                                    <span key={cIdx} className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-black bg-emerald-50 text-emerald-800 border border-emerald-200/70">
+                                      <GraduationCap className="w-3 h-3 text-emerald-600" />
+                                      <span>{cls}</span>
+                                    </span>
+                                  ))
+                                ) : (
+                                  <span className="text-xs text-slate-400 italic">General Parent</span>
+                                )}
+                              </div>
+                            </td>
+
+                            {/* Satisfaction Stars */}
+                            <td className="py-4 px-6">
+                              {satisfactionAns ? (
+                                <div className="flex items-center gap-1.5">
+                                  <span className="font-black text-slate-800 text-sm">{satisfactionAns}★</span>
+                                  <div className="flex items-center gap-0.5 text-amber-400">
+                                    {[1, 2, 3, 4, 5].map(star => (
+                                      <Star
+                                        key={star}
+                                        className={`w-3 h-3 ${star <= Number(satisfactionAns) ? 'fill-amber-400 text-amber-400' : 'text-slate-200'}`}
+                                      />
+                                    ))}
+                                  </div>
+                                </div>
+                              ) : (
+                                <span className="text-xs text-slate-400 italic">—</span>
+                              )}
+                            </td>
+
+                            {/* NPS Recommendation */}
+                            <td className="py-4 px-6">
+                              {npsAns !== undefined && npsAns !== null ? (
+                                <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-black border ${
+                                  Number(npsAns) >= 9
+                                    ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                                    : Number(npsAns) >= 7
+                                    ? 'bg-amber-50 text-amber-800 border-amber-200'
+                                    : 'bg-rose-50 text-rose-800 border-rose-200'
+                                }`}>
+                                  {npsAns} / 10
+                                </span>
+                              ) : (
+                                <span className="text-xs text-slate-400 italic">—</span>
+                              )}
+                            </td>
+
+                            {/* Date */}
+                            <td className="py-4 px-6 text-xs text-slate-500 font-semibold whitespace-nowrap">
+                              {new Date(response.submittedAt).toLocaleDateString('en-GB', {
+                                day: '2-digit',
+                                month: 'short',
+                                year: 'numeric',
+                              })}
+                            </td>
+
+                            {/* Actions */}
+                            <td className="py-4 px-6 text-right">
+                              <div className="flex items-center justify-end gap-2">
+                                {parentPhoneClean && (
+                                  <a
+                                    href={`https://wa.me/${parentPhoneClean.replace(/^0/, '234')}?text=${encodeURIComponent(
+                                      `Assalamu Alaikum ${response.parentName || 'Parent'}, thank you for submitting your feedback regarding AI Integrated Academy Argungu. We appreciate your valuable contribution!`
+                                    )}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="p-2 rounded-xl text-emerald-600 hover:bg-emerald-50 transition-all cursor-pointer"
+                                    title="WhatsApp Parent"
+                                  >
+                                    <MessageSquare className="w-4 h-4" />
+                                  </a>
+                                )}
+
+                                <button
+                                  type="button"
+                                  onClick={() => setSelectedSurveyResponse(response)}
+                                  className="py-1.5 px-3 rounded-xl text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 transition-all cursor-pointer shadow-2xs"
+                                  title="View full survey response"
+                                >
+                                  View Details
+                                </button>
+
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeleteSurveyResponse(response.id, response.parentName || '')}
+                                  className="p-2 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-all cursor-pointer"
+                                  title="Delete response"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </main>
 
       {/* Official A4 Admission Letter Modal */}
@@ -5032,6 +5773,149 @@ export default function AdminControl({ students, initialStaff = [] }: AdminContr
         classStudentMap={classStudentMap}
         schoolSettings={schoolSettings}
       />
+
+      {/* Individual Parent Survey Response Modal */}
+      {selectedSurveyResponse && (
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-[2.5rem] p-6 md:p-8 w-full max-w-2xl shadow-2xl border border-slate-100 animate-slide-up max-h-[90vh] overflow-y-auto no-scrollbar">
+            {/* Modal Header */}
+            <div className="flex items-start justify-between mb-6 pb-4 border-b border-slate-100">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center font-bold">
+                  <MessageSquareHeart className="w-6 h-6" />
+                </div>
+                <div>
+                  <h3 className="text-2xl font-black text-slate-800 tracking-tight leading-none">
+                    {selectedSurveyResponse.parentName || 'Parent Feedback'}
+                  </h3>
+                  <p className="text-xs font-semibold text-slate-400 mt-1.5">
+                    Submitted on {new Date(selectedSurveyResponse.submittedAt).toLocaleString('en-GB')}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedSurveyResponse(null)}
+                className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 hover:bg-slate-200 transition-all cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Parent Info Strip */}
+            <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200/80 mb-6 flex flex-wrap items-center justify-between gap-3 text-xs">
+              <div>
+                <span className="text-slate-400 font-bold block">Phone Number</span>
+                <span className="font-mono font-bold text-slate-800">{selectedSurveyResponse.parentPhone || 'Not specified'}</span>
+              </div>
+              <div>
+                <span className="text-slate-400 font-bold block">Children Classes</span>
+                <div className="flex flex-wrap gap-1 mt-0.5">
+                  {(selectedSurveyResponse.classes && selectedSurveyResponse.classes.length > 0) ? (
+                    selectedSurveyResponse.classes.map((c, i) => (
+                      <span key={i} className="px-2 py-0.5 bg-emerald-100 text-emerald-800 font-bold rounded-md text-[11px]">
+                        {c}
+                      </span>
+                    ))
+                  ) : (
+                    <span className="text-slate-500 italic">No specific class</span>
+                  )}
+                </div>
+              </div>
+              {selectedSurveyResponse.parentPhone && (
+                <a
+                  href={`https://wa.me/${selectedSurveyResponse.parentPhone.replace(/[^\d]/g, '').replace(/^0/, '234')}?text=${encodeURIComponent(
+                    `Assalamu Alaikum ${selectedSurveyResponse.parentName || 'Parent'}, regarding your recent feedback for AI Integrated Academy Argungu...`
+                  )}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="py-1.5 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1.5 transition-all shadow-xs"
+                >
+                  <MessageSquare className="w-3.5 h-3.5" />
+                  <span>Reply on WhatsApp</span>
+                </a>
+              )}
+            </div>
+
+            {/* Question by Question Answers */}
+            <div className="space-y-4">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400">Survey Answers</h4>
+              {(surveyData?.config?.questions || []).map((q, idx) => {
+                const answer = selectedSurveyResponse.answers?.[q.id];
+                return (
+                  <div key={q.id} className="p-4 rounded-xl border border-slate-200 bg-white space-y-2">
+                    <div className="flex items-center justify-between text-xs text-slate-400 font-bold">
+                      <span>Question {idx + 1} • {q.category || 'General'}</span>
+                    </div>
+                    <p className="text-sm font-extrabold text-slate-800">{q.question || q.title}</p>
+                    
+                    <div className="pt-1">
+                      {answer === undefined || answer === null || answer === '' ? (
+                        <span className="text-xs text-slate-400 italic">No answer provided</span>
+                      ) : q.type === 'rating_5' ? (
+                        <div className="flex items-center gap-2">
+                          <span className="text-base font-black text-amber-500">{answer} / 5</span>
+                          <div className="flex items-center gap-1 text-amber-400">
+                            {[1, 2, 3, 4, 5].map(s => (
+                              <Star
+                                key={s}
+                                className={`w-4 h-4 ${s <= Number(answer) ? 'fill-amber-400 text-amber-400' : 'text-slate-200'}`}
+                              />
+                            ))}
+                          </div>
+                        </div>
+                      ) : q.type === 'nps_10' ? (
+                        <div className="flex items-center gap-2">
+                          <span className={`px-3 py-1 rounded-xl text-sm font-black border ${
+                            Number(answer) >= 9
+                              ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                              : Number(answer) >= 7
+                              ? 'bg-amber-50 text-amber-800 border-amber-200'
+                              : 'bg-rose-50 text-rose-800 border-rose-200'
+                          }`}>
+                            Score: {answer} / 10
+                          </span>
+                          <span className="text-xs font-bold text-slate-500">
+                            {Number(answer) >= 9 ? 'Promoter' : Number(answer) >= 7 ? 'Passive' : 'Detractor'}
+                          </span>
+                        </div>
+                      ) : q.type === 'text' ? (
+                        <div className="p-3 bg-slate-50 rounded-xl text-sm text-slate-700 italic border border-slate-100">
+                          "{String(answer)}"
+                        </div>
+                      ) : (
+                        <span className="inline-block px-3 py-1 bg-slate-100 text-slate-800 rounded-lg text-xs font-bold font-mono">
+                          {String(answer)}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Modal Actions */}
+            <div className="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between">
+              <button
+                type="button"
+                onClick={() => handleDeleteSurveyResponse(selectedSurveyResponse.id, selectedSurveyResponse.parentName || '')}
+                className="py-2 px-3 text-rose-600 hover:bg-rose-50 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>Delete Feedback</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setSelectedSurveyResponse(null)}
+                className="py-2.5 px-5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition-all cursor-pointer"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ================= ADD / EDIT STAFF MODAL OVERLAY ================= */}
       {isStaffModalOpen && (

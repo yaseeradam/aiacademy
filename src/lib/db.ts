@@ -1,5 +1,5 @@
 import clientPromise from './mongodb';
-import { Parent, Student, VerificationStatus, AuditLog, SchoolSettings, Staff } from '../types';
+import { Parent, Student, VerificationStatus, AuditLog, SchoolSettings, Staff, SurveyConfig, SurveyQuestion, SurveyResponse } from '../types';
 import { normalizeAdmissionNumber } from './classUtils';
 
 const DB_NAME = 'ai_academy';
@@ -9,6 +9,8 @@ const AUDIT_COL = 'audit_logs';
 const SETTINGS_COL = 'settings';
 const COUNTERS_COL = 'counters';
 const STAFF_COL = 'staff';
+const SURVEY_CONFIG_COL = 'survey_config';
+const SURVEY_RESPONSES_COL = 'survey_responses';
 
 // Escape a string so it is safe to embed inside a MongoDB $regex
 function escapeRegex(str: string): string {
@@ -792,4 +794,133 @@ export async function syncStaffFromExcelList(records: Array<{
 
   return { importedCount: count, updatedStaff };
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Parent Survey & Feedback Operations
+// ─────────────────────────────────────────────────────────────────────────────
+
+export const DEFAULT_SURVEY_QUESTIONS: SurveyQuestion[] = [
+  {
+    id: 'q_academics',
+    question: "How satisfied are you with your child's academic learning progress and classroom teaching?",
+    type: 'rating_5',
+    category: 'Academics & Teaching',
+    required: true,
+  },
+  {
+    id: 'q_communication',
+    question: "How would you rate the communication from teachers and the school administration?",
+    type: 'single_choice',
+    options: ['Excellent - Very responsive & clear', 'Good - Satisfactory updates', 'Fair - Could be more frequent', 'Poor - Difficult to get information'],
+    category: 'Communication',
+    required: true,
+  },
+  {
+    id: 'q_environment',
+    question: "How would you rate the school environment, cleanliness, safety, and child care?",
+    type: 'rating_5',
+    category: 'Safety & Environment',
+    required: true,
+  },
+  {
+    id: 'q_discipline',
+    question: "How satisfied are you with moral guidance, student discipline, and Islamic & character values at AI Academy?",
+    type: 'single_choice',
+    options: ['Very Satisfied', 'Satisfied', 'Neutral', 'Needs Improvement'],
+    category: 'Discipline & Values',
+    required: true,
+  },
+  {
+    id: 'q_nps',
+    question: "How likely are you to recommend AI Integrated Academy to friends, relatives, and colleagues?",
+    type: 'nps_10',
+    category: 'General Recommendation',
+    required: true,
+  },
+  {
+    id: 'q_doing_well',
+    question: "What is one thing you love most about AI Academy or that the school is doing very well?",
+    type: 'text',
+    category: 'Feedback',
+    required: false,
+  },
+  {
+    id: 'q_improvements',
+    question: "What is one area where the school can improve to serve your child better?",
+    type: 'text',
+    category: 'Feedback',
+    required: false,
+  },
+];
+
+export async function getSurveyConfig(): Promise<SurveyConfig> {
+  await ensureSeeded();
+  const db = await getDB();
+  const doc = await db.collection<SurveyConfig>(SURVEY_CONFIG_COL).findOne({ id: 'survey_default' });
+  if (doc) {
+    const { _id, ...rest } = doc as any;
+    return rest as SurveyConfig;
+  }
+  return {
+    id: 'survey_default',
+    title: 'Parent Satisfaction & Experience Survey',
+    description: 'Dear Parents & Guardians, your feedback is crucial in shaping our academy and providing the best education and care for your children. Please take 2 minutes to answer these questions.',
+    isActive: true,
+    term: '1st Term',
+    session: '2025/2026',
+    questions: DEFAULT_SURVEY_QUESTIONS,
+    updatedAt: new Date().toISOString(),
+  };
+}
+
+export async function updateSurveyConfig(config: Partial<SurveyConfig>): Promise<void> {
+  await ensureSeeded();
+  const db = await getDB();
+  await db.collection<SurveyConfig>(SURVEY_CONFIG_COL).updateOne(
+    { id: 'survey_default' },
+    { $set: { ...config, id: 'survey_default', updatedAt: new Date().toISOString() } },
+    { upsert: true }
+  );
+}
+
+export async function saveSurveyResponse(response: SurveyResponse): Promise<void> {
+  await ensureSeeded();
+  const db = await getDB();
+  await db.collection<SurveyResponse>(SURVEY_RESPONSES_COL).updateOne(
+    { id: response.id },
+    { $set: response },
+    { upsert: true }
+  );
+}
+
+export async function getSurveyResponseByPhone(phone: string): Promise<SurveyResponse | null> {
+  await ensureSeeded();
+  const db = await getDB();
+  const normalized = normalizePhone(phone);
+  const doc = await db.collection<SurveyResponse>(SURVEY_RESPONSES_COL).findOne({
+    $or: [
+      { parentPhone: phone },
+      { parentPhone: normalized },
+      { parentPhone: { $regex: new RegExp(`${escapeRegex(normalized)}$`) } }
+    ]
+  });
+  if (!doc) return null;
+  const { _id, ...rest } = doc as any;
+  return rest as SurveyResponse;
+}
+
+export async function getAllSurveyResponses(): Promise<SurveyResponse[]> {
+  await ensureSeeded();
+  const db = await getDB();
+  const docs = await db.collection<SurveyResponse>(SURVEY_RESPONSES_COL).find({}).sort({ submittedAt: -1 }).toArray();
+  return docs.map(({ _id, ...rest }: any) => rest as SurveyResponse);
+}
+
+export async function deleteSurveyResponse(id: string): Promise<boolean> {
+  await ensureSeeded();
+  const db = await getDB();
+  const res = await db.collection(SURVEY_RESPONSES_COL).deleteOne({ id });
+  return res.deletedCount > 0;
+}
+
 

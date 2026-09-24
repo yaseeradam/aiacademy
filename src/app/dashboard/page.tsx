@@ -4,7 +4,7 @@ import { getParentByPhone, getStudentsByParentId, getAllStudents, getSchoolSetti
 import VerificationCard from '@/components/VerificationCard';
 import AdminControl from '@/components/AdminControl';
 import { logoutAction } from '../actions';
-import { LogOut, Info, ShieldAlert, Award } from 'lucide-react';
+import { LogOut, Info, ShieldAlert, Award, MessageSquareHeart, ArrowRight } from 'lucide-react';
 
 export const revalidate = 0; // Dynamic rendering
 
@@ -105,6 +105,33 @@ export default async function DashboardPage() {
                   <Info className="w-3.5 h-3.5 text-[#137333]" />
                   <span>Action required by Sep 14th</span>
                 </div>
+              </div>
+
+              {/* Parent Feedback Survey Banner */}
+              <div className="bg-gradient-to-r from-[#07361e] via-[#0f7343] to-[#145a35] text-white p-4 sm:p-5 rounded-3xl shadow-md border border-emerald-700/40 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex items-start sm:items-center gap-3.5">
+                  <div className="w-11 h-11 rounded-2xl bg-white/15 backdrop-blur-md flex items-center justify-center shrink-0 border border-white/20 shadow-inner">
+                    <MessageSquareHeart className="w-6 h-6 text-amber-300" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-black text-sm sm:text-base text-white tracking-tight">Parent Experience Survey</h3>
+                      <span className="px-2 py-0.5 rounded-full bg-amber-400 text-slate-950 font-black text-[10px] uppercase tracking-wider">
+                        2 Min
+                      </span>
+                    </div>
+                    <p className="text-xs text-emerald-100 font-medium mt-0.5">
+                      Your voice shapes our school! Share your feedback on teaching, safety, and care.
+                    </p>
+                  </div>
+                </div>
+                <a
+                  href={`/survey?phone=${encodeURIComponent(phone)}`}
+                  className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-white hover:bg-emerald-50 text-[#0f7343] font-black text-xs shadow-md transition-all shrink-0 cursor-pointer"
+                >
+                  <span>Take Survey</span>
+                  <ArrowRight className="w-4 h-4" />
+                </a>
               </div>
 
               {/* Profiles Grid */}

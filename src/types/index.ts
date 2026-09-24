@@ -71,3 +71,36 @@ export interface Staff {
   salary?: string;
   createdAt?: string;
 }
+
+export interface SurveyQuestion {
+  id: string;
+  question: string;
+  title?: string;
+  type: 'rating_5' | 'single_choice' | 'nps_10' | 'text';
+  options?: string[];
+  category?: string;
+  required?: boolean;
+}
+
+export interface SurveyConfig {
+  id: string;
+  title: string;
+  description: string;
+  isActive: boolean;
+  term?: string;
+  session?: string;
+  questions: SurveyQuestion[];
+  updatedAt?: string;
+}
+
+export interface SurveyResponse {
+  id: string;
+  parentPhone: string;
+  parentName?: string;
+  studentNames?: string[];
+  classes?: string[];
+  answers: Record<string, string | number>;
+  submittedAt: string;
+  term?: string;
+  session?: string;
+}
