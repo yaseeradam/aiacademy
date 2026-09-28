@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 import { logoutAction, adminUpdateStudentAction, adminDeleteStudentAction, adminDeleteMultipleStudentsAction, unassignStudentFromSubclassAction, unassignMultipleStudentsFromSubclassAction, assignMultipleStudentsToSubclassAction, restoreMissingSeedStudentsAction, clearAllDatabaseDataAction, adminCreateStudentAction, adminVerifyAction, adminTogglePaymentStatusAction, getAuditLogsAction, scanAdmissionFormOCRAction, getSchoolSettingsAction, updateSchoolSettingsAction, findDuplicateStudentsAction, fixDuplicateAdmissionNumbersAction, DuplicateGroup, getAllStaffAction, adminCreateStaffAction, adminUpdateStaffAction, adminDeleteStaffAction, adminImportStaffCSVAction, adminSeedStaffFromExcelAction, adminGetSurveyDataAction, adminUpdateSurveyConfigAction, adminDeleteSurveyResponseAction, adminSaveSurveyAction, adminSetActiveSurveyAction, adminDeleteSurveyAction } from '@/app/actions';
 import AdmissionLetterModal, { printBulkAdmissionLetters, printPaidStudentsPDF, getStudentClassArm, getStudentAdmissionNumber } from './AdmissionLetterModal';
-import AppointmentLetterModal, { printBulkAppointmentLetters } from './AppointmentLetterModal';
+import AppointmentLetterModal, { printBulkAppointmentLetters, printIndividualAppointmentLetter } from './AppointmentLetterModal';
 import PickupIDCardModal from './PickupIDCardModal';
 import PrintClassRosterModal from './PrintClassRosterModal';
 import { printOfficialClassEnrolmentRoster } from '@/lib/printUtils';
@@ -119,6 +119,8 @@ export default function AdminControl({ students, initialStaff = [] }: AdminContr
   // Modal State for viewing Admission Letter & Appointment Letter
   const [letterModalStudent, setLetterModalStudent] = useState<Student | null>(null);
   const [appointmentModalStaff, setAppointmentModalStaff] = useState<Staff | null>(null);
+  const [isStaffLetterPickerOpen, setIsStaffLetterPickerOpen] = useState<boolean>(false);
+  const [staffLetterPickerSearch, setStaffLetterPickerSearch] = useState<string>('');
   const [isPickupModalOpen, setIsPickupModalOpen] = useState<boolean>(false);
   const [isPrintClassModalOpen, setIsPrintClassModalOpen] = useState<boolean>(false);
   const [isTogglingFee, setIsTogglingFee] = useState<string | null>(null);
@@ -5249,27 +5251,40 @@ export default function AdminControl({ students, initialStaff = [] }: AdminContr
                   <span className="hidden md:inline">Export CSV</span>
                 </button>
 
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (!staffList || staffList.length === 0) {
-                      alert('No staff records available to print.');
-                      return;
-                    }
-                    printBulkAppointmentLetters(staffList, schoolSettings.logo || '/logo.jpg', {
-                      name: schoolSettings.name,
-                      address: schoolSettings.address,
-                      phone: schoolSettings.tel1 ? `${schoolSettings.tel1}, ${schoolSettings.tel2}` : undefined,
-                      email: schoolSettings.email,
-                    });
-                  }}
-                  disabled={staffList.length === 0}
-                  className="py-2.5 px-3.5 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-800 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer shadow-xs disabled:opacity-50"
-                  title="Print official A4 appointment letters for all staff"
-                >
-                  <FileText className="w-4 h-4 text-emerald-600" />
-                  <span>Print Appointment Letters ({staffList.length})</span>
-                </button>
+                <div className="inline-flex items-center rounded-xl bg-emerald-50 border border-emerald-200 p-0.5 shadow-2xs">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (!staffList || staffList.length === 0) {
+                        alert('No staff records available to print.');
+                        return;
+                      }
+                      printBulkAppointmentLetters(staffList, schoolSettings.logo || '/logo.jpg', {
+                        name: schoolSettings.name,
+                        address: schoolSettings.address,
+                        phone: schoolSettings.tel1 ? `${schoolSettings.tel1}, ${schoolSettings.tel2}` : undefined,
+                        email: schoolSettings.email,
+                      });
+                    }}
+                    disabled={staffList.length === 0}
+                    className="py-2 px-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-xs disabled:opacity-50"
+                    title="Print official A4 appointment letters for all staff members"
+                  >
+                    <Printer className="w-3.5 h-3.5 text-emerald-100" />
+                    <span>Print All ({staffList.length})</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setIsStaffLetterPickerOpen(true)}
+                    disabled={staffList.length === 0}
+                    className="py-2 px-3 hover:bg-emerald-100 text-emerald-800 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                    title="Select an individual staff member to print or customize their appointment letter"
+                  >
+                    <FileText className="w-3.5 h-3.5 text-emerald-600" />
+                    <span>Print Individual Letter...</span>
+                  </button>
+                </div>
 
                 <button
                   type="button"
@@ -5482,15 +5497,31 @@ export default function AdminControl({ students, initialStaff = [] }: AdminContr
                           {/* Actions */}
                           <td className="py-4 px-6 text-right">
                             <div className="flex items-center justify-end gap-2">
-                              <button
-                                type="button"
-                                onClick={() => setAppointmentModalStaff(staff)}
-                                className="py-1.5 px-3 rounded-xl text-xs font-bold bg-emerald-50 text-emerald-800 hover:bg-emerald-100 border border-emerald-200 transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs"
-                                title="Generate official Teacher Appointment Letter"
-                              >
-                                <FileText className="w-3.5 h-3.5 text-emerald-600" />
-                                <span>Appointment Letter</span>
-                              </button>
+                              <div className="inline-flex items-center rounded-xl bg-emerald-50 border border-emerald-200 p-0.5 shadow-2xs">
+                                <button
+                                  type="button"
+                                  onClick={() => printIndividualAppointmentLetter(staff, schoolSettings.logo || '/logo.jpg', {
+                                    name: schoolSettings.name,
+                                    address: schoolSettings.address,
+                                    phone: schoolSettings.tel1 ? `${schoolSettings.tel1}, ${schoolSettings.tel2}` : undefined,
+                                    email: schoolSettings.email,
+                                  })}
+                                  className="py-1.5 px-2.5 rounded-lg text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white transition-all flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-95"
+                                  title={`Directly print official appointment letter for ${staff.name}`}
+                                >
+                                  <Printer className="w-3.5 h-3.5 text-emerald-100" />
+                                  <span>Print Letter</span>
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setAppointmentModalStaff(staff)}
+                                  className="py-1.5 px-2 rounded-lg text-xs font-bold text-emerald-800 hover:bg-emerald-100 transition-all flex items-center gap-1 cursor-pointer"
+                                  title="Preview and customize letter parameters (salary, terms, date)"
+                                >
+                                  <FileText className="w-3.5 h-3.5 text-emerald-600" />
+                                  <span className="hidden xl:inline">Preview</span>
+                                </button>
+                              </div>
                               <button
                                 type="button"
                                 onClick={() => handleOpenEditStaff(staff)}
@@ -6180,6 +6211,167 @@ export default function AdminControl({ students, initialStaff = [] }: AdminContr
             logo: schoolSettings.logo || '/logo.jpg',
           }}
         />
+      )}
+
+      {/* Individual Staff Appointment Letter Picker Modal */}
+      {isStaffLetterPickerOpen && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-3 md:p-6 overflow-hidden">
+          <div className="bg-white rounded-[2rem] w-full max-w-2xl shadow-2xl border border-slate-100 flex flex-col max-h-[90vh] animate-slide-up">
+            {/* Header */}
+            <div className="flex items-center justify-between p-6 border-b border-slate-100">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-[#0f7343] flex items-center justify-center font-bold">
+                  <Printer className="w-6 h-6" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-black text-slate-800 tracking-tight leading-none">
+                    Print Individual Appointment Letter
+                  </h3>
+                  <p className="text-xs font-semibold text-slate-400 mt-1.5">
+                    Select any staff member to immediately print their letter or preview & customize terms.
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsStaffLetterPickerOpen(false);
+                  setStaffLetterPickerSearch('');
+                }}
+                className="w-10 h-10 rounded-2xl bg-slate-50 hover:bg-slate-100 text-slate-400 hover:text-slate-600 flex items-center justify-center transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Search Input */}
+            <div className="p-4 bg-slate-50 border-b border-slate-100">
+              <div className="relative">
+                <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3 pointer-events-none" />
+                <input
+                  type="text"
+                  value={staffLetterPickerSearch}
+                  onChange={(e) => setStaffLetterPickerSearch(e.target.value)}
+                  placeholder="Search staff by name, role, ID, or class..."
+                  className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
+                  autoFocus
+                />
+              </div>
+            </div>
+
+            {/* Staff List */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-2.5 no-scrollbar">
+              {staffList
+                .filter(s => {
+                  const q = staffLetterPickerSearch.toLowerCase().trim();
+                  if (!q) return true;
+                  return (
+                    s.name.toLowerCase().includes(q) ||
+                    (s.role && s.role.toLowerCase().includes(q)) ||
+                    (s.idNumber && s.idNumber.toLowerCase().includes(q)) ||
+                    (s.section && s.section.toLowerCase().includes(q)) ||
+                    (s.classAllocated && s.classAllocated.toLowerCase().includes(q))
+                  );
+                })
+                .map(staff => (
+                  <div
+                    key={staff.id}
+                    className="p-3.5 rounded-2xl border border-slate-200 hover:border-emerald-300 hover:bg-emerald-50/20 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-emerald-700 to-emerald-500 text-white flex items-center justify-center font-bold text-sm shrink-0 uppercase shadow-xs">
+                        {staff.name.slice(0, 2)}
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-slate-800 text-sm">{staff.name}</span>
+                          <span className="px-2 py-0.5 rounded-md bg-slate-100 font-mono text-[10px] font-bold text-slate-600">
+                            {staff.idNumber}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2 text-xs text-slate-500 mt-0.5">
+                          <span>{staff.role || 'Teacher'}</span>
+                          {staff.classAllocated && (
+                            <>
+                              <span>•</span>
+                              <span className="font-semibold text-emerald-700">{staff.classAllocated}</span>
+                            </>
+                          )}
+                          {staff.salary && (
+                            <>
+                              <span>•</span>
+                              <span className="font-semibold text-slate-600">₦{Number(String(staff.salary).replace(/[^0-9]/g, '')).toLocaleString()}</span>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          printIndividualAppointmentLetter(staff, schoolSettings.logo || '/logo.jpg', {
+                            name: schoolSettings.name,
+                            address: schoolSettings.address,
+                            phone: schoolSettings.tel1 ? `${schoolSettings.tel1}, ${schoolSettings.tel2}` : undefined,
+                            email: schoolSettings.email,
+                          });
+                        }}
+                        className="py-1.5 px-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-95"
+                        title={`Directly print appointment letter for ${staff.name}`}
+                      >
+                        <Printer className="w-3.5 h-3.5" />
+                        <span>Print Letter</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setAppointmentModalStaff(staff);
+                          setIsStaffLetterPickerOpen(false);
+                        }}
+                        className="py-1.5 px-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer"
+                        title="Preview and customize salary, terms, signatory"
+                      >
+                        <FileText className="w-3.5 h-3.5 text-slate-500" />
+                        <span>Preview</span>
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              {staffList.filter(s => {
+                const q = staffLetterPickerSearch.toLowerCase().trim();
+                if (!q) return true;
+                return (
+                  s.name.toLowerCase().includes(q) ||
+                  (s.role && s.role.toLowerCase().includes(q)) ||
+                  (s.idNumber && s.idNumber.toLowerCase().includes(q)) ||
+                  (s.section && s.section.toLowerCase().includes(q)) ||
+                  (s.classAllocated && s.classAllocated.toLowerCase().includes(q))
+                );
+              }).length === 0 && (
+                <div className="p-8 text-center text-slate-400">
+                  <p className="text-xs font-bold">No staff found matching &ldquo;{staffLetterPickerSearch}&rdquo;</p>
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="p-4 border-t border-slate-100 bg-slate-50 flex items-center justify-between text-xs text-slate-500">
+              <span>Total staff: {staffList.length}</span>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsStaffLetterPickerOpen(false);
+                  setStaffLetterPickerSearch('');
+                }}
+                className="py-1.5 px-4 bg-white hover:bg-slate-200 border border-slate-200 text-slate-700 rounded-xl font-bold transition-all cursor-pointer"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Official CR80 Student Pickup ID Card & Offline Gate Scanner Modal */}

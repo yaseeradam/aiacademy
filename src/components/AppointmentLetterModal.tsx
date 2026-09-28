@@ -13,33 +13,142 @@ interface AppointmentLetterModalProps {
   schoolSettings?: SchoolSettings;
 }
 
+export interface PrintAppointmentLetterOptions {
+  name?: string;
+  address?: string;
+  phone?: string;
+  email?: string;
+  salary?: string | number;
+  salaryWords?: string;
+  date?: string;
+  position?: string;
+  employmentType?: string;
+  signatoryName?: string;
+  signatoryTitle?: string;
+  probationPeriod?: string;
+  noticePeriod?: string;
+}
+
+export function printHTMLDocument(htmlContent: string) {
+  if (typeof window === 'undefined') return;
+
+  // Try printing via hidden iframe first (avoids popup blockers and stays in the same tab)
+  try {
+    let iframe = document.getElementById('ai-appointment-print-iframe') as HTMLIFrameElement | null;
+    if (iframe) {
+      iframe.remove();
+    }
+
+    iframe = document.createElement('iframe');
+    iframe.id = 'ai-appointment-print-iframe';
+    iframe.style.position = 'fixed';
+    iframe.style.right = '0';
+    iframe.style.bottom = '0';
+    iframe.style.width = '10px';
+    iframe.style.height = '10px';
+    iframe.style.border = '0';
+    iframe.style.opacity = '0.01';
+    iframe.style.pointerEvents = 'none';
+    iframe.style.zIndex = '-9999';
+    document.body.appendChild(iframe);
+
+    const doc = iframe.contentWindow?.document || iframe.contentDocument;
+    if (doc) {
+      doc.open();
+      doc.write(htmlContent);
+      doc.close();
+
+      setTimeout(() => {
+        try {
+          iframe?.contentWindow?.focus();
+          iframe?.contentWindow?.print();
+        } catch (e) {
+          console.warn('Iframe print failed, falling back to window.open', e);
+          fallbackPrintWindow(htmlContent);
+        }
+      }, 450);
+      return;
+    }
+  } catch (err) {
+    console.warn('Could not print via iframe, falling back to window.open', err);
+  }
+
+  fallbackPrintWindow(htmlContent);
+}
+
+function fallbackPrintWindow(htmlContent: string) {
+  const printWindow = window.open('', '_blank', 'width=850,height=1050');
+  if (printWindow) {
+    printWindow.document.open();
+    printWindow.document.write(htmlContent);
+    printWindow.document.close();
+    printWindow.focus();
+    printWindow.onload = () => {
+      setTimeout(() => {
+        try {
+          printWindow.print();
+        } catch (e) {
+          console.error('Error invoking printWindow.print()', e);
+        }
+      }, 350);
+    };
+    setTimeout(() => {
+      try {
+        printWindow.print();
+      } catch (e) {
+        console.error('Error invoking printWindow.print() fallback', e);
+      }
+    }, 1200);
+  }
+}
+
+export function printIndividualAppointmentLetter(
+  staff: Staff,
+  logoSrc: string = '/logo.jpg',
+  schoolInfo?: { name?: string; address?: string; phone?: string; email?: string },
+  customOptions?: PrintAppointmentLetterOptions
+) {
+  if (!staff) {
+    alert('No staff record selected to generate appointment letter.');
+    return;
+  }
+  return printBulkAppointmentLetters([staff], logoSrc, schoolInfo, customOptions);
+}
+
 export function printBulkAppointmentLetters(
   staffList: Staff[],
   logoSrc: string = '/logo.jpg',
-  schoolInfo?: { name?: string; address?: string; phone?: string; email?: string }
+  schoolInfo?: { name?: string; address?: string; phone?: string; email?: string },
+  customOptions?: PrintAppointmentLetterOptions
 ) {
   if (!staffList || staffList.length === 0) {
     alert('No staff records selected to generate appointment letters.');
     return;
   }
 
-  const schoolName = schoolInfo?.name || 'AI INTEGRATED ACADEMY ARGUNGU';
-  const schoolAddress = schoolInfo?.address || "Behind Buben Ta'Ololo's Residence, Tudun Wada, Argungu, Kebbi State";
-  const schoolPhone = schoolInfo?.phone || '08069676697, 07034784861';
-  const schoolEmail = schoolInfo?.email || 'alijabahintegratedacademyarg@gmail.com';
-  const currentDate = new Date().toLocaleDateString('en-GB', {
+  const schoolName = customOptions?.name || schoolInfo?.name || 'AI INTEGRATED ACADEMY ARGUNGU';
+  const schoolAddress = customOptions?.address || schoolInfo?.address || "Behind Buben Ta'Ololo's Residence, Tudun Wada, Argungu, Kebbi State";
+  const schoolPhone = customOptions?.phone || schoolInfo?.phone || '08069676697, 07034784861';
+  const schoolEmail = customOptions?.email || schoolInfo?.email || 'alijabahintegratedacademyarg@gmail.com';
+  const currentDate = customOptions?.date || new Date().toLocaleDateString('en-GB', {
     day: 'numeric',
     month: 'long',
     year: 'numeric',
   });
 
   const pagesHTML = staffList.map(staff => {
-    const rawSalary = staff.salary ? String(staff.salary).replace(/[^0-9]/g, '') : '50000';
+    const rawSalary = customOptions?.salary !== undefined
+      ? String(customOptions.salary).replace(/[^0-9]/g, '')
+      : (staff.salary ? String(staff.salary).replace(/[^0-9]/g, '') : '50000');
     const salaryAmount = rawSalary ? Number(rawSalary).toLocaleString() : '50,000';
-    const salaryWords = numberToNairaWords(rawSalary || 50000) || 'Fifty Thousand Naira Only';
-    const position = staff.role || 'Teacher';
+    const salaryWords = customOptions?.salaryWords || (numberToNairaWords(rawSalary || 50000) || 'Fifty Thousand Naira Only');
+    const position = customOptions?.position || staff.role || 'Teacher';
     const staffId = staff.idNumber || 'AIA-STF26';
-    const employmentType = 'Full-Time';
+    const employmentType = customOptions?.employmentType || 'Full-Time';
+    const signatoryName = customOptions?.signatoryName || "Prof. Murtala Ahmed Rufa'i";
+    const signatoryTitle = customOptions?.signatoryTitle || "Executive Director";
+    const probationPeriod = customOptions?.probationPeriod || "6 months";
+    const noticePeriod = customOptions?.noticePeriod || "one month";
 
     return `
     <div class="page">
@@ -108,8 +217,8 @@ export function printBulkAppointmentLetters(
 
           <ol class="terms-list">
             <li><strong>Commencement Date:</strong> Your appointment takes effect from ${currentDate}.</li>
-            <li><strong>Probationary Period:</strong> You will serve a 6-month probationary period starting from your date of resumption. Within this period, there will be monthly performance appraisals over defined agreed tasks.</li>
-            <li><strong>Confirmation:</strong> Confirmation of this offer is subject to the satisfactory completion of your 6-month probationary period.</li>
+            <li><strong>Probationary Period:</strong> You will serve a ${probationPeriod} probationary period starting from your date of resumption. Within this period, there will be monthly performance appraisals over defined agreed tasks.</li>
+            <li><strong>Confirmation:</strong> Confirmation of this offer is subject to the satisfactory completion of your ${probationPeriod} probationary period.</li>
             <li>
               <strong>Core Responsibilities:</strong>
               <ul class="resp-list">
@@ -123,7 +232,7 @@ export function printBulkAppointmentLetters(
             <li><strong>Salary:</strong> Your role shall be indemnified with a monthly salary of (${salaryWords}) (₦${salaryAmount}).</li>
             <li><strong>Holiday & Leave:</strong> You will be entitled to official school holidays during term breaks, except when required for scheduled staff development trainings.</li>
             <li><strong>Maternity Leave:</strong> Female staff are entitled to 12 weeks of maternity leave in line with the school's employment policy.</li>
-            <li><strong>Termination:</strong> Either you or the school can end this appointment by giving one month written notice. If notice is not given, one month salary will be paid in lieu.</li>
+            <li><strong>Termination:</strong> Either you or the school can end this appointment by giving ${noticePeriod} written notice. If notice is not given, ${noticePeriod} salary will be paid in lieu.</li>
           </ol>
 
           <p class="closing-p">
@@ -137,8 +246,8 @@ export function printBulkAppointmentLetters(
           <div class="signoff">
             <p class="yours">Yours Faithfully,</p>
             <div class="sig-line"></div>
-            <p class="name">Prof. Murtala Ahmed Rufa'i</p>
-            <p class="title">Executive Director</p>
+            <p class="name">${signatoryName}</p>
+            <p class="title">${signatoryTitle}</p>
             <p class="school">${schoolName}</p>
           </div>
 
@@ -461,20 +570,25 @@ export function printBulkAppointmentLetters(
 <body>
   ${pagesHTML}
   <script>
-    window.onload = function() {
+    function triggerPrint() {
       setTimeout(function() {
-        window.print();
-      }, 400);
-    };
+        try {
+          window.focus();
+          window.print();
+        } catch (e) {}
+      }, 350);
+    }
+    if (document.readyState === 'complete' || document.readyState === 'interactive') {
+      triggerPrint();
+    } else {
+      window.addEventListener('DOMContentLoaded', triggerPrint);
+      window.addEventListener('load', triggerPrint);
+    }
   </script>
 </body>
 </html>`;
 
-  const printWindow = window.open('', '_blank', 'width=850,height=1050');
-  if (printWindow) {
-    printWindow.document.write(printHTML);
-    printWindow.document.close();
-  }
+  printHTMLDocument(printHTML);
 }
 
 export default function AppointmentLetterModal({
@@ -952,20 +1066,25 @@ export default function AppointmentLetterModal({
     </div>
   </div>
   <script>
-    window.onload = function() {
+    function triggerPrint() {
       setTimeout(function() {
-        window.print();
-      }, 400);
-    };
+        try {
+          window.focus();
+          window.print();
+        } catch (e) {}
+      }, 350);
+    }
+    if (document.readyState === 'complete' || document.readyState === 'interactive') {
+      triggerPrint();
+    } else {
+      window.addEventListener('DOMContentLoaded', triggerPrint);
+      window.addEventListener('load', triggerPrint);
+    }
   </script>
 </body>
 </html>`;
 
-    const printWindow = window.open('', '_blank', 'width=850,height=1050');
-    if (printWindow) {
-      printWindow.document.write(printHTML);
-      printWindow.document.close();
-    }
+    printHTMLDocument(printHTML);
   };
 
   if (!isOpen) return null;
