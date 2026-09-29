@@ -3311,7 +3311,7 @@ export default function AdminControl({ students, initialStaff = [] }: AdminContr
             </div>
 
             {/* Activity and Quick Actions */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
               {/* Correction Logs Preview */}
               <div className="soft-card p-6 bg-white lg:col-span-2 rounded-[2rem]">
                 <div className="flex justify-between items-center mb-6">
@@ -3418,7 +3418,7 @@ export default function AdminControl({ students, initialStaff = [] }: AdminContr
                     </p>
                   </div>
 
-                  <div className="flex flex-wrap items-center gap-3">
+                  <div className="flex flex-wrap items-center gap-2.5 shrink-0">
                     <button
                       type="button"
                       onClick={() => setIsCreateClassModalOpen(true)}
@@ -5470,7 +5470,7 @@ export default function AdminControl({ students, initialStaff = [] }: AdminContr
         {activeTab === 'staff' && (
           <div className="space-y-6 animate-slide-down">
             {/* Header */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4">
               <div>
                 <h1 className="text-3xl font-black text-slate-800 tracking-tight leading-none">Staff Directory</h1>
                 <p className="text-slate-500 text-sm font-semibold mt-2.5">
@@ -5478,44 +5478,8 @@ export default function AdminControl({ students, initialStaff = [] }: AdminContr
                 </p>
               </div>
 
-              <div className="flex items-center gap-2.5 flex-wrap">
-                <button
-                  type="button"
-                  onClick={handleSyncOfficialStaff}
-                  disabled={isLoadingStaff}
-                  className="py-2.5 px-3.5 bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-800 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer shadow-xs disabled:opacity-50"
-                  title="Sync the 22 official staff members from the staff schedule"
-                >
-                  <ShieldCheck className="w-4 h-4 text-amber-600" />
-                  <span>Sync 22 Official Staff</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    setImportedStaffPreview([]);
-                    setStaffImportFile(null);
-                    setIsImportStaffModalOpen(true);
-                  }}
-                  className="py-2.5 px-3.5 bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-800 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer shadow-xs"
-                  title="Import staff from CSV or Excel file"
-                >
-                  <Upload className="w-4 h-4 text-blue-600" />
-                  <span>Import CSV / Excel</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={handleExportStaffCSV}
-                  disabled={staffList.length === 0}
-                  className="py-2.5 px-3.5 bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer shadow-xs disabled:opacity-50"
-                  title="Export all staff records to CSV"
-                >
-                  <Download className="w-4 h-4 text-slate-600" />
-                  <span className="hidden md:inline">Export CSV</span>
-                </button>
-
-                <div className="inline-flex items-center rounded-xl bg-emerald-50 border border-emerald-200 p-0.5 shadow-2xs">
+              <div className="flex items-center gap-2 flex-wrap">
+                <div className="inline-flex items-center rounded-xl bg-emerald-50 border border-emerald-200 p-0.5 shadow-2xs shrink-0">
                   <button
                     type="button"
                     onClick={() => {
@@ -5531,30 +5495,66 @@ export default function AdminControl({ students, initialStaff = [] }: AdminContr
                       });
                     }}
                     disabled={staffList.length === 0}
-                    className="py-2 px-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-xs disabled:opacity-50"
+                    className="py-2 px-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-xs disabled:opacity-50 whitespace-nowrap"
                     title="Print official A4 appointment letters for all staff members"
                   >
                     <Printer className="w-3.5 h-3.5 text-emerald-100" />
-                    <span>Print All ({staffList.length})</span>
+                    <span>Print All Letters ({staffList.length})</span>
                   </button>
 
                   <button
                     type="button"
                     onClick={() => setIsStaffLetterPickerOpen(true)}
                     disabled={staffList.length === 0}
-                    className="py-2 px-3 hover:bg-emerald-100 text-emerald-800 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                    className="py-2 px-3 hover:bg-emerald-100 text-emerald-800 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50 whitespace-nowrap"
                     title="Select an individual staff member to print or customize their appointment letter"
                   >
                     <FileText className="w-3.5 h-3.5 text-emerald-600" />
-                    <span>Print Individual Letter...</span>
+                    <span>Print Individual...</span>
                   </button>
                 </div>
 
                 <button
                   type="button"
+                  onClick={handleSyncOfficialStaff}
+                  disabled={isLoadingStaff}
+                  className="py-2 px-3 bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-800 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer shadow-xs disabled:opacity-50 whitespace-nowrap shrink-0"
+                  title="Sync the 22 official staff members from the staff schedule"
+                >
+                  <ShieldCheck className="w-4 h-4 text-amber-600" />
+                  <span>Sync 22 Staff</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setImportedStaffPreview([]);
+                    setStaffImportFile(null);
+                    setIsImportStaffModalOpen(true);
+                  }}
+                  className="py-2 px-3 bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-800 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer shadow-xs whitespace-nowrap shrink-0"
+                  title="Import staff from CSV or Excel file"
+                >
+                  <Upload className="w-4 h-4 text-blue-600" />
+                  <span>Import</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleExportStaffCSV}
+                  disabled={staffList.length === 0}
+                  className="py-2 px-3 bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer shadow-xs disabled:opacity-50 whitespace-nowrap shrink-0"
+                  title="Export all staff records to CSV"
+                >
+                  <Download className="w-4 h-4 text-slate-600" />
+                  <span>Export</span>
+                </button>
+
+                <button
+                  type="button"
                   onClick={loadStaff}
                   disabled={isLoadingStaff}
-                  className="py-2.5 px-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer shadow-xs disabled:opacity-50"
+                  className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-black transition-all flex items-center justify-center cursor-pointer shadow-xs disabled:opacity-50 shrink-0"
                   title="Refresh staff records"
                 >
                   <RefreshCw className={`w-4 h-4 ${isLoadingStaff ? 'animate-spin' : ''}`} />
@@ -5563,10 +5563,10 @@ export default function AdminControl({ students, initialStaff = [] }: AdminContr
                 <button
                   type="button"
                   onClick={handleOpenAddStaff}
-                  className="py-2.5 px-4 bg-gradient-to-r from-[#0f7343] to-emerald-600 hover:from-emerald-700 hover:to-[#0b5c34] text-white rounded-xl text-xs font-black transition-all flex items-center gap-2 cursor-pointer shadow-md active:scale-98 border border-emerald-400/40"
+                  className="py-2 px-3.5 bg-gradient-to-r from-[#0f7343] to-emerald-600 hover:from-emerald-700 hover:to-[#0b5c34] text-white rounded-xl text-xs font-black transition-all flex items-center gap-2 cursor-pointer shadow-md active:scale-98 border border-emerald-400/40 whitespace-nowrap shrink-0"
                 >
                   <Plus className="w-4 h-4 text-amber-300 stroke-[3]" />
-                  <span>Add New Staff</span>
+                  <span>Add Staff</span>
                 </button>
               </div>
             </div>
@@ -5671,9 +5671,9 @@ export default function AdminControl({ students, initialStaff = [] }: AdminContr
                 </div>
               ) : (
                 <div className="overflow-x-auto">
-                  <table className="w-full text-left border-collapse">
+                  <table className="w-full text-left border-collapse min-w-[860px]">
                     <thead>
-                      <tr className="bg-slate-50/80 border-b border-slate-100 text-[11px] font-black uppercase tracking-wider text-slate-500">
+                      <tr className="bg-slate-50/80 border-b border-slate-100 text-[11px] font-black uppercase tracking-wider text-slate-500 whitespace-nowrap">
                         <th className="py-4 px-6">Name</th>
                         <th className="py-4 px-6">Phone</th>
                         <th className="py-4 px-6">ID Number</th>
