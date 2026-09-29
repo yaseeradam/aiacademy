@@ -524,21 +524,34 @@ export async function getSchoolSettings(): Promise<SchoolSettings> {
   }
   await ensureSeeded();
   const db = await getDB();
-  const doc = await db.collection<{ id: string } & SchoolSettings>(SETTINGS_COL).findOne({ id: 'school_settings' });
-  if (doc) {
-    const { _id, id, ...rest } = doc;
-    void _id; void id;
-    cachedSettings = rest as SchoolSettings;
-    cachedSettingsTime = now;
-    return cachedSettings;
-  }
+
   const fallback: SchoolSettings = {
     schoolName: 'AI INTEGRATED ACADEMY ARGUNGU',
     motto: 'Learning Today, Leading Tomorrow',
     address: "Behind Buben Ta'Ololo's Residence, Tudun Wada, Argungu",
     phones: '08069676697, 07034784861',
-    logo: '/logo.jpg'
+    logo: '/logo.jpg',
+    customClasses: ['Nursery 1', 'Basic 1', 'Basic 2'],
+    customSubclasses: [
+      'Nursery 1 Gold', 'Nursery 1 Silver', 'Nursery 1 Green',
+      'Basic 1 Gold', 'Basic 1 Silver', 'Basic 1 Green',
+      'Basic 2 Gold', 'Basic 2 Silver', 'Basic 2 Green'
+    ]
   };
+
+  const doc = await db.collection<{ id: string } & SchoolSettings>(SETTINGS_COL).findOne({ id: 'school_settings' });
+  if (doc) {
+    const { _id, id, ...rest } = doc;
+    void _id; void id;
+    cachedSettings = {
+      ...fallback,
+      ...rest,
+      customClasses: rest.customClasses || fallback.customClasses,
+      customSubclasses: rest.customSubclasses || fallback.customSubclasses,
+    };
+    cachedSettingsTime = now;
+    return cachedSettings;
+  }
   cachedSettings = fallback;
   cachedSettingsTime = now;
   return fallback;

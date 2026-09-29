@@ -12,30 +12,19 @@ export function getStudentClassArm(cls: string | undefined, studentId?: string, 
     return trimmed;
   }
 
-  // If already assigned to an explicit arm (e.g. "Nursery 1 Gold", "Basic 1 Silver 2", etc.)
-  if (trimmed.includes('Gold') || trimmed.includes('Silver') || trimmed.includes('Green') || trimmed.includes('Blue') || trimmed.includes('Diamond')) {
+  // If already assigned to an explicit arm (e.g. "Nursery 1 Gold", "Basic 3 Diamond", etc.)
+  if (/\b(Gold|Silver|Green|Blue|Red|Diamond|Ruby|Bronze|Yellow|Gold 2|Silver 2|Green 2)\b/i.test(trimmed)) {
     return trimmed;
   }
 
-  // Determine base class
-  let baseClass = 'Nursery 1';
-  if (/Basic 2|Primary 2/i.test(trimmed)) baseClass = 'Basic 2';
-  else if (/Basic 1|Primary 1/i.test(trimmed)) baseClass = 'Basic 1';
-  else if (/Nursery/i.test(trimmed)) baseClass = 'Nursery 1';
+  // Determine base class dynamically
+  let baseClass = trimmed.replace(/^Primary\s+/i, 'Basic ');
 
   if (allStudents && allStudents.length > 0 && studentId) {
     const bareClassStudents = allStudents.filter(s => {
-      if (!s.intendedClass) return baseClass === 'Nursery 1';
-      const sTrim = s.intendedClass.trim();
-      
-      let sBaseClass = 'Nursery 1';
-      if (/Basic 2|Primary 2/i.test(sTrim)) sBaseClass = 'Basic 2';
-      else if (/Basic 1|Primary 1/i.test(sTrim)) sBaseClass = 'Basic 1';
-      else if (/Nursery/i.test(sTrim)) sBaseClass = 'Nursery 1';
-
-      if (sBaseClass !== baseClass) return false;
-
-      return !sTrim.includes('Unassigned') && !sTrim.includes('Gold') && !sTrim.includes('Silver') && !sTrim.includes('Green') && !sTrim.includes('Blue') && !sTrim.includes('Diamond');
+      if (!s.intendedClass) return false;
+      const sTrim = s.intendedClass.trim().replace(/^Primary\s+/i, 'Basic ');
+      return sTrim === baseClass || sTrim.startsWith(baseClass);
     });
 
     const idx = bareClassStudents.findIndex(s => s.id === studentId);

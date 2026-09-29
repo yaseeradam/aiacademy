@@ -56,6 +56,8 @@ export interface SchoolSettings {
   phones: string;
   logo: string;
   geminiApiKey?: string;
+  customClasses?: string[];
+  customSubclasses?: string[];
 }
 
 export interface Staff {

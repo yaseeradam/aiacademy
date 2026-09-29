@@ -13,7 +13,7 @@ import {
   GraduationCap, Folder, FolderOpen, Edit3, Briefcase, Phone, MessageSquareHeart, Star, ThumbsUp, ExternalLink, Copy, Check,
   ArrowUp, ArrowDown, Sparkles, CheckSquare, Layers
 } from 'lucide-react';
-import { logoutAction, adminUpdateStudentAction, adminDeleteStudentAction, adminDeleteMultipleStudentsAction, unassignStudentFromSubclassAction, unassignMultipleStudentsFromSubclassAction, assignMultipleStudentsToSubclassAction, restoreMissingSeedStudentsAction, clearAllDatabaseDataAction, adminCreateStudentAction, adminVerifyAction, adminTogglePaymentStatusAction, getAuditLogsAction, scanAdmissionFormOCRAction, getSchoolSettingsAction, updateSchoolSettingsAction, findDuplicateStudentsAction, fixDuplicateAdmissionNumbersAction, DuplicateGroup, getAllStaffAction, adminCreateStaffAction, adminUpdateStaffAction, adminDeleteStaffAction, adminImportStaffCSVAction, adminSeedStaffFromExcelAction, adminGetSurveyDataAction, adminUpdateSurveyConfigAction, adminDeleteSurveyResponseAction, adminSaveSurveyAction, adminSetActiveSurveyAction, adminDeleteSurveyAction } from '@/app/actions';
+import { logoutAction, adminUpdateStudentAction, adminDeleteStudentAction, adminDeleteMultipleStudentsAction, unassignStudentFromSubclassAction, unassignMultipleStudentsFromSubclassAction, assignMultipleStudentsToSubclassAction, restoreMissingSeedStudentsAction, clearAllDatabaseDataAction, adminCreateStudentAction, adminVerifyAction, adminTogglePaymentStatusAction, getAuditLogsAction, scanAdmissionFormOCRAction, getSchoolSettingsAction, updateSchoolSettingsAction, findDuplicateStudentsAction, fixDuplicateAdmissionNumbersAction, DuplicateGroup, getAllStaffAction, adminCreateStaffAction, adminUpdateStaffAction, adminDeleteStaffAction, adminImportStaffCSVAction, adminSeedStaffFromExcelAction, adminGetSurveyDataAction, adminUpdateSurveyConfigAction, adminDeleteSurveyResponseAction, adminSaveSurveyAction, adminSetActiveSurveyAction, adminDeleteSurveyAction, adminCreateClassAction, adminCreateSubclassArmAction, adminDeleteCustomClassAction, adminDeleteCustomSubclassArmAction } from '@/app/actions';
 import AdmissionLetterModal, { printBulkAdmissionLetters, printPaidStudentsPDF, getStudentClassArm, getStudentAdmissionNumber } from './AdmissionLetterModal';
 import AppointmentLetterModal, { printBulkAppointmentLetters, printIndividualAppointmentLetter } from './AppointmentLetterModal';
 import PickupIDCardModal from './PickupIDCardModal';
@@ -146,6 +146,35 @@ export default function AdminControl({ students, initialStaff = [] }: AdminContr
   const [subgroupSortOrder, setSubgroupSortOrder] = useState<'most_populated' | 'alphabetical' | 'capacity'>('most_populated');
   const [exportDropdownArm, setExportDropdownArm] = useState<string | null>(null);
   const [isHeroExportOpen, setIsHeroExportOpen] = useState<boolean>(false);
+  // School Settings state
+  const [schoolSettings, setSchoolSettings] = useState<{
+    name: string;
+    motto: string;
+    address: string;
+    tel1: string;
+    tel2: string;
+    email: string;
+    logo: string;
+    geminiApiKey: string;
+    customClasses?: string[];
+    customSubclasses?: string[];
+  }>({
+    name: 'AI Integrated Academy Argungu',
+    motto: 'Learning Today, Leading Tomorrow',
+    address: "Behind Buben Ta'Ololo's Residence, Tudun Wada, Argungu",
+    tel1: '08069676697',
+    tel2: '07034784861',
+    email: 'alijabahintegratedacademyarg@gmail.com',
+    logo: '/logo.jpg',
+    geminiApiKey: '',
+    customClasses: ['Nursery 1', 'Basic 1', 'Basic 2'],
+    customSubclasses: [
+      'Nursery 1 Gold', 'Nursery 1 Silver', 'Nursery 1 Green',
+      'Basic 1 Gold', 'Basic 1 Silver', 'Basic 1 Green',
+      'Basic 2 Gold', 'Basic 2 Silver', 'Basic 2 Green'
+    ],
+  });
+  const [settingsSaved, setSettingsSaved] = useState(false);
 
   // Staff Directory state
   const [staffList, setStaffList] = useState<Staff[]>(initialStaff);
@@ -725,20 +754,16 @@ export default function AdminControl({ students, initialStaff = [] }: AdminContr
     }
   };
 
-  // Default Class Subgroups / Streams (30 students per class capacity)
-  const defaultSubgroups = useMemo(() => [
-    'Nursery 1 Gold',
-    'Nursery 1 Silver',
-    'Nursery 1 Green',
-    'Basic 1 Gold',
-    'Basic 1 Silver',
-    'Basic 1 Green',
-    'Basic 2 Gold',
-    'Basic 2 Silver',
-    'Basic 2 Green',
-  ], []);
-
-
+  // Default Class Subgroups / Streams (36 students per class capacity)
+  const defaultSubgroups = useMemo(() => {
+    return schoolSettings.customSubclasses && schoolSettings.customSubclasses.length > 0
+      ? schoolSettings.customSubclasses
+      : [
+          'Nursery 1 Gold', 'Nursery 1 Silver', 'Nursery 1 Green',
+          'Basic 1 Gold', 'Basic 1 Silver', 'Basic 1 Green',
+          'Basic 2 Gold', 'Basic 2 Silver', 'Basic 2 Green'
+        ];
+  }, [schoolSettings.customSubclasses]);
 
   const classStudentMap = useMemo(() => {
     const map: Record<string, Student[]> = {};
@@ -763,17 +788,31 @@ export default function AdminControl({ students, initialStaff = [] }: AdminContr
 
   // Main class categories sorted by enrollment count (most populated first)
   const sortedMainClasses = useMemo(() => {
-    const classes = ['Nursery 1', 'Basic 1', 'Basic 2'];
+    const baseList = schoolSettings.customClasses && schoolSettings.customClasses.length > 0
+      ? schoolSettings.customClasses
+      : ['Nursery 1', 'Basic 1', 'Basic 2'];
+
+    const set = new Set([
+      ...baseList,
+      ...students.map(s => {
+        const arm = studentArmCache.get(s.id) || s.intendedClass;
+        return arm.replace(/\s+(Gold|Silver|Green|Blue|Red|Yellow|Diamond|\d+)(\s+\d+)?$/i, '').trim();
+      }).filter(Boolean)
+    ]);
+    const classes = Array.from(set);
+
     return classes.sort((a, b) => {
-      const countA = (classStudentMap[`${a} Gold`]?.length || 0) +
-                     (classStudentMap[`${a} Silver`]?.length || 0) +
-                     (classStudentMap[`${a} Green`]?.length || 0);
-      const countB = (classStudentMap[`${b} Gold`]?.length || 0) +
-                     (classStudentMap[`${b} Silver`]?.length || 0) +
-                     (classStudentMap[`${b} Green`]?.length || 0);
+      const countA = Object.entries(classStudentMap).reduce((sum, [armName, armStudents]) => {
+        if (armName.toLowerCase().startsWith(a.toLowerCase())) return sum + armStudents.length;
+        return sum;
+      }, 0);
+      const countB = Object.entries(classStudentMap).reduce((sum, [armName, armStudents]) => {
+        if (armName.toLowerCase().startsWith(b.toLowerCase())) return sum + armStudents.length;
+        return sum;
+      }, 0);
       return countB - countA;
     });
-  }, [classStudentMap]);
+  }, [schoolSettings.customClasses, classStudentMap, studentArmCache, students]);
 
   // Class list sorted based on selected priority order (most populated first by default)
   const classList = useMemo(() => {
@@ -1937,18 +1976,16 @@ export default function AdminControl({ students, initialStaff = [] }: AdminContr
   const [isDeletingStudent, setIsDeletingStudent] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
 
-  // School Settings state
-  const [schoolSettings, setSchoolSettings] = useState({
-    name: 'AI Integrated Academy Argungu',
-    motto: 'Learning Today, Leading Tomorrow',
-    address: "Behind Buben Ta'Ololo's Residence, Tudun Wada, Argungu",
-    tel1: '08069676697',
-    tel2: '07034784861',
-    email: 'alijabahintegratedacademyarg@gmail.com',
-    logo: '/logo.jpg',
-    geminiApiKey: '',
-  });
-  const [settingsSaved, setSettingsSaved] = useState(false);
+  // Class & Subclass Arm Creation Modal States
+  const [isCreateClassModalOpen, setIsCreateClassModalOpen] = useState(false);
+  const [newClassNameInput, setNewClassNameInput] = useState('');
+  const [selectedArmsForNewClass, setSelectedArmsForNewClass] = useState<string[]>(['Gold', 'Silver', 'Green']);
+  const [isCreatingClass, setIsCreatingClass] = useState(false);
+
+  const [isCreateArmModalOpen, setIsCreateArmModalOpen] = useState(false);
+  const [targetMainClassForArm, setTargetMainClassForArm] = useState('');
+  const [newArmNameInput, setNewArmNameInput] = useState('');
+  const [isCreatingArm, setIsCreatingArm] = useState(false);
 
   useEffect(() => {
     getSchoolSettingsAction().then(dbSettings => {
@@ -1962,10 +1999,206 @@ export default function AdminControl({ students, initialStaff = [] }: AdminContr
           tel2: dbSettings.phones ? dbSettings.phones.split(',')[1]?.trim() || prev.tel2 : prev.tel2,
           logo: dbSettings.logo || prev.logo,
           geminiApiKey: dbSettings.geminiApiKey || prev.geminiApiKey,
+          customClasses: dbSettings.customClasses && dbSettings.customClasses.length > 0 ? dbSettings.customClasses : prev.customClasses,
+          customSubclasses: dbSettings.customSubclasses && dbSettings.customSubclasses.length > 0 ? dbSettings.customSubclasses : prev.customSubclasses,
         }));
       }
     });
   }, []);
+
+  const handleCreateMainClass = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newClassNameInput.trim()) return;
+    setIsCreatingClass(true);
+    setFeedbackModal({
+      isOpen: true,
+      type: 'loading',
+      title: 'Creating Main Class...',
+      message: `Adding class "${newClassNameInput.trim()}" to school settings...`,
+    });
+
+    try {
+      const res = await adminCreateClassAction(newClassNameInput.trim(), selectedArmsForNewClass);
+      if (res.success) {
+        const dbSettings = await getSchoolSettingsAction();
+        if (dbSettings) {
+          setSchoolSettings(prev => ({
+            ...prev,
+            customClasses: dbSettings.customClasses || prev.customClasses,
+            customSubclasses: dbSettings.customSubclasses || prev.customSubclasses,
+          }));
+        }
+        setIsCreateClassModalOpen(false);
+        setNewClassNameInput('');
+        router.refresh();
+        setFeedbackModal({
+          isOpen: true,
+          type: 'success',
+          title: 'Main Class Created!',
+          message: `Class "${newClassNameInput.trim()}" and its subclass arms have been created successfully.`,
+        });
+      } else {
+        setFeedbackModal({
+          isOpen: true,
+          type: 'error',
+          title: 'Class Creation Failed',
+          message: res.error || 'Failed to create main class.',
+        });
+      }
+    } catch (err: unknown) {
+      setFeedbackModal({
+        isOpen: true,
+        type: 'error',
+        title: 'Error Creating Class',
+        message: err instanceof Error ? err.message : 'An unexpected error occurred.',
+      });
+    } finally {
+      setIsCreatingClass(false);
+    }
+  };
+
+  const handleCreateSubclassArm = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!targetMainClassForArm.trim() || !newArmNameInput.trim()) return;
+    setIsCreatingArm(true);
+    setFeedbackModal({
+      isOpen: true,
+      type: 'loading',
+      title: 'Creating Subclass Arm...',
+      message: `Adding arm "${newArmNameInput.trim()}" to ${targetMainClassForArm.trim()}...`,
+    });
+
+    try {
+      const res = await adminCreateSubclassArmAction(targetMainClassForArm.trim(), newArmNameInput.trim());
+      if (res.success) {
+        const dbSettings = await getSchoolSettingsAction();
+        if (dbSettings) {
+          setSchoolSettings(prev => ({
+            ...prev,
+            customClasses: dbSettings.customClasses || prev.customClasses,
+            customSubclasses: dbSettings.customSubclasses || prev.customSubclasses,
+          }));
+        }
+        setIsCreateArmModalOpen(false);
+        setNewArmNameInput('');
+        router.refresh();
+        setFeedbackModal({
+          isOpen: true,
+          type: 'success',
+          title: 'Subclass Arm Created!',
+          message: `Subclass arm "${targetMainClassForArm.trim()} ${newArmNameInput.trim()}" has been created successfully.`,
+        });
+      } else {
+        setFeedbackModal({
+          isOpen: true,
+          type: 'error',
+          title: 'Arm Creation Failed',
+          message: res.error || 'Failed to create subclass arm.',
+        });
+      }
+    } catch (err: unknown) {
+      setFeedbackModal({
+        isOpen: true,
+        type: 'error',
+        title: 'Error Creating Arm',
+        message: err instanceof Error ? err.message : 'An unexpected error occurred.',
+      });
+    } finally {
+      setIsCreatingArm(false);
+    }
+  };
+
+  const handleDeleteMainClass = async (className: string) => {
+    if (!window.confirm(`Are you sure you want to delete main class "${className}" and all its empty subclass arms?`)) return;
+
+    setFeedbackModal({
+      isOpen: true,
+      type: 'loading',
+      title: 'Deleting Main Class...',
+      message: `Removing class "${className}"...`,
+    });
+
+    try {
+      const res = await adminDeleteCustomClassAction(className);
+      if (res.success) {
+        const dbSettings = await getSchoolSettingsAction();
+        if (dbSettings) {
+          setSchoolSettings(prev => ({
+            ...prev,
+            customClasses: dbSettings.customClasses || prev.customClasses,
+            customSubclasses: dbSettings.customSubclasses || prev.customSubclasses,
+          }));
+        }
+        router.refresh();
+        setFeedbackModal({
+          isOpen: true,
+          type: 'success',
+          title: 'Main Class Deleted',
+          message: `Class "${className}" has been deleted successfully.`,
+        });
+      } else {
+        setFeedbackModal({
+          isOpen: true,
+          type: 'error',
+          title: 'Deletion Failed',
+          message: res.error || 'Failed to delete main class.',
+        });
+      }
+    } catch (err: unknown) {
+      setFeedbackModal({
+        isOpen: true,
+        type: 'error',
+        title: 'Error Deleting Class',
+        message: err instanceof Error ? err.message : 'An unexpected error occurred.',
+      });
+    }
+  };
+
+  const handleDeleteSubclassArm = async (subgroupName: string) => {
+    if (!window.confirm(`Are you sure you want to delete subclass arm "${subgroupName}"?`)) return;
+
+    setFeedbackModal({
+      isOpen: true,
+      type: 'loading',
+      title: 'Deleting Subclass Arm...',
+      message: `Removing subclass arm "${subgroupName}"...`,
+    });
+
+    try {
+      const res = await adminDeleteCustomSubclassArmAction(subgroupName);
+      if (res.success) {
+        const dbSettings = await getSchoolSettingsAction();
+        if (dbSettings) {
+          setSchoolSettings(prev => ({
+            ...prev,
+            customClasses: dbSettings.customClasses || prev.customClasses,
+            customSubclasses: dbSettings.customSubclasses || prev.customSubclasses,
+          }));
+        }
+        router.refresh();
+        setFeedbackModal({
+          isOpen: true,
+          type: 'success',
+          title: 'Subclass Arm Deleted',
+          message: `Subclass arm "${subgroupName}" has been deleted successfully.`,
+        });
+      } else {
+        setFeedbackModal({
+          isOpen: true,
+          type: 'error',
+          title: 'Deletion Failed',
+          message: res.error || 'Failed to delete subclass arm.',
+        });
+      }
+    } catch (err: unknown) {
+      setFeedbackModal({
+        isOpen: true,
+        type: 'error',
+        title: 'Error Deleting Arm',
+        message: err instanceof Error ? err.message : 'An unexpected error occurred.',
+      });
+    }
+  };
 
   // New Student Verification form state
   const [newStudent, setNewStudent] = useState({
@@ -3188,8 +3421,31 @@ export default function AdminControl({ students, initialStaff = [] }: AdminContr
                   <div className="flex flex-wrap items-center gap-3">
                     <button
                       type="button"
-                      onClick={() => setIsPrintClassModalOpen(true)}
+                      onClick={() => setIsCreateClassModalOpen(true)}
                       className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-emerald-600 to-[#0f7343] hover:from-emerald-500 hover:to-[#0b5c34] text-white font-black text-xs rounded-xl shadow-sm transition-all cursor-pointer border border-emerald-400/30"
+                      title="Create new main class (e.g. Nursery 2, Basic 3)"
+                    >
+                      <Plus className="w-4 h-4 text-amber-300" />
+                      <span>+ Create Main Class</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setTargetMainClassForArm(sortedMainClasses[0] || 'Nursery 1');
+                        setIsCreateArmModalOpen(true);
+                      }}
+                      className="flex items-center gap-2 px-4 py-2.5 bg-emerald-800 hover:bg-emerald-900 text-white font-black text-xs rounded-xl shadow-sm transition-all cursor-pointer border border-emerald-500/30"
+                      title="Create new subclass arm (e.g. Diamond, Gold)"
+                    >
+                      <Plus className="w-4 h-4 text-emerald-300" />
+                      <span>+ Create Subclass Arm</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setIsPrintClassModalOpen(true)}
+                      className="flex items-center gap-2 px-4 py-2.5 bg-slate-800 hover:bg-slate-900 text-white font-black text-xs rounded-xl shadow-sm transition-all cursor-pointer border border-slate-700"
                       title="Print student names grouped by classes"
                     >
                       <Printer className="w-4 h-4 text-amber-300" />
@@ -3199,28 +3455,10 @@ export default function AdminControl({ students, initialStaff = [] }: AdminContr
                     <button
                       type="button"
                       onClick={() => printPaidStudentsPDF(students, schoolSettings.logo || '/logo.jpg')}
-                      className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-emerald-800 to-[#0f7343] hover:from-emerald-900 hover:to-[#0b5c34] text-white font-black text-xs rounded-xl shadow-sm transition-all cursor-pointer border border-emerald-500/30"
-                    >
-                      <FileText className="w-4 h-4 text-emerald-300" />
-                      <span>Paid Students PDF ({students.filter(s => s.paymentStatus === 'paid').length})</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => printBulkAdmissionLetters(students, schoolSettings.logo)}
                       className="flex items-center gap-2 px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl shadow-sm transition-all cursor-pointer"
                     >
-                      <Printer className="w-4 h-4 text-emerald-400" />
-                      <span>Bulk Print All Letters ({students.length})</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => handleOpenAssignArmModal('Nursery 1 Gold')}
-                      className="flex items-center gap-2 px-4 py-2.5 bg-[#0f7343] hover:bg-[#0b5c34] text-white font-bold text-xs rounded-xl shadow-sm transition-all cursor-pointer"
-                    >
-                      <Plus className="w-4 h-4" />
-                      <span>Add / Assign Students to Arm</span>
+                      <FileText className="w-4 h-4 text-emerald-300" />
+                      <span>Paid PDF ({students.filter(s => s.paymentStatus === 'paid').length})</span>
                     </button>
                   </div>
                 </div>
@@ -3229,14 +3467,12 @@ export default function AdminControl({ students, initialStaff = [] }: AdminContr
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                   {sortedMainClasses.map((mainClass) => {
                     const classStudents = students.filter(s => (studentArmCache.get(s.id) ?? '').startsWith(mainClass));
-                    const goldCount = (classStudentMap[`${mainClass} Gold`]?.length || 0);
-                    const silverCount = (classStudentMap[`${mainClass} Silver`]?.length || 0);
-                    const greenCount = (classStudentMap[`${mainClass} Green`]?.length || 0);
+                    const mainClassArms = classList.filter(arm => arm.toLowerCase().startsWith(mainClass.toLowerCase()));
 
                     const verified = classStudents.filter(s => s.verificationStatus === 'verified').length;
                     const paid = classStudents.filter(s => s.paymentStatus === 'paid').length;
                     const pendingPaid = classStudents.filter(s => s.paymentStatus !== 'paid').length;
-                    const totalCapacity = 108; // 3 arms x 36 capacity
+                    const totalCapacity = Math.max(36, mainClassArms.length * 36);
                     const mainPct = Math.min(100, Math.round((classStudents.length / totalCapacity) * 100));
 
                     const isSelected = classTabFilter === mainClass;
@@ -3258,15 +3494,25 @@ export default function AdminControl({ students, initialStaff = [] }: AdminContr
                                 <GraduationCap className="w-6 h-6" />
                               </div>
                               <div>
-                                <h3 className="text-xl font-black text-slate-900 tracking-tight">{mainClass}</h3>
+                                <div className="flex items-center gap-2">
+                                  <h3 className="text-xl font-black text-slate-900 tracking-tight">{mainClass}</h3>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDeleteMainClass(mainClass)}
+                                    className="p-1 text-slate-400 hover:text-rose-600 transition-colors cursor-pointer"
+                                    title={`Delete class ${mainClass}`}
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
                                 <span className="text-[11px] font-bold text-slate-500">
-                                  3 Subclasses (Gold, Silver, Green)
+                                  {mainClassArms.length} Subclass Arm(s)
                                 </span>
                               </div>
                             </div>
 
                             <span className="text-xs font-black bg-emerald-100 text-emerald-800 px-3 py-1 rounded-full border border-emerald-200">
-                              {classStudents.length} / 108 Enrolled
+                              {classStudents.length} / {totalCapacity} Enrolled
                             </span>
                           </div>
                         </div>
@@ -3302,40 +3548,58 @@ export default function AdminControl({ students, initialStaff = [] }: AdminContr
 
                           {/* Subclass Arm Rows Breakdown */}
                           <div className="pt-2 space-y-2 border-t border-slate-100">
-                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">Subclass Arms (36 Max Each):</span>
+                            <div className="flex items-center justify-between">
+                              <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Subclass Arms (36 Max Each):</span>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setTargetMainClassForArm(mainClass);
+                                  setIsCreateArmModalOpen(true);
+                                }}
+                                className="text-[10px] font-bold text-[#0f7343] hover:underline flex items-center gap-1 cursor-pointer"
+                              >
+                                <Plus className="w-3 h-3" />
+                                <span>+ Add Arm</span>
+                              </button>
+                            </div>
                             
-                            {/* Gold */}
-                            <div className="flex items-center justify-between p-2 rounded-xl bg-amber-50/50 border border-amber-100 text-xs">
-                              <div className="flex items-center gap-2 font-bold text-amber-900">
-                                <span className="w-2.5 h-2.5 rounded-full bg-amber-500 shrink-0" />
-                                <span>Gold Arm</span>
+                            {mainClassArms.length === 0 ? (
+                              <div className="p-3 rounded-xl bg-slate-50 border border-dashed border-slate-200 text-center text-xs text-slate-500 font-semibold">
+                                No subclass arms created yet.
                               </div>
-                              <span className={`font-black ${goldCount >= 36 ? 'text-rose-600' : 'text-slate-800'}`}>
-                                {goldCount} / 36 {goldCount >= 36 && '🔴 FULL'}
-                              </span>
-                            </div>
+                            ) : (
+                              mainClassArms.map(armName => {
+                                const armStudents = classStudentMap[armName] || [];
+                                const count = armStudents.length;
+                                const isFull = count >= 36;
+                                const armColor = armName.toLowerCase().includes('gold') ? 'bg-amber-50/60 border-amber-100 text-amber-900' :
+                                                 armName.toLowerCase().includes('silver') ? 'bg-slate-50 border-slate-200 text-slate-700' :
+                                                 armName.toLowerCase().includes('green') ? 'bg-emerald-50/60 border-emerald-100 text-emerald-900' :
+                                                 'bg-blue-50/60 border-blue-100 text-blue-900';
 
-                            {/* Silver */}
-                            <div className="flex items-center justify-between p-2 rounded-xl bg-slate-50 border border-slate-200 text-xs">
-                              <div className="flex items-center gap-2 font-bold text-slate-700">
-                                <span className="w-2.5 h-2.5 rounded-full bg-slate-500 shrink-0" />
-                                <span>Silver Arm</span>
-                              </div>
-                              <span className={`font-black ${silverCount >= 36 ? 'text-rose-600' : 'text-slate-800'}`}>
-                                {silverCount} / 36 {silverCount >= 36 && '🔴 FULL'}
-                              </span>
-                            </div>
-
-                            {/* Green */}
-                            <div className="flex items-center justify-between p-2 rounded-xl bg-emerald-50/50 border border-emerald-100 text-xs">
-                              <div className="flex items-center gap-2 font-bold text-emerald-900">
-                                <span className="w-2.5 h-2.5 rounded-full bg-emerald-600 shrink-0" />
-                                <span>Green Arm</span>
-                              </div>
-                              <span className={`font-black ${greenCount >= 36 ? 'text-rose-600' : 'text-slate-800'}`}>
-                                {greenCount} / 36 {greenCount >= 36 && '🔴 FULL'}
-                              </span>
-                            </div>
+                                return (
+                                  <div key={armName} className={`flex items-center justify-between p-2 rounded-xl border text-xs ${armColor}`}>
+                                    <div className="flex items-center gap-2 font-bold min-w-0 truncate">
+                                      <span className="w-2.5 h-2.5 rounded-full bg-slate-400 shrink-0" />
+                                      <span className="truncate">{armName}</span>
+                                    </div>
+                                    <div className="flex items-center gap-2 shrink-0">
+                                      <span className={`font-black ${isFull ? 'text-rose-600' : 'text-slate-800'}`}>
+                                        {count} / 36 {isFull && '🔴 FULL'}
+                                      </span>
+                                      <button
+                                        type="button"
+                                        onClick={() => handleDeleteSubclassArm(armName)}
+                                        className="text-slate-400 hover:text-rose-600 transition-colors p-1 cursor-pointer"
+                                        title={`Delete arm ${armName}`}
+                                      >
+                                        <Trash2 className="w-3 h-3" />
+                                      </button>
+                                    </div>
+                                  </div>
+                                );
+                              })
+                            )}
                           </div>
                         </div>
 
@@ -3381,7 +3645,7 @@ export default function AdminControl({ students, initialStaff = [] }: AdminContr
                     >
                       All Subgroups ({students.length})
                     </button>
-                    {['Nursery 1', 'Basic 1', 'Basic 2'].map(mainCls => (
+                    {sortedMainClasses.map(mainCls => (
                       <button
                         key={mainCls}
                         onClick={() => setClassTabFilter(mainCls)}
@@ -4695,7 +4959,7 @@ export default function AdminControl({ students, initialStaff = [] }: AdminContr
                     required
                   >
                     <optgroup label="⚡ Automatic Subgroup Placement">
-                      {['Nursery 1', 'Basic 1', 'Basic 2'].map(mainCls => {
+                      {sortedMainClasses.map(mainCls => {
                         const arms = ['Gold', 'Silver', 'Green', 'Gold 2', 'Silver 2', 'Green 2'];
                         const targetArm = arms.find(arm => {
                           const cnt = (classStudentMap[`${mainCls} ${arm}`]?.length || 0);
@@ -7414,7 +7678,7 @@ export default function AdminControl({ students, initialStaff = [] }: AdminContr
                     required
                   >
                     <optgroup label="⚡ Automatic Subgroup Placement">
-                      {['Nursery 1', 'Basic 1', 'Basic 2'].map(mainCls => {
+                      {sortedMainClasses.map(mainCls => {
                         const otherStudents = students.filter(s => s.id !== editingStudent.id);
                         const arms = ['Gold', 'Silver', 'Green', 'Gold 2', 'Silver 2', 'Green 2'];
                         const targetArm = arms.find(arm => {
@@ -8021,9 +8285,7 @@ export default function AdminControl({ students, initialStaff = [] }: AdminContr
                   {[
                     { id: 'all', label: 'All Students' },
                     { id: 'unassigned', label: 'Unassigned Only' },
-                    { id: 'Nursery 1', label: 'Nursery 1' },
-                    { id: 'Basic 1', label: 'Basic 1' },
-                    { id: 'Basic 2', label: 'Basic 2' },
+                    ...sortedMainClasses.map(c => ({ id: c, label: c }))
                   ].map(pill => (
                     <button
                       key={pill.id}
@@ -8069,7 +8331,7 @@ export default function AdminControl({ students, initialStaff = [] }: AdminContr
                   if (currentArm === assignToArmModal.armName) return false;
 
                   if (filter === 'unassigned') {
-                    const isBare = s.intendedClass === 'Nursery 1' || s.intendedClass === 'Basic 1' || s.intendedClass === 'Basic 2';
+                    const isBare = sortedMainClasses.some(c => s.intendedClass === c);
                     if (!currentArm.includes('Unassigned') && !isBare) {
                       return false;
                     }
@@ -8240,6 +8502,171 @@ export default function AdminControl({ students, initialStaff = [] }: AdminContr
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Create Main Class */}
+      {isCreateClassModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-fade-in">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-5 border border-slate-200 animate-slide-down">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-emerald-100 text-[#0f7343] flex items-center justify-center font-black">
+                  <GraduationCap className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-black text-slate-800">Create New Main Class</h3>
+                  <p className="text-xs text-slate-500 font-semibold">Add a new academic class level</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsCreateClassModalOpen(false)}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-all cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateMainClass} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Main Class Name</label>
+                <input
+                  type="text"
+                  value={newClassNameInput}
+                  onChange={(e) => setNewClassNameInput(e.target.value)}
+                  placeholder="e.g. Nursery 2, Basic 3, JSS 1"
+                  className="w-full soft-input font-bold text-sm"
+                  required
+                  autoFocus
+                />
+                <p className="text-[11px] text-slate-400 font-semibold mt-1">Enter the broad class title (without stream name).</p>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Initial Subclass Arms to Create</label>
+                <div className="grid grid-cols-3 gap-2">
+                  {['Gold', 'Silver', 'Green', 'Blue', 'Diamond', 'Ruby'].map(arm => {
+                    const isChecked = selectedArmsForNewClass.includes(arm);
+                    return (
+                      <label
+                        key={arm}
+                        className={`flex items-center justify-center gap-1.5 p-2 rounded-xl border text-xs font-bold cursor-pointer transition-all ${
+                          isChecked ? 'bg-emerald-50 border-[#0f7343] text-[#0f7343]' : 'bg-slate-50 border-slate-200 text-slate-600'
+                        }`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={isChecked}
+                          onChange={() => {
+                            if (isChecked) {
+                              setSelectedArmsForNewClass(prev => prev.filter(a => a !== arm));
+                            } else {
+                              setSelectedArmsForNewClass(prev => [...prev, arm]);
+                            }
+                          }}
+                          className="w-3.5 h-3.5 rounded text-[#0f7343] focus:ring-[#0f7343]"
+                        />
+                        <span>{arm}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="pt-3 flex items-center justify-end gap-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setIsCreateClassModalOpen(false)}
+                  className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold text-xs cursor-pointer transition-all"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={!newClassNameInput.trim() || isCreatingClass}
+                  className="px-5 py-2.5 bg-[#0f7343] hover:bg-[#0b5c34] text-white rounded-xl font-extrabold text-xs transition-all shadow-md flex items-center gap-1.5 cursor-pointer disabled:opacity-40"
+                >
+                  {isCreatingClass ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+                  <span>{isCreatingClass ? 'Creating...' : 'Save & Create Class'}</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Create Subclass Arm */}
+      {isCreateArmModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-fade-in">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-5 border border-slate-200 animate-slide-down">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-amber-100 text-amber-700 flex items-center justify-center font-black">
+                  <Layers className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-black text-slate-800">Create Subclass Arm</h3>
+                  <p className="text-xs text-slate-500 font-semibold">Add a new arm section to a main class</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsCreateArmModalOpen(false)}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-all cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateSubclassArm} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Select Main Class</label>
+                <select
+                  value={targetMainClassForArm}
+                  onChange={(e) => setTargetMainClassForArm(e.target.value)}
+                  className="w-full soft-input font-bold text-sm cursor-pointer"
+                  required
+                >
+                  {sortedMainClasses.map(cls => (
+                    <option key={cls} value={cls}>{cls}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Arm Name / Stream Title</label>
+                <input
+                  type="text"
+                  value={newArmNameInput}
+                  onChange={(e) => setNewArmNameInput(e.target.value)}
+                  placeholder="e.g. Diamond, Blue, Gold 2, Alpha"
+                  className="w-full soft-input font-bold text-sm"
+                  required
+                  autoFocus
+                />
+                <p className="text-[11px] text-slate-400 font-semibold mt-1">Full arm name will be formatted as e.g. &quot;{targetMainClassForArm} {newArmNameInput.trim() || 'Arm'}&quot;.</p>
+              </div>
+
+              <div className="pt-3 flex items-center justify-end gap-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setIsCreateArmModalOpen(false)}
+                  className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold text-xs cursor-pointer transition-all"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={!targetMainClassForArm.trim() || !newArmNameInput.trim() || isCreatingArm}
+                  className="px-5 py-2.5 bg-[#0f7343] hover:bg-[#0b5c34] text-white rounded-xl font-extrabold text-xs transition-all shadow-md flex items-center gap-1.5 cursor-pointer disabled:opacity-40"
+                >
+                  {isCreatingArm ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+                  <span>{isCreatingArm ? 'Creating...' : 'Create Subclass Arm'}</span>
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

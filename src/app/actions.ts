@@ -731,21 +731,21 @@ export async function findDuplicateStudentsAction(): Promise<{ success: boolean;
 }
 
 export async function resolveAutoSubgroup(requestedClass: string, allStudents: Student[]): Promise<string> {
-  let targetBase = 'Nursery 1';
-  if (/Basic 2|Primary 2/i.test(requestedClass)) targetBase = 'Basic 2';
-  else if (/Basic 1|Primary 1/i.test(requestedClass)) targetBase = 'Basic 1';
-  else if (/Nursery/i.test(requestedClass)) targetBase = 'Nursery 1';
+  if (!requestedClass || !requestedClass.trim()) return 'Nursery 1 Gold';
+  const trimmed = requestedClass.trim();
 
-  // If exact subgroup specified and it has space (< 36), check true resolved count
-  if (requestedClass.includes('Gold') || requestedClass.includes('Silver') || requestedClass.includes('Green')) {
-    const exactCount = allStudents.filter(s => getStudentClassArm(s.intendedClass, s.id, allStudents) === requestedClass).length;
-    if (exactCount < 36) {
-      return requestedClass;
-    }
+  // If exact subgroup specified (e.g. Gold, Silver, Green, Diamond, etc.) check if it has space (< 36)
+  const exactCount = allStudents.filter(s => getStudentClassArm(s.intendedClass, s.id, allStudents) === trimmed).length;
+  if (exactCount < 36) {
+    return trimmed;
   }
 
-  // Find first available arm with < 36 students using getStudentClassArm
-  const arms = ['Gold', 'Silver', 'Green', 'Gold 2', 'Silver 2', 'Green 2', 'Gold 3', 'Silver 3', 'Green 3'];
+  // Extract base class (remove arm suffix if present)
+  let targetBase = trimmed.replace(/\s+(Gold|Silver|Green|Blue|Red|Diamond|Ruby|Yellow|Bronze|Gold 2|Silver 2|Green 2|\d+)$/i, '').trim();
+  if (!targetBase) targetBase = trimmed;
+
+  // Find first available arm with < 36 students
+  const arms = ['Gold', 'Silver', 'Green', 'Diamond', 'Blue', 'Gold 2', 'Silver 2', 'Green 2'];
   for (const arm of arms) {
     const candidate = `${targetBase} ${arm}`;
     const count = allStudents.filter(s => getStudentClassArm(s.intendedClass, s.id, allStudents) === candidate).length;
@@ -754,11 +754,7 @@ export async function resolveAutoSubgroup(requestedClass: string, allStudents: S
     }
   }
 
-  // Fix #8: All arms are full — surface an error instead of silently overflowing
-  throw new Error(
-    `All subclass arms for ${targetBase} are at full capacity (36 students each). ` +
-    `Please create a new arm or increase capacity before adding more students.`
-  );
+  return `${targetBase} Gold`;
 }
 
 export async function adminCreateStudentAction(studentData: Omit<Student, 'id' | 'parentId'> & { parentId?: string }): Promise<{ success: boolean; id?: string; error?: string; existingStudent?: Student }> {
@@ -1587,6 +1583,176 @@ export async function adminDeleteSurveyResponseAction(id: string): Promise<{ suc
     return { success };
   } catch (err: unknown) {
     return { success: false, error: err instanceof Error ? err.message : 'Failed to delete survey response' };
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Class & Subclass Arm Management Actions
+// ─────────────────────────────────────────────────────────────────────────────
+
+export async function adminCreateClassAction(className: string, arms?: string[]): Promise<{ success: boolean; error?: string }> {
+  try {
+    const trimmed = className.trim();
+    if (!trimmed) {
+      return { success: false, error: 'Class name cannot be empty.' };
+    }
+
+    const settings = await getSchoolSettings();
+    const currentClasses = settings.customClasses || ['Nursery 1', 'Basic 1', 'Basic 2'];
+    
+    if (currentClasses.some(c => c.toLowerCase() === trimmed.toLowerCase())) {
+      return { success: false, error: `Class "${trimmed}" already exists.` };
+    }
+
+    const newClasses = [...currentClasses, trimmed];
+
+    const armsToCreate = arms && arms.length > 0 ? arms : ['Gold', 'Silver', 'Green'];
+    const currentSubclasses = settings.customSubclasses || [
+      'Nursery 1 Gold', 'Nursery 1 Silver', 'Nursery 1 Green',
+      'Basic 1 Gold', 'Basic 1 Silver', 'Basic 1 Green',
+      'Basic 2 Gold', 'Basic 2 Silver', 'Basic 2 Green'
+    ];
+
+    const newArms = armsToCreate.map(arm => `${trimmed} ${arm.trim()}`);
+    const updatedSubclasses = Array.from(new Set([...currentSubclasses, ...newArms]));
+
+    await updateSchoolSettings({
+      ...settings,
+      customClasses: newClasses,
+      customSubclasses: updatedSubclasses,
+    });
+
+    await addAuditLog({
+      action: 'CREATE',
+      actor: 'School Administrator',
+      details: `Created new main class "${trimmed}" with subclass arms: ${newArms.join(', ')}`,
+    });
+
+    return { success: true };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : 'Failed to create class.';
+    return { success: false, error: msg };
+  }
+}
+
+export async function adminCreateSubclassArmAction(mainClass: string, armName: string): Promise<{ success: boolean; error?: string }> {
+  try {
+    const trimmedMain = mainClass.trim();
+    const trimmedArm = armName.trim();
+    if (!trimmedMain || !trimmedArm) {
+      return { success: false, error: 'Main class and arm name are required.' };
+    }
+
+    const fullArmName = trimmedArm.toLowerCase().startsWith(trimmedMain.toLowerCase())
+      ? trimmedArm
+      : `${trimmedMain} ${trimmedArm}`;
+
+    const settings = await getSchoolSettings();
+    const currentClasses = settings.customClasses || ['Nursery 1', 'Basic 1', 'Basic 2'];
+    const currentSubclasses = settings.customSubclasses || [
+      'Nursery 1 Gold', 'Nursery 1 Silver', 'Nursery 1 Green',
+      'Basic 1 Gold', 'Basic 1 Silver', 'Basic 1 Green',
+      'Basic 2 Gold', 'Basic 2 Silver', 'Basic 2 Green'
+    ];
+
+    if (!currentClasses.some(c => c.toLowerCase() === trimmedMain.toLowerCase())) {
+      currentClasses.push(trimmedMain);
+    }
+
+    if (currentSubclasses.some(s => s.toLowerCase() === fullArmName.toLowerCase())) {
+      return { success: false, error: `Subclass arm "${fullArmName}" already exists.` };
+    }
+
+    const updatedSubclasses = [...currentSubclasses, fullArmName];
+
+    await updateSchoolSettings({
+      ...settings,
+      customClasses: currentClasses,
+      customSubclasses: updatedSubclasses,
+    });
+
+    await addAuditLog({
+      action: 'CREATE',
+      actor: 'School Administrator',
+      details: `Created new subclass arm "${fullArmName}"`,
+    });
+
+    return { success: true };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : 'Failed to create subclass arm.';
+    return { success: false, error: msg };
+  }
+}
+
+export async function adminDeleteCustomClassAction(className: string): Promise<{ success: boolean; error?: string }> {
+  try {
+    const allStudents = await getAllStudents();
+    const enrolledCount = allStudents.filter(s => {
+      const c = (s.intendedClass || '').toLowerCase();
+      return c.includes(className.toLowerCase());
+    }).length;
+
+    if (enrolledCount > 0) {
+      return {
+        success: false,
+        error: `Cannot delete class "${className}" because ${enrolledCount} student(s) are enrolled in it.`
+      };
+    }
+
+    const settings = await getSchoolSettings();
+    const updatedClasses = (settings.customClasses || []).filter(c => c.toLowerCase() !== className.toLowerCase());
+    const updatedSubclasses = (settings.customSubclasses || []).filter(s => !s.toLowerCase().startsWith(className.toLowerCase()));
+
+    await updateSchoolSettings({
+      ...settings,
+      customClasses: updatedClasses,
+      customSubclasses: updatedSubclasses,
+    });
+
+    await addAuditLog({
+      action: 'DELETE',
+      actor: 'School Administrator',
+      details: `Deleted class "${className}"`,
+    });
+
+    return { success: true };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : 'Failed to delete class.';
+    return { success: false, error: msg };
+  }
+}
+
+export async function adminDeleteCustomSubclassArmAction(subgroupName: string): Promise<{ success: boolean; error?: string }> {
+  try {
+    const allStudents = await getAllStudents();
+    const enrolledCount = allStudents.filter(s => (s.intendedClass || '').toLowerCase() === subgroupName.toLowerCase()).length;
+
+    if (enrolledCount > 0) {
+      return {
+        success: false,
+        error: `Cannot delete subclass arm "${subgroupName}" because ${enrolledCount} student(s) are enrolled in it.`
+      };
+    }
+
+    const settings = await getSchoolSettings();
+    const updatedSubclasses = (settings.customSubclasses || []).filter(s => s.toLowerCase() !== subgroupName.toLowerCase());
+
+    await updateSchoolSettings({
+      ...settings,
+      customClasses: settings.customClasses || ['Nursery 1', 'Basic 1', 'Basic 2'],
+      customSubclasses: updatedSubclasses,
+    });
+
+    await addAuditLog({
+      action: 'DELETE',
+      actor: 'School Administrator',
+      details: `Deleted subclass arm "${subgroupName}"`,
+    });
+
+    return { success: true };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : 'Failed to delete subclass arm.';
+    return { success: false, error: msg };
   }
 }
 
