@@ -1,15 +1,11 @@
-import { MongoClient, ServerApiVersion } from 'mongodb';
+import { MongoClient } from 'mongodb';
 
 const options = {
-  serverApi: {
-    version: ServerApiVersion.v1,
-    strict: true,
-    deprecationErrors: true,
-  },
-  maxPoolSize: 10,
+  maxPoolSize: 20,
   minPoolSize: 2,
-  connectTimeoutMS: 10000,
+  connectTimeoutMS: 20000,
   socketTimeoutMS: 45000,
+  serverSelectionTimeoutMS: 15000,
 };
 
 

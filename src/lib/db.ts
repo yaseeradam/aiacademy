@@ -69,115 +69,35 @@ async function getDB() {
   return client.db(DB_NAME);
 }
 
-// Single-run seed & index creation across app lifecycle
-async function ensureSeeded() {
-  if (seedFailed) return;  // Don't retry after a persistent failure
-  if (!seedPromise) {
-    seedPromise = (async () => {
+let seeded = false;
+
+// Single-run seed & index creation across app lifecycle — completely non-blocking
+async function ensureSeeded(): Promise<void> {
+  if (seeded || seedFailed) return;
+  seeded = true;
+
+  // Run in background without blocking the incoming user request
+  (async () => {
+    try {
       const db = await getDB();
-      // Ensure database indexes exist for ultra-fast queries
-      try {
-        await Promise.all([
-          db.collection(PARENTS_COL).createIndex({ phoneNumber: 1 }),
-          db.collection(PARENTS_COL).createIndex({ id: 1 }, { unique: true }),
-          db.collection(STUDENTS_COL).createIndex({ parentId: 1 }),
-          db.collection(STUDENTS_COL).createIndex({ id: 1 }, { unique: true }),
-          db.collection(STUDENTS_COL).createIndex({ formNumber: 1 }),
-          db.collection(SETTINGS_COL).createIndex({ id: 1 }, { unique: true }),
-          db.collection(COUNTERS_COL).createIndex({ _id: 1 }),
-          db.collection(AUDIT_COL).createIndex({ timestamp: -1 }),
-          db.collection(STAFF_COL).createIndex({ id: 1 }, { unique: true }),
-          db.collection(STAFF_COL).createIndex({ idNumber: 1 }),
-          db.collection(STAFF_COL).createIndex({ classAllocated: 1 }),
-        ]);
-      } catch {
-        /* ignore index conflict if already exists */
-      }
-
-      // Ensure initial parents, students, and staff exist without overwriting modified data
-      for (const p of INITIAL_PARENTS) {
-        await db.collection<Parent>(PARENTS_COL).updateOne({ id: p.id }, { $setOnInsert: p }, { upsert: true });
-      }
-      for (const s of INITIAL_STUDENTS) {
-        await db.collection<Student>(STUDENTS_COL).updateOne({ id: s.id }, { $setOnInsert: s }, { upsert: true });
-      }
-      // Ensure initial staff exist via fast bulkWrite
-      if (INITIAL_STAFF.length > 0) {
-        const staffBulkOps = INITIAL_STAFF.map(st => ({
-          updateOne: {
-            filter: { idNumber: st.idNumber },
-            update: { $setOnInsert: st },
-            upsert: true
-          }
-        }));
-        await db.collection(STAFF_COL).bulkWrite(staffBulkOps, { ordered: false }).catch(() => {});
-      }
-
-      // Fix migration: only run class-name migrations once (skip on subsequent cold starts)
-      const migrationDoc = await db.collection(SETTINGS_COL).findOne({ id: 'migration_version' });
-      const migrationVersion = (migrationDoc as Record<string, unknown> | null)?.version as number | undefined ?? 0;
-
-      if (migrationVersion < 1) {
-        await db.collection<Student>(STUDENTS_COL).updateMany(
-          { intendedClass: { $regex: /Primary 2/i } },
-          { $set: { intendedClass: 'Basic 2' } }
-        );
-        await db.collection<Student>(STUDENTS_COL).updateMany(
-          { intendedClass: { $regex: /Primary 1/i } },
-          { $set: { intendedClass: 'Basic 1' } }
-        );
-        await autoAssignBareClasses(db);
-        await db.collection(SETTINGS_COL).updateOne(
-          { id: 'migration_version' },
-          { $set: { id: 'migration_version', version: 1 } },
-          { upsert: true }
-        );
-      }
-
-      if (migrationVersion < 2) {
-        await fixDuplicateAndMissingAdmissionNumbers();
-        await db.collection(SETTINGS_COL).updateOne(
-          { id: 'migration_version' },
-          { $set: { id: 'migration_version', version: 2 } },
-          { upsert: true }
-        );
-      }
-
-      if (migrationVersion < 3) {
-        await db.collection(SETTINGS_COL).updateOne(
-          { id: 'migration_version' },
-          { $set: { id: 'migration_version', version: 3 } },
-          { upsert: true }
-        );
-      }
-
-      if (migrationVersion < 4) {
-        // Automatically normalize all legacy B2026 / 2026 / slash admission numbers in MongoDB to AIAA-B26-XXX
-        const allStudentsInDb = await db.collection<Student>(STUDENTS_COL).find({}).toArray();
-        for (const s of allStudentsInDb) {
-          if (s.admissionNumber && (s.admissionNumber.includes('2026') || s.admissionNumber.includes('/') || !/^AIAA-B26-\d{3,}$/i.test(s.admissionNumber))) {
-            const normalized = normalizeAdmissionNumber(s.admissionNumber);
-            if (normalized && normalized !== s.admissionNumber) {
-              await db.collection<Student>(STUDENTS_COL).updateOne(
-                { id: s.id },
-                { $set: { admissionNumber: normalized } }
-              );
-            }
-          }
-        }
-        await db.collection(SETTINGS_COL).updateOne(
-          { id: 'migration_version' },
-          { $set: { id: 'migration_version', version: 4 } },
-          { upsert: true }
-        );
-      }
-    })().catch(err => {
-      console.error('DB seed/index error (will not retry):', err);
-      seedFailed = true;  // stop silent retry loop
-      seedPromise = null;
-    });
-  }
-  return seedPromise;
+      // Ensure indexes exist in background without blocking critical path
+      await Promise.all([
+        db.collection(PARENTS_COL).createIndex({ phoneNumber: 1 }),
+        db.collection(PARENTS_COL).createIndex({ id: 1 }, { unique: true }),
+        db.collection(STUDENTS_COL).createIndex({ parentId: 1 }),
+        db.collection(STUDENTS_COL).createIndex({ id: 1 }, { unique: true }),
+        db.collection(STUDENTS_COL).createIndex({ formNumber: 1 }),
+        db.collection(SETTINGS_COL).createIndex({ id: 1 }, { unique: true }),
+        db.collection(COUNTERS_COL).createIndex({ _id: 1 }),
+        db.collection(AUDIT_COL).createIndex({ timestamp: -1 }),
+        db.collection(STAFF_COL).createIndex({ id: 1 }, { unique: true }),
+        db.collection(STAFF_COL).createIndex({ idNumber: 1 }),
+        db.collection(STAFF_COL).createIndex({ classAllocated: 1 }),
+      ]).catch(() => {});
+    } catch (err) {
+      console.warn('Background index sync warning:', err);
+    }
+  })();
 }
 
 async function autoAssignBareClasses(db: any) {
@@ -395,12 +315,17 @@ export async function updateStudentStatus(
 export async function getAllStudents(): Promise<Student[]> {
   await ensureSeeded();
   const db = await getDB();
-  const docs = await db.collection<Student>(STUDENTS_COL).find({}).toArray();
+  const docs = await db.collection<Student>(STUDENTS_COL).find(
+    {},
+    { projection: { photo: 0 } }
+  ).toArray();
   return docs.map(({ _id, ...rest }) => {
     void _id;
     const s = rest as Student;
     if (/Primary/i.test(s.intendedClass)) s.intendedClass = 'Basic 1';
     if (s.admissionNumber) s.admissionNumber = normalizeAdmissionNumber(s.admissionNumber);
+    // Point photo to high-speed cached streaming endpoint
+    s.photo = `/api/student-photo?id=${s.id}`;
     return s;
   });
 }

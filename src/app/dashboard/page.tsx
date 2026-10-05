@@ -20,15 +20,18 @@ export default async function DashboardPage() {
   const displayPhone = phone || '';
 
   if (isAdmin) {
-    // Run settings + students + staff in parallel — they are independent
+    // Run settings + students + staff in parallel with safe error fallbacks
     const [, allStudents, allStaff] = await Promise.all([
-      getSchoolSettings(),
-      getAllStudents(),
+      getSchoolSettings().catch(() => ({ schoolName: 'AI INTEGRATED ACADEMY ARGUNGU', motto: 'Learning Today, Leading Tomorrow', address: '', phones: '', logo: '/logo.jpg' })),
+      getAllStudents().catch(err => {
+        console.error('Error fetching students for admin:', err);
+        return [];
+      }),
       getAllStaff().catch(() => INITIAL_STAFF),
     ]);
     return (
       <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
-        <AdminControl students={allStudents} initialStaff={allStaff || INITIAL_STAFF} />
+        <AdminControl students={allStudents || []} initialStaff={allStaff || INITIAL_STAFF} />
       </div>
     );
   }

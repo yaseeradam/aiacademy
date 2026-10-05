@@ -64,11 +64,12 @@ export default function AdminControl({ students, initialStaff = [] }: AdminContr
 
   const StudentAvatar = ({ student, size = 'sm' }: { student: Student; size?: 'sm' | 'md' | 'lg' }) => {
     const dimensions = size === 'lg' ? 'w-16 h-16 text-sm' : size === 'md' ? 'w-11 h-11 text-sm' : 'w-10 h-10 text-xs';
+    const [hasError, setHasError] = useState(false);
     return (
       <div className={`${dimensions} rounded-full overflow-hidden shrink-0 bg-slate-100 flex items-center justify-center font-bold border border-slate-200/60 relative`}>
-        {student.photo ? (
+        {student.photo && !hasError ? (
           /* eslint-disable-next-line @next/next/no-img-element */
-          <img src={student.photo} alt={student.firstName} loading="lazy" decoding="async" className="w-full h-full object-cover" />
+          <img src={student.photo} alt={student.firstName} loading="lazy" decoding="async" onError={() => setHasError(true)} className="w-full h-full object-cover" />
         ) : (
           <span className="text-slate-500 uppercase">{student.firstName[0]}{student.lastName?.[0] || ''}</span>
         )}
