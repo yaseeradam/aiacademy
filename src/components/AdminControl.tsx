@@ -11,7 +11,7 @@ import {
   Grid, Settings, Plus, LogOut, Trash2, Save, BookOpen,
   Loader2, Scan, History, MessageSquare, Camera, FileText, CheckCircle2, CreditCard, Printer,
   GraduationCap, Folder, FolderOpen, Edit3, Briefcase, Phone, MessageSquareHeart, Star, ThumbsUp, ExternalLink, Copy, Check,
-  ArrowUp, ArrowDown, Sparkles, CheckSquare, Layers
+  ArrowUp, ArrowDown, Sparkles, Calendar, CheckSquare, Layers
 } from 'lucide-react';
 import { logoutAction, adminUpdateStudentAction, adminDeleteStudentAction, adminDeleteMultipleStudentsAction, unassignStudentFromSubclassAction, unassignMultipleStudentsFromSubclassAction, assignMultipleStudentsToSubclassAction, restoreMissingSeedStudentsAction, clearAllDatabaseDataAction, adminCreateStudentAction, adminVerifyAction, adminTogglePaymentStatusAction, getAuditLogsAction, scanAdmissionFormOCRAction, getSchoolSettingsAction, updateSchoolSettingsAction, findDuplicateStudentsAction, fixDuplicateAdmissionNumbersAction, DuplicateGroup, getAllStaffAction, adminCreateStaffAction, adminUpdateStaffAction, adminDeleteStaffAction, adminImportStaffCSVAction, adminSeedStaffFromExcelAction, adminGetSurveyDataAction, adminUpdateSurveyConfigAction, adminDeleteSurveyResponseAction, adminSaveSurveyAction, adminSetActiveSurveyAction, adminDeleteSurveyAction, adminCreateClassAction, adminCreateSubclassArmAction, adminDeleteCustomClassAction, adminDeleteCustomSubclassArmAction } from '@/app/actions';
 import AdmissionLetterModal, { printBulkAdmissionLetters, printPaidStudentsPDF, getStudentClassArm, getStudentAdmissionNumber } from './AdmissionLetterModal';
@@ -27,6 +27,35 @@ interface AdminControlProps {
 
 export default function AdminControl({ students, initialStaff = [] }: AdminControlProps) {
   const router = useRouter();
+
+  // Helper functions for Date of Birth picker
+  const toDatePickerValue = (val?: string): string => {
+    if (!val) return '';
+    const trimmed = val.trim();
+    if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) return trimmed;
+    const dmy = trimmed.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+    if (dmy) {
+      const d = dmy[1].padStart(2, '0');
+      const m = dmy[2].padStart(2, '0');
+      const y = dmy[3];
+      return `${y}-${m}-${d}`;
+    }
+    return '';
+  };
+
+  const formatDobDisplay = (val?: string): string => {
+    if (!val) return '';
+    const iso = toDatePickerValue(val);
+    if (!iso) return val;
+    try {
+      const [y, m, d] = iso.split('-').map(Number);
+      const date = new Date(y, m - 1, d);
+      return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+    } catch {
+      return val;
+    }
+  };
+
 
   const compressImage = (file: File, maxDim = 1000, quality = 0.70): Promise<string> => {
     return new Promise((resolve, reject) => {
@@ -4931,13 +4960,23 @@ export default function AdminControl({ students, initialStaff = [] }: AdminContr
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Date of Birth</label>
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2 flex items-center justify-between">
+                    <span className="flex items-center gap-1.5">
+                      <Calendar className="w-3.5 h-3.5 text-emerald-600" />
+                      <span>Date of Birth</span>
+                    </span>
+                    {newStudent.dateOfBirth && (
+                      <span className="text-[11px] font-bold text-emerald-700 lowercase tracking-normal">
+                        ({formatDobDisplay(newStudent.dateOfBirth)})
+                      </span>
+                    )}
+                  </label>
                   <input
-                    type="text"
-                    value={newStudent.dateOfBirth}
+                    type="date"
+                    value={toDatePickerValue(newStudent.dateOfBirth)}
                     onChange={(e) => setNewStudent({...newStudent, dateOfBirth: e.target.value})}
-                    placeholder="DD/MM/YYYY"
-                    className="w-full soft-input"
+                    max={new Date().toISOString().split('T')[0]}
+                    className="w-full soft-input cursor-pointer font-medium text-slate-800"
                   />
                 </div>
                 <div>
@@ -7720,13 +7759,23 @@ export default function AdminControl({ students, initialStaff = [] }: AdminContr
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Date of Birth</label>
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2 flex items-center justify-between">
+                    <span className="flex items-center gap-1.5">
+                      <Calendar className="w-3.5 h-3.5 text-emerald-600" />
+                      <span>Date of Birth</span>
+                    </span>
+                    {editingStudent.dateOfBirth && (
+                      <span className="text-[11px] font-bold text-emerald-700 lowercase tracking-normal">
+                        ({formatDobDisplay(editingStudent.dateOfBirth)})
+                      </span>
+                    )}
+                  </label>
                   <input
-                    type="text"
-                    value={editingStudent.dateOfBirth}
+                    type="date"
+                    value={toDatePickerValue(editingStudent.dateOfBirth)}
                     onChange={(e) => setEditingStudent({...editingStudent, dateOfBirth: e.target.value})}
-                    placeholder="YYYY-MM-DD"
-                    className="w-full soft-input text-sm"
+                    max={new Date().toISOString().split('T')[0]}
+                    className="w-full soft-input text-sm cursor-pointer font-medium text-slate-800"
                   />
                 </div>
               </div>
