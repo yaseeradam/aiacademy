@@ -1,5 +1,8 @@
 import { Student } from '@/types';
 
+// Memoize class arm assignments per array reference to ensure O(1) lookups and eliminate O(N^2) render freezes
+const armCacheByArray = new WeakMap<Student[], Map<string, string>>();
+
 export function getStudentClassArm(cls: string | undefined, studentId?: string, allStudents?: Student[]): string {
   if (!cls) return 'Nursery 1 Gold';
   let trimmed = cls.trim();
@@ -21,19 +24,44 @@ export function getStudentClassArm(cls: string | undefined, studentId?: string, 
   let baseClass = trimmed.replace(/^Primary\s+/i, 'Basic ');
 
   if (allStudents && allStudents.length > 0 && studentId) {
-    const bareClassStudents = allStudents.filter(s => {
-      if (!s.intendedClass) return false;
-      const sTrim = s.intendedClass.trim().replace(/^Primary\s+/i, 'Basic ');
-      return sTrim === baseClass || sTrim.startsWith(baseClass);
-    });
+    let studentMap = armCacheByArray.get(allStudents);
+    if (!studentMap) {
+      studentMap = new Map<string, string>();
+      const classBuckets = new Map<string, string[]>();
 
-    const idx = bareClassStudents.findIndex(s => s.id === studentId);
-    if (idx >= 0) {
-      if (idx < 36) return `${baseClass} Gold`;
-      if (idx < 72) return `${baseClass} Silver`;
-      if (idx < 108) return `${baseClass} Green`;
-      return `${baseClass} Gold 2`;
+      for (let i = 0; i < allStudents.length; i++) {
+        const s = allStudents[i];
+        if (!s.intendedClass) continue;
+        const sTrim = s.intendedClass.trim();
+        if (sTrim.includes('Unassigned') || /\b(Gold|Silver|Green|Blue|Red|Diamond|Ruby|Bronze|Yellow|Gold 2|Silver 2|Green 2)\b/i.test(sTrim)) {
+          continue;
+        }
+        const sBase = sTrim.replace(/^Primary\s+/i, 'Basic ');
+        const baseKey = sBase.startsWith('Basic 2') ? 'Basic 2' : sBase.startsWith('Basic 1') ? 'Basic 1' : sBase.startsWith('Nursery 2') ? 'Nursery 2' : sBase.startsWith('Nursery 1') ? 'Nursery 1' : sBase;
+        let bucket = classBuckets.get(baseKey);
+        if (!bucket) {
+          bucket = [];
+          classBuckets.set(baseKey, bucket);
+        }
+        bucket.push(s.id);
+      }
+
+      classBuckets.forEach((ids, bClass) => {
+        ids.forEach((id, idx) => {
+          let assigned = `${bClass} Gold`;
+          if (idx < 36) assigned = `${bClass} Gold`;
+          else if (idx < 72) assigned = `${bClass} Silver`;
+          else if (idx < 108) assigned = `${bClass} Green`;
+          else assigned = `${bClass} Gold 2`;
+          studentMap!.set(id, assigned);
+        });
+      });
+
+      armCacheByArray.set(allStudents, studentMap);
     }
+
+    const cached = studentMap.get(studentId);
+    if (cached) return cached;
   }
 
   return `${baseClass} Gold`;

@@ -68,7 +68,7 @@ export default function AdminControl({ students, initialStaff = [] }: AdminContr
       <div className={`${dimensions} rounded-full overflow-hidden shrink-0 bg-slate-100 flex items-center justify-center font-bold border border-slate-200/60 relative`}>
         {student.photo ? (
           /* eslint-disable-next-line @next/next/no-img-element */
-          <img src={student.photo} alt={student.firstName} className="w-full h-full object-cover" />
+          <img src={student.photo} alt={student.firstName} loading="lazy" decoding="async" className="w-full h-full object-cover" />
         ) : (
           <span className="text-slate-500 uppercase">{student.firstName[0]}{student.lastName?.[0] || ''}</span>
         )}
@@ -7679,27 +7679,30 @@ export default function AdminControl({ students, initialStaff = [] }: AdminContr
                   >
                     <optgroup label="⚡ Automatic Subgroup Placement">
                       {sortedMainClasses.map(mainCls => {
-                        const otherStudents = students.filter(s => s.id !== editingStudent.id);
                         const arms = ['Gold', 'Silver', 'Green', 'Gold 2', 'Silver 2', 'Green 2'];
+                        const currentResolved = studentArmCache.get(editingStudent.id) || editingStudent.intendedClass || '';
                         const targetArm = arms.find(arm => {
-                          const cnt = otherStudents.filter(s => getStudentClassArm(s.intendedClass, s.id, otherStudents) === `${mainCls} ${arm}`).length;
+                          const armKey = `${mainCls} ${arm}`;
+                          let cnt = classStudentMap[armKey]?.length || 0;
+                          if (currentResolved === armKey && cnt > 0) cnt -= 1;
                           return cnt < 36;
                         }) || 'Gold';
                         const assignedFull = `${mainCls} ${targetArm}`;
-                        const spotCnt = otherStudents.filter(s => getStudentClassArm(s.intendedClass, s.id, otherStudents) === assignedFull).length;
+                        let spotCnt = classStudentMap[assignedFull]?.length || 0;
+                        if (currentResolved === assignedFull && spotCnt > 0) spotCnt -= 1;
                         return (
                           <option key={`edit-auto-${mainCls}`} value={assignedFull}>
-                            ⚡ Auto-Assign to {mainCls} (→ {targetArm} Arm: {36 - spotCnt} spots available)
+                            ⚡ Auto-Assign to {mainCls} (→ {targetArm} Arm: {Math.max(0, 36 - spotCnt)} spots available)
                           </option>
                         );
                       })}
                     </optgroup>
                     <optgroup label="Direct Subgroup Selection">
                       {classList.map(cls => {
-                        const otherStudents = students.filter(s => s.id !== editingStudent.id);
-                        const currentResolved = getStudentClassArm(editingStudent.intendedClass, editingStudent.id, students);
-                        const count = otherStudents.filter(s => getStudentClassArm(s.intendedClass, s.id, otherStudents) === cls).length;
+                        const currentResolved = studentArmCache.get(editingStudent.id) || editingStudent.intendedClass || '';
+                        let count = classStudentMap[cls]?.length || 0;
                         const isCurrent = currentResolved === cls;
+                        if (isCurrent && count > 0) count -= 1;
                         const isFull = count >= 36 && !isCurrent;
                         return (
                           <option 

@@ -28,16 +28,11 @@ function getActualClientPromise(): Promise<MongoClient> {
     throw new Error('Please add your MongoDB URI to your environment variables or .env.local as MONGODB_URI');
   }
 
-  if (process.env.NODE_ENV === 'development') {
-    if (!global._mongoClientPromise) {
-      client = new MongoClient(uri, options);
-      global._mongoClientPromise = client.connect();
-    }
-    actualClientPromise = global._mongoClientPromise;
-  } else {
+  if (!global._mongoClientPromise) {
     client = new MongoClient(uri, options);
-    actualClientPromise = client.connect();
+    global._mongoClientPromise = client.connect();
   }
+  actualClientPromise = global._mongoClientPromise;
   return actualClientPromise;
 }
 
