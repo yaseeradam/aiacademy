@@ -249,7 +249,7 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // Default: Professional CSV export containing Base64 passport pictures & photo URLs
+    // Default: Professional CSV export fully optimized and recognized by AcademyHub
     const escapeCSV = (val: string | undefined | null) => {
       if (!val) return '';
       const stringVal = String(val).trim();
@@ -259,30 +259,52 @@ export async function GET(request: NextRequest) {
       return stringVal;
     };
 
+    // Helper to split class and section/arm for AcademyHub (e.g. "Basic 1 Gold" -> class: "Basic 1", section: "Gold")
+    const splitClassAndSection = (fullClass: string | undefined) => {
+      if (!fullClass) return { className: 'Nursery 1', sectionName: 'Gold' };
+      const trimmed = fullClass.trim();
+      const match = trimmed.match(/^(.*?)\s+(Gold\s*2|Silver\s*2|Green\s*2|Gold|Silver|Green|Blue|Red|Diamond|Ruby|Bronze|Yellow|Arm\s*[A-Z]|[A-Z])\b/i);
+      if (match) {
+        return {
+          className: match[1].trim(),
+          sectionName: match[2].trim(),
+        };
+      }
+      return {
+        className: trimmed,
+        sectionName: 'General',
+      };
+    };
+
+    // Standard headers recognized natively by AcademyHub's standard & AI importers
     const headers = [
-      'Adm No',
-      'Photo (Base64)',
-      'Photo URL',
-      'First Name',
-      'Last Name',
-      'Class',
-      'Gender',
-      'Date of Birth',
-      'Father Name',
-      'Mother Name',
-      'Residential Address',
-      'Phone 1',
-      'Phone 2',
-      'Guardian Name',
-      'Guardian Address',
-      'Nationality',
-      'Religion',
-      'Verification Status',
-      'Correction Notes',
-      'Payment Status',
-      'Academic Session',
-      'Resumption Date',
-      'Admission Date',
+      'admission_number',
+      'first_name',
+      'last_name',
+      'gender',
+      'class_name',
+      'section_name',
+      'passport_photo',
+      'dob',
+      'guardian_name',
+      'guardian_phone',
+      'guardian_address',
+      'status',
+      'photo_url',
+      'class_full',
+      'father_name',
+      'mother_name',
+      'residential_address',
+      'phone1',
+      'phone2',
+      'nationality',
+      'religion',
+      'verification_status',
+      'correction_notes',
+      'payment_status',
+      'academic_session',
+      'resumption_date',
+      'admission_date',
     ];
 
     const csvRows = [headers.join(',')];
@@ -291,31 +313,45 @@ export async function GET(request: NextRequest) {
       const parent = parentMap.get(student.parentId);
       const admNo = getStudentAdmissionNumber(student);
       const classArm = getStudentClassArm(student.intendedClass, student.id, students);
+      const { className, sectionName } = splitClassAndSection(classArm || student.intendedClass);
+
       const rawPhoto = (photoMap.get(student.id) || '').trim().replace(/[\r\n]/g, '');
       let base64Photo = '';
-      if (rawPhoto.startsWith('data:')) {
+      if (rawPhoto.startsWith('data:image')) {
         base64Photo = rawPhoto;
       } else if (rawPhoto.length > 100 && !rawPhoto.startsWith('http') && !rawPhoto.startsWith('/')) {
         base64Photo = `data:image/jpeg;base64,${rawPhoto}`;
       }
       const photoUrl = `https://portal.academyhub.com.ng/api/student-photo?id=${student.id}`;
 
+      // Normalize gender to 'Male' or 'Female' (strictly required by AcademyHub)
+      const gender = (student.gender || 'Male').toLowerCase().startsWith('f') ? 'Female' : 'Male';
+
+      // Normalize guardian contact info
+      const guardianName = student.guardianName || student.fatherName || parent?.parentName || 'Parent / Guardian';
+      const guardianPhone = student.phone1 || parent?.phoneNumber || '';
+      const guardianAddress = student.guardianAddress || student.residentialAddress || '';
+
       const row = [
         escapeCSV(admNo),
-        escapeCSV(base64Photo),
-        escapeCSV(photoUrl),
         escapeCSV(student.firstName),
         escapeCSV(student.lastName),
-        escapeCSV(classArm || student.intendedClass),
-        escapeCSV(student.gender),
+        escapeCSV(gender),
+        escapeCSV(className),
+        escapeCSV(sectionName),
+        escapeCSV(base64Photo),
         escapeCSV(student.dateOfBirth),
+        escapeCSV(guardianName),
+        escapeCSV(guardianPhone),
+        escapeCSV(guardianAddress),
+        escapeCSV('Active'), // AcademyHub expects 'Active'
+        escapeCSV(photoUrl),
+        escapeCSV(classArm || student.intendedClass),
         escapeCSV(student.fatherName || parent?.parentName),
         escapeCSV(student.motherName),
         escapeCSV(student.residentialAddress),
         escapeCSV(student.phone1 || parent?.phoneNumber),
         escapeCSV(student.phone2),
-        escapeCSV(student.guardianName),
-        escapeCSV(student.guardianAddress),
         escapeCSV(student.nationality),
         escapeCSV(student.religion),
         escapeCSV(student.verificationStatus),

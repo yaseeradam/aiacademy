@@ -111,7 +111,13 @@ export async function POST(request: NextRequest) {
       if (!firstName) firstName = 'Student';
       if (!lastName && !rawFullName) lastName = '';
 
-      const rawClass = (
+      const rawClassFull = (row['class_full'] || row['class full'] || '').trim();
+      const rawClassName = (row['class_name'] || row['classname'] || '').trim();
+      const rawSectionName = (row['section_name'] || row['sectionname'] || row['section'] || row['arm'] || '').trim();
+
+      let rawClass = (
+        rawClassFull ||
+        (rawClassName && rawSectionName ? `${rawClassName} ${rawSectionName}` : rawClassName) ||
         row['class'] || row['intended class'] || row['intendedclass'] || row['intended_class'] || row['subclass arm'] || row['subclass_arm'] || row['subclass'] || 'Nursery 1'
       ).trim();
 
@@ -127,13 +133,16 @@ export async function POST(request: NextRequest) {
       const motherName = (row['mother name'] || row['mothername'] || row['mother_name'] || '').trim();
       const residentialAddress = (row['address'] || row['residential address'] || row['residential_address'] || '').trim();
       
+      // Passport photo (Base64 data URI or image string)
+      const passportPhoto = (row['passport_photo'] || row['passport photo'] || row['photo'] || row['image'] || '').trim();
+
       // Phone numbers
       const phone1 = (
-        row['phone 1'] || row['phone1'] || row['phone_1'] || row['phone'] || row['phone number'] || row['phone_number'] || row['phonenumber'] || row['parent phone'] || row['parent_phone'] || row['contact phone'] || row['contact_phone'] || ''
+        row['phone 1'] || row['phone1'] || row['phone_1'] || row['phone'] || row['phone number'] || row['phone_number'] || row['phonenumber'] || row['parent phone'] || row['parent_phone'] || row['contact phone'] || row['contact_phone'] || row['guardian_phone'] || row['guardian phone'] || ''
       ).trim();
       const phone2 = (row['phone 2'] || row['phone2'] || row['phone_2'] || '').trim();
       
-      const guardianName = (row['parent / guardian name'] || row['parent/guardian name'] || row['guardian name'] || row['guardianname'] || row['guardian_name'] || row['parent name'] || '').trim();
+      const guardianName = (row['parent / guardian name'] || row['parent/guardian name'] || row['guardian name'] || row['guardianname'] || row['guardian_name'] || row['guardian'] || row['parent name'] || '').trim();
       const guardianAddress = (row['guardian address'] || row['guardian_address'] || '').trim();
       const nationality = (row['nationality'] || '').trim();
       const religion = (row['religion'] || '').trim();
@@ -220,7 +229,8 @@ export async function POST(request: NextRequest) {
         guardianName,
         guardianAddress,
         nationality,
-        religion
+        religion,
+        ...(passportPhoto ? { photo: passportPhoto } : {})
       };
 
       students.push(studentData);
