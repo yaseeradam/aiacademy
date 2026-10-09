@@ -368,6 +368,24 @@ export async function getAllStudents(): Promise<Student[]> {
   });
 }
 
+export async function getAllStudentPhotos(): Promise<Map<string, string>> {
+  await ensureSeeded();
+  return withDBRetry(async (db) => {
+    const cursor = db.collection<Student>(STUDENTS_COL).find(
+      { photo: { $exists: true, $ne: '' } },
+      { projection: { id: 1, photo: 1 } }
+    ).batchSize(50);
+    const photoMap = new Map<string, string>();
+    while (await cursor.hasNext()) {
+      const doc = await cursor.next();
+      if (doc && doc.id && doc.photo) {
+        photoMap.set(doc.id, doc.photo);
+      }
+    }
+    return photoMap;
+  });
+}
+
 export async function getAllParents(): Promise<Parent[]> {
   await ensureSeeded();
   return withDBRetry(async (db) => {

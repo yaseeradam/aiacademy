@@ -3349,9 +3349,12 @@ export default function AdminControl({ students, initialStaff = [], settings }: 
                     <span>Upload CSV File</span>
                     <input type="file" accept=".csv" onChange={handleCSVImport} className="hidden" />
                   </label>
-                  <a href="/api/export-csv" className="flex items-center justify-center gap-2.5 py-2.5 px-4 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs transition-all cursor-pointer">
-                    <Download className="w-4 h-4" />
-                    <span>Download Excel / CSV</span>
+                  <a href="/api/export-csv" className="flex items-center justify-center gap-2.5 py-2.5 px-4 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs transition-all cursor-pointer shadow-xs" title="Download Excel register with embedded passport photos">
+                    <Download className="w-4 h-4 text-emerald-400" />
+                    <span>Download Excel (With Photos)</span>
+                  </a>
+                  <a href="/api/export-csv?format=csv" className="flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl border border-slate-200 hover:border-slate-300 bg-white hover:bg-slate-50 text-slate-600 font-bold text-xs transition-all cursor-pointer" title="Download plain CSV file">
+                    <span>Plain CSV</span>
                   </a>
                   <button
                     type="button"
@@ -3461,12 +3464,17 @@ export default function AdminControl({ students, initialStaff = [], settings }: 
                   </div>
                   <ChevronRight className="w-4 h-4 text-emerald-600 group-hover:translate-x-0.5 transition-transform" />
                 </a>
-                <a href="/api/export-csv" className="w-full flex items-center justify-between p-4 rounded-xl bg-[#f8fafc] border border-slate-100 hover:bg-slate-100 transition-all text-left">
-                  <div>
-                    <span className="block text-xs font-bold text-slate-800">Export Report</span>
-                    <span className="block text-[10px] text-slate-400">Download Excel/CSV</span>
+                <a href="/api/export-csv" className="w-full flex items-center justify-between p-4 rounded-xl bg-[#f8fafc] border border-slate-100 hover:bg-slate-100 transition-all text-left group">
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-xl bg-emerald-100 border border-emerald-200 flex items-center justify-center shrink-0">
+                      <Camera className="w-4 h-4 text-emerald-700" />
+                    </div>
+                    <div>
+                      <span className="block text-xs font-bold text-slate-800 group-hover:text-emerald-800">Student Register (With Photos)</span>
+                      <span className="block text-[10px] text-emerald-700 font-semibold">Excel file with embedded passport photos</span>
+                    </div>
                   </div>
-                  <ChevronRight className="w-4 h-4 text-slate-400" />
+                  <ChevronRight className="w-4 h-4 text-emerald-600 group-hover:translate-x-0.5 transition-transform" />
                 </a>
               </div>
             </div>
