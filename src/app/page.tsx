@@ -141,7 +141,7 @@ function LoginContent() {
             <div className="p-6 sm:p-8">
               <div className="mb-6">
                 <div className="flex items-center justify-between text-xs mb-1">
-                  <span className="font-bold text-slate-800 uppercase tracking-wider text-[11px]">Parent & Admin Access</span>
+                  <span className="font-bold text-slate-800 uppercase tracking-wider text-[11px]">Parent & Staff Portal</span>
                   <span className="text-emerald-700 font-semibold text-[11px] bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-100">
                     Secure Verification
                   </span>
@@ -155,7 +155,7 @@ function LoginContent() {
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
                   <label htmlFor="phone" className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                    Phone Number / Access ID
+                    Phone Number
                   </label>
                   <div className="relative flex items-center">
                     <div className="absolute left-3.5 flex items-center pointer-events-none text-slate-400">
@@ -165,15 +165,12 @@ function LoginContent() {
                       type="text"
                       id="phone"
                       name="phone"
-                      placeholder="e.g. 0803 123 4567 or admin"
+                      placeholder="e.g. 0803 123 4567"
                       required
                       className="w-full pl-10 pr-4 py-3 bg-slate-50 hover:bg-slate-100/70 focus:bg-white border border-slate-200 rounded-xl font-semibold text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-600/20 transition-all"
                       autoComplete="tel"
                     />
                   </div>
-                  <p className="text-[11px] text-slate-400 mt-1 font-medium">
-                    Type <code className="bg-slate-100 px-1 py-0.5 rounded font-mono text-slate-600 font-bold">admin</code> for administrative management portal.
-                  </p>
                 </div>
 
                 {/* Error Alert Box */}
