@@ -9,102 +9,21 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const format = searchParams.get('format')?.toLowerCase();
-    const isExplicitCSV = format === 'csv';
+    const isExcel = format === 'xlsx' || format === 'excel';
 
     const students = await getAllStudents();
     const parents = await getAllParents();
     const parentMap = new Map(parents.map(p => [p.id, p]));
 
-    // If explicit CSV is requested, provide RFC-4180 CSV with direct Photo URL links
-    if (isExplicitCSV) {
-      const escapeCSV = (val: string | undefined | null) => {
-        if (!val) return '';
-        const stringVal = String(val).trim();
-        if (stringVal.includes(',') || stringVal.includes('"') || stringVal.includes('\n') || stringVal.includes('\r')) {
-          return `"${stringVal.replace(/"/g, '""')}"`;
-        }
-        return stringVal;
-      };
-
-      const headers = [
-        'Adm No',
-        'Photo URL',
-        'First Name',
-        'Last Name',
-        'Class',
-        'Gender',
-        'Date of Birth',
-        'Father Name',
-        'Mother Name',
-        'Residential Address',
-        'Phone 1',
-        'Phone 2',
-        'Guardian Name',
-        'Guardian Address',
-        'Nationality',
-        'Religion',
-        'Verification Status',
-        'Correction Notes',
-        'Payment Status',
-        'Academic Session',
-        'Resumption Date',
-        'Admission Date',
-      ];
-
-      const csvRows = [headers.join(',')];
-
-      for (const student of students) {
-        const parent = parentMap.get(student.parentId);
-        const admNo = getStudentAdmissionNumber(student);
-        const classArm = getStudentClassArm(student.intendedClass, student.id, students);
-        const photoUrl = `https://portal.academyhub.com.ng/api/student-photo?id=${student.id}`;
-
-        const row = [
-          escapeCSV(admNo),
-          escapeCSV(photoUrl),
-          escapeCSV(student.firstName),
-          escapeCSV(student.lastName),
-          escapeCSV(classArm || student.intendedClass),
-          escapeCSV(student.gender),
-          escapeCSV(student.dateOfBirth),
-          escapeCSV(student.fatherName || parent?.parentName),
-          escapeCSV(student.motherName),
-          escapeCSV(student.residentialAddress),
-          escapeCSV(student.phone1 || parent?.phoneNumber),
-          escapeCSV(student.phone2),
-          escapeCSV(student.guardianName),
-          escapeCSV(student.guardianAddress),
-          escapeCSV(student.nationality),
-          escapeCSV(student.religion),
-          escapeCSV(student.verificationStatus),
-          escapeCSV(student.correctionNotes),
-          escapeCSV(student.paymentStatus),
-          escapeCSV(student.academicSession),
-          escapeCSV(student.resumptionDate),
-          escapeCSV(student.admissionDate),
-        ];
-        csvRows.push(row.join(','));
-      }
-
-      const csvContent = '\ufeff' + csvRows.join('\r\n');
-      return new NextResponse(csvContent, {
-        status: 200,
-        headers: {
-          'Content-Type': 'text/csv; charset=utf-8',
-          'Content-Disposition': 'attachment; filename="student_verification_data.csv"',
-          'Pragma': 'no-cache',
-          'Cache-Control': 'no-cache, no-store, must-revalidate',
-        },
-      });
-    }
-
-    // Default: Professional Excel spreadsheet with EMBEDDED passport photos
     let photoMap = new Map<string, string>();
     try {
       photoMap = await getAllStudentPhotos();
     } catch (err) {
-      console.warn('Could not fetch student photos from DB for Excel export, continuing without embedded images:', err);
+      console.warn('Could not fetch student photos from DB for export, continuing without embedded images:', err);
     }
+
+    // When ?format=xlsx is requested, generate rich Excel with embedded photo thumbnails
+    if (isExcel) {
 
     const workbook = new ExcelJS.Workbook();
     workbook.creator = 'AI Integrated Academy';
@@ -319,11 +238,102 @@ export async function GET(request: NextRequest) {
 
     const buffer = await workbook.xlsx.writeBuffer();
 
-    return new NextResponse(buffer, {
+      return new NextResponse(buffer, {
+        status: 200,
+        headers: {
+          'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          'Content-Disposition': 'attachment; filename="student_register_with_photos.xlsx"',
+          'Pragma': 'no-cache',
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+        },
+      });
+    }
+
+    // Default: Professional CSV export containing Base64 passport pictures & photo URLs
+    const escapeCSV = (val: string | undefined | null) => {
+      if (!val) return '';
+      const stringVal = String(val).trim();
+      if (stringVal.includes(',') || stringVal.includes('"') || stringVal.includes('\n') || stringVal.includes('\r')) {
+        return `"${stringVal.replace(/"/g, '""')}"`;
+      }
+      return stringVal;
+    };
+
+    const headers = [
+      'Adm No',
+      'Photo (Base64)',
+      'Photo URL',
+      'First Name',
+      'Last Name',
+      'Class',
+      'Gender',
+      'Date of Birth',
+      'Father Name',
+      'Mother Name',
+      'Residential Address',
+      'Phone 1',
+      'Phone 2',
+      'Guardian Name',
+      'Guardian Address',
+      'Nationality',
+      'Religion',
+      'Verification Status',
+      'Correction Notes',
+      'Payment Status',
+      'Academic Session',
+      'Resumption Date',
+      'Admission Date',
+    ];
+
+    const csvRows = [headers.join(',')];
+
+    for (const student of students) {
+      const parent = parentMap.get(student.parentId);
+      const admNo = getStudentAdmissionNumber(student);
+      const classArm = getStudentClassArm(student.intendedClass, student.id, students);
+      const rawPhoto = (photoMap.get(student.id) || '').trim().replace(/[\r\n]/g, '');
+      let base64Photo = '';
+      if (rawPhoto.startsWith('data:')) {
+        base64Photo = rawPhoto;
+      } else if (rawPhoto.length > 100 && !rawPhoto.startsWith('http') && !rawPhoto.startsWith('/')) {
+        base64Photo = `data:image/jpeg;base64,${rawPhoto}`;
+      }
+      const photoUrl = `https://portal.academyhub.com.ng/api/student-photo?id=${student.id}`;
+
+      const row = [
+        escapeCSV(admNo),
+        escapeCSV(base64Photo),
+        escapeCSV(photoUrl),
+        escapeCSV(student.firstName),
+        escapeCSV(student.lastName),
+        escapeCSV(classArm || student.intendedClass),
+        escapeCSV(student.gender),
+        escapeCSV(student.dateOfBirth),
+        escapeCSV(student.fatherName || parent?.parentName),
+        escapeCSV(student.motherName),
+        escapeCSV(student.residentialAddress),
+        escapeCSV(student.phone1 || parent?.phoneNumber),
+        escapeCSV(student.phone2),
+        escapeCSV(student.guardianName),
+        escapeCSV(student.guardianAddress),
+        escapeCSV(student.nationality),
+        escapeCSV(student.religion),
+        escapeCSV(student.verificationStatus),
+        escapeCSV(student.correctionNotes),
+        escapeCSV(student.paymentStatus),
+        escapeCSV(student.academicSession),
+        escapeCSV(student.resumptionDate),
+        escapeCSV(student.admissionDate),
+      ];
+      csvRows.push(row.join(','));
+    }
+
+    const csvContent = '\ufeff' + csvRows.join('\r\n');
+    return new NextResponse(csvContent, {
       status: 200,
       headers: {
-        'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        'Content-Disposition': 'attachment; filename="student_register_with_photos.xlsx"',
+        'Content-Type': 'text/csv; charset=utf-8',
+        'Content-Disposition': 'attachment; filename="student_verification_data_with_photos.csv"',
         'Pragma': 'no-cache',
         'Cache-Control': 'no-cache, no-store, must-revalidate',
       },

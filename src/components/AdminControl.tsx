@@ -3349,12 +3349,13 @@ export default function AdminControl({ students, initialStaff = [], settings }: 
                     <span>Upload CSV File</span>
                     <input type="file" accept=".csv" onChange={handleCSVImport} className="hidden" />
                   </label>
-                  <a href="/api/export-csv" className="flex items-center justify-center gap-2.5 py-2.5 px-4 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs transition-all cursor-pointer shadow-xs" title="Download Excel register with embedded passport photos">
+                  <a href="/api/export-csv" className="flex items-center justify-center gap-2.5 py-2.5 px-4 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs transition-all cursor-pointer shadow-xs" title="Download CSV file with student records and Base64 passport photos">
                     <Download className="w-4 h-4 text-emerald-400" />
-                    <span>Download Excel (With Photos)</span>
+                    <span>Download CSV (With Photos)</span>
                   </a>
-                  <a href="/api/export-csv?format=csv" className="flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl border border-slate-200 hover:border-slate-300 bg-white hover:bg-slate-50 text-slate-600 font-bold text-xs transition-all cursor-pointer" title="Download plain CSV file">
-                    <span>Plain CSV</span>
+                  <a href="/api/export-csv?format=xlsx" className="flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl border border-slate-200 hover:border-slate-300 bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs transition-all cursor-pointer" title="Download Excel (.xlsx) file">
+                    <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
+                    <span>Excel (.xlsx)</span>
                   </a>
                   <button
                     type="button"
@@ -3470,8 +3471,8 @@ export default function AdminControl({ students, initialStaff = [], settings }: 
                       <Camera className="w-4 h-4 text-emerald-700" />
                     </div>
                     <div>
-                      <span className="block text-xs font-bold text-slate-800 group-hover:text-emerald-800">Student Register (With Photos)</span>
-                      <span className="block text-[10px] text-emerald-700 font-semibold">Excel file with embedded passport photos</span>
+                      <span className="block text-xs font-bold text-slate-800 group-hover:text-emerald-800">Export Student Data (CSV)</span>
+                      <span className="block text-[10px] text-emerald-700 font-semibold">Includes Base64 passport pictures & photo URLs</span>
                     </div>
                   </div>
                   <ChevronRight className="w-4 h-4 text-emerald-600 group-hover:translate-x-0.5 transition-transform" />
