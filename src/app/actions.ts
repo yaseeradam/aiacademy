@@ -62,10 +62,11 @@ export async function loginAction(formData: FormData) {
   if (phone.toLowerCase() === 'admin') {
     const cookieStore = await cookies();
     cookieStore.set('parent_phone', 'admin', {
+      path: '/',
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      maxAge: 60 * 60 * 24, // 1 day
+      sameSite: 'lax',
+      maxAge: 60 * 60 * 24 * 7, // 7 days
     });
     await addAuditLog({
       action: 'LOGIN',
@@ -85,10 +86,11 @@ export async function loginAction(formData: FormData) {
 
   const cookieStore = await cookies();
   cookieStore.set('parent_phone', parent.phoneNumber, {
+    path: '/',
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict',
-    maxAge: 60 * 60 * 24, // 1 day
+    sameSite: 'lax',
+    maxAge: 60 * 60 * 24 * 7, // 7 days
   });
 
   await addAuditLog({
@@ -102,6 +104,11 @@ export async function loginAction(formData: FormData) {
 
 export async function logoutAction() {
   const cookieStore = await cookies();
+  cookieStore.set('parent_phone', '', {
+    path: '/',
+    httpOnly: true,
+    maxAge: 0,
+  });
   cookieStore.delete('parent_phone');
   redirect('/');
 }

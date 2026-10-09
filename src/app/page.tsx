@@ -2,7 +2,10 @@
 
 import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { ArrowRight, AlertTriangle, Phone, ShieldCheck, X } from 'lucide-react';
+import { 
+  ArrowRight, AlertTriangle, Phone, ShieldCheck, X, 
+  GraduationCap, Award, Lock, CheckCircle2, School, HelpCircle 
+} from 'lucide-react';
 import { loginAction, publicVerifyStudentAction, getSchoolSettingsAction } from './actions';
 import { Student } from '@/types';
 
@@ -16,11 +19,15 @@ function LoginContent() {
   const [verifyError, setVerifyError] = useState<string | null>(null);
   const [schoolLogo, setSchoolLogo] = useState<string>('/logo.jpg');
   const [schoolName, setSchoolName] = useState<string>('AI INTEGRATED ACADEMY ARGUNGU');
+  const [schoolMotto, setSchoolMotto] = useState<string>('Learning Today, Leading Tomorrow');
+  const [schoolPhones, setSchoolPhones] = useState<string>('08069676697, 07034784861');
 
   useEffect(() => {
     getSchoolSettingsAction().then(settings => {
       if (settings?.logo) setSchoolLogo(settings.logo);
       if (settings?.schoolName) setSchoolName(settings.schoolName);
+      if (settings?.motto) setSchoolMotto(settings.motto);
+      if (settings?.phones) setSchoolPhones(settings.phones);
     });
   }, []);
 
@@ -62,115 +69,170 @@ function LoginContent() {
   };
 
   return (
-    <div className="relative min-h-screen flex items-center justify-center overflow-hidden" style={{ background: 'linear-gradient(135deg, #f0fdf4 0%, #dcfce7 40%, #bbf7d0 70%, #f0fdf4 100%)' }}>
-
-      {/* Subtle background shapes */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-32 -left-32 w-[500px] h-[500px] rounded-full opacity-30" style={{ background: 'radial-gradient(circle, #86efac, transparent 70%)' }} />
-        <div className="absolute -bottom-40 -right-40 w-[600px] h-[600px] rounded-full opacity-20" style={{ background: 'radial-gradient(circle, #4ade80, transparent 70%)' }} />
-        <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'linear-gradient(#15803d 1px, transparent 1px), linear-gradient(90deg, #15803d 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
+    <div className="relative min-h-screen flex flex-col justify-between bg-slate-900 overflow-hidden font-sans selection:bg-emerald-500 selection:text-white">
+      {/* Background Graphic Patterns */}
+      <div className="absolute inset-0 z-0">
+        <div 
+          className="absolute inset-0 bg-cover bg-center opacity-10 filter blur-xs"
+          style={{ backgroundImage: `radial-gradient(circle at 50% 50%, #065f46 0%, #064e3b 50%, #022c22 100%)` }}
+        />
+        <div 
+          className="absolute inset-0 opacity-[0.06]" 
+          style={{ 
+            backgroundImage: 'linear-gradient(#10b981 1px, transparent 1px), linear-gradient(90deg, #10b981 1px, transparent 1px)', 
+            backgroundSize: '48px 48px' 
+          }} 
+        />
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[350px] bg-gradient-to-b from-emerald-500/15 via-teal-600/5 to-transparent blur-3xl pointer-events-none" />
       </div>
 
-      {/* Main card */}
-      <div className="w-full max-w-[460px] p-8 md:p-10 mx-4 animate-slide-up relative rounded-[2.5rem] z-10" style={{ background: 'rgba(255,255,255,0.97)', boxShadow: '0 32px 80px rgba(0,0,0,0.35), 0 0 0 1px rgba(255,255,255,0.1)' }}>
-        <div className="flex flex-col items-center text-center">
-
-          {/* Logo */}
-          <div className="w-20 h-20 mb-4 rounded-full overflow-hidden border-4 border-green-100 shadow-lg flex items-center justify-center bg-white p-0.5">
+      {/* Top Header / Bar */}
+      <header className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 py-6 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-white/10 backdrop-blur-md border border-white/20 p-1 flex items-center justify-center shadow-lg">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={schoolLogo}
               alt={schoolName}
-              className="w-full h-full object-contain rounded-full"
+              className="w-full h-full object-contain rounded-lg"
             />
           </div>
-
-          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2.5">
-            {schoolName}
-          </span>
-          
-          <h1 className="text-3xl font-black text-slate-800 tracking-tight leading-none mb-3">
-            Student Data Verification
-          </h1>
-          
-          <p className="text-slate-500 text-sm font-semibold mt-1 mb-8 leading-relaxed max-w-xs">
-            Enter your registered phone number to access your children&apos;s profiles.
-          </p>
+          <div>
+            <span className="text-white font-extrabold text-sm sm:text-base tracking-tight block leading-tight">
+              {schoolName}
+            </span>
+            <span className="text-emerald-400 text-[11px] font-semibold tracking-wider uppercase block">
+              Student Information Portal
+            </span>
+          </div>
         </div>
 
-        {/* Login Form */}
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div>
-            <label htmlFor="phone" className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
-              Phone Number
-            </label>
-            <div className="relative flex items-center">
-              {/* input display with low contrast prefix "call" matching image */}
-              <div className="absolute left-4 flex items-center pointer-events-none">
-                <Phone className="w-4 h-4 text-slate-400" />
+        <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-950/80 border border-emerald-500/30 text-emerald-300 text-xs font-semibold backdrop-blur-sm">
+          <Award className="w-3.5 h-3.5 text-amber-400" />
+          <span>2025/2026 Academic Session</span>
+        </div>
+      </header>
+
+      {/* Main Login Form Container */}
+      <main className="relative z-10 flex-1 flex items-center justify-center px-4 py-8">
+        <div className="w-full max-w-[440px] animate-slide-up">
+          {/* Card Wrapper */}
+          <div className="bg-white rounded-3xl shadow-2xl shadow-black/40 border border-slate-100/90 overflow-hidden">
+            {/* Card Header Strip */}
+            <div className="bg-gradient-to-r from-emerald-800 via-emerald-700 to-teal-800 px-6 py-6 text-white text-center relative overflow-hidden">
+              <div className="absolute -right-6 -bottom-6 w-24 h-24 rounded-full bg-white/10 blur-xl pointer-events-none" />
+              <div className="mx-auto w-16 h-16 rounded-2xl bg-white p-1.5 shadow-xl flex items-center justify-center mb-3 border-2 border-emerald-200">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={schoolLogo}
+                  alt={schoolName}
+                  className="w-full h-full object-contain rounded-xl"
+                />
               </div>
-              <input
-                type="text"
-                id="phone"
-                name="phone"
-                placeholder="0803 123 4567"
-                required
-                className="w-full pl-12 pr-4 py-3.5 bg-[#f0f4f9]/60 border border-slate-200/80 rounded-[1.25rem] font-semibold text-sm text-slate-800 focus:outline-none focus:border-green-600 focus:bg-white transition-all focus:ring-1 focus:ring-green-600/35"
-                autoComplete="tel"
-              />
+              <h1 className="text-xl sm:text-2xl font-black tracking-tight text-white leading-tight">
+                Data Verification Portal
+              </h1>
+              <p className="text-emerald-100/90 text-xs font-medium mt-1">
+                AI INTEGRATED ACADEMY ARGUNGU
+              </p>
+            </div>
+
+            {/* Card Body */}
+            <div className="p-6 sm:p-8">
+              <div className="mb-6">
+                <div className="flex items-center justify-between text-xs mb-1">
+                  <span className="font-bold text-slate-800 uppercase tracking-wider text-[11px]">Parent & Admin Access</span>
+                  <span className="text-emerald-700 font-semibold text-[11px] bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-100">
+                    Secure Verification
+                  </span>
+                </div>
+                <p className="text-slate-500 text-xs font-medium leading-relaxed">
+                  Enter your registered phone number to verify enrollment details, class allocations, and download official documents.
+                </p>
+              </div>
+
+              {/* Login Form */}
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div>
+                  <label htmlFor="phone" className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                    Phone Number / Access ID
+                  </label>
+                  <div className="relative flex items-center">
+                    <div className="absolute left-3.5 flex items-center pointer-events-none text-slate-400">
+                      <Phone className="w-4 h-4" />
+                    </div>
+                    <input
+                      type="text"
+                      id="phone"
+                      name="phone"
+                      placeholder="e.g. 0803 123 4567 or admin"
+                      required
+                      className="w-full pl-10 pr-4 py-3 bg-slate-50 hover:bg-slate-100/70 focus:bg-white border border-slate-200 rounded-xl font-semibold text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-600/20 transition-all"
+                      autoComplete="tel"
+                    />
+                  </div>
+                  <p className="text-[11px] text-slate-400 mt-1 font-medium">
+                    Type <code className="bg-slate-100 px-1 py-0.5 rounded font-mono text-slate-600 font-bold">admin</code> for administrative management portal.
+                  </p>
+                </div>
+
+                {/* Error Alert Box */}
+                {error && (
+                  <div className="p-3.5 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-800 font-semibold flex items-start gap-2.5 animate-slide-down">
+                    <AlertTriangle className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
+                    <div className="leading-relaxed">{error}</div>
+                  </div>
+                )}
+
+                {/* Submit Button */}
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full py-3.5 px-6 rounded-xl bg-gradient-to-r from-emerald-700 via-emerald-800 to-teal-900 hover:from-emerald-600 hover:to-teal-800 text-white font-extrabold text-sm flex items-center justify-center gap-2 transition-all active:scale-[0.99] cursor-pointer shadow-lg shadow-emerald-950/20 disabled:opacity-70 disabled:cursor-not-allowed"
+                >
+                  {loading ? (
+                    <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <>
+                      <span>Sign In & Verify Profiles</span>
+                      <ArrowRight className="w-4 h-4" />
+                    </>
+                  )}
+                </button>
+              </form>
+
+              {/* Help & Support */}
+              <div className="mt-6 pt-5 border-t border-slate-100 flex flex-col gap-2">
+                <div className="flex items-center justify-between text-xs text-slate-500 font-medium">
+                  <span className="flex items-center gap-1">
+                    <Lock className="w-3.5 h-3.5 text-slate-400" />
+                    256-bit Encrypted Session
+                  </span>
+                  <span className="text-slate-400">Argungu, Kebbi State</span>
+                </div>
+                <div className="text-[11px] text-slate-400 text-center mt-1">
+                  Need assistance? Contact School Desk: <span className="text-slate-700 font-bold">{schoolPhones}</span>
+                </div>
+              </div>
             </div>
           </div>
-
-          {/* Error Alert Box */}
-          {error && (
-            <div className="p-4 bg-rose-50 border border-rose-100 rounded-2xl text-xs text-rose-800 font-semibold flex items-start gap-2.5 animate-slide-down">
-              <AlertTriangle className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
-              <div className="leading-relaxed">{error}</div>
-            </div>
-          )}
-
-          {/* Submit Button (Matches access dashboard design in login page.png) */}
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full py-3.5 px-6 rounded-full bg-[#111622] hover:bg-[#1a2133] text-white font-bold text-sm flex items-center justify-center gap-2 transition-all active:scale-[0.98] cursor-pointer"
-          >
-            {loading ? (
-              <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-            ) : (
-              <>
-                <span>Access Dashboard</span>
-                <ArrowRight className="w-4 h-4 opacity-80" />
-              </>
-            )}
-          </button>
-        </form>
-
-        {/* Account Help Link */}
-        <div className="mt-6 text-center">
-          <a href="#" className="text-xs font-semibold text-slate-400 hover:text-slate-600 transition-all hover:underline">
-            Need help accessing your account?
-          </a>
         </div>
+      </main>
 
-        {/* Admin and portal version badge */}
-        <div className="mt-8 pt-5 border-t border-slate-100/80 flex justify-center text-[10px] text-slate-400 font-bold">
-          <span className="text-green-600 bg-green-50/60 px-2 py-0.5 rounded border border-green-100/40">
-            Argungu Portal v2.0
+      {/* Footer */}
+      <footer className="relative z-10 w-full max-w-7xl mx-auto px-4 py-4 text-center">
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-2 text-xs text-slate-400 font-medium">
+          <span className="text-emerald-400 font-semibold uppercase tracking-wider text-[11px]">
+            &quot;{schoolMotto}&quot;
           </span>
+          <span className="hidden sm:inline text-slate-600">•</span>
+          <span>&copy; {new Date().getFullYear()} AI Integrated Academy Argungu. Official Portal.</span>
         </div>
-      </div>
-
-      {/* Brand Footer */}
-      <div className="absolute bottom-6 left-0 right-0 text-center z-10">
-        <span className="text-[10px] font-black text-green-700 uppercase tracking-widest opacity-60">
-          LEARNING TODAY, LEADING TOMORROW
-        </span>
-      </div>
+      </footer>
 
       {/* Public QR Code Verification Modal */}
       {(verifiedStudent || verifyError) && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl p-6 md:p-8 max-w-md w-full shadow-2xl border border-slate-100 animate-slide-up space-y-5 relative">
             <button
               onClick={() => {
@@ -185,7 +247,7 @@ function LoginContent() {
             {verifyError ? (
               <div className="py-6 text-center space-y-3">
                 <AlertTriangle className="w-12 h-12 text-rose-500 mx-auto" />
-                <h3 className="text-lg font-black text-slate-900">Verification Failed</h3>
+                <h3 className="text-lg font-black text-slate-900">Verification Not Found</h3>
                 <p className="text-xs font-semibold text-rose-700 bg-rose-50 p-3 rounded-xl border border-rose-100">
                   {verifyError}
                 </p>
@@ -193,7 +255,7 @@ function LoginContent() {
             ) : verifiedStudent ? (
               <div className="space-y-4">
                 <div className="flex items-center gap-3 border-b border-slate-100 pb-4">
-                  <div className="w-12 h-12 rounded-2xl bg-emerald-600 text-white flex items-center justify-center font-bold shrink-0 shadow-md">
+                  <div className="w-12 h-12 rounded-2xl bg-emerald-700 text-white flex items-center justify-center font-bold shrink-0 shadow-md">
                     <ShieldCheck className="w-6 h-6" />
                   </div>
                   <div>
@@ -220,7 +282,7 @@ function LoginContent() {
                       {verifiedStudent.firstName} {verifiedStudent.lastName}
                     </h4>
                     <p className="text-xs font-semibold text-slate-600">
-                      Form No: <code className="font-mono font-bold text-emerald-900">{verifiedStudent.formNumber}</code>
+                      Admission No: <code className="font-mono font-bold text-emerald-900">{verifiedStudent.admissionNumber || verifiedStudent.formNumber}</code>
                     </p>
                     <p className="text-[11px] font-bold text-emerald-700 mt-0.5">
                       Class: {verifiedStudent.intendedClass} • {verifiedStudent.gender}
@@ -232,7 +294,7 @@ function LoginContent() {
                   <p><strong className="text-slate-800">School:</strong> AI Integrated Academy Argungu</p>
                   <p><strong className="text-slate-800">Parent/Guardian:</strong> {verifiedStudent.fatherName || verifiedStudent.guardianName || 'N/A'}</p>
                   <p>
-                    <strong className="text-slate-800">Verification Status:</strong>{' '}
+                    <strong className="text-slate-800">Status:</strong>{' '}
                     {verifiedStudent.verificationStatus === 'verified' ? (
                       <span className="text-emerald-700 font-extrabold uppercase">Officially Verified ✓</span>
                     ) : verifiedStudent.verificationStatus === 'requires_correction' ? (
@@ -248,7 +310,7 @@ function LoginContent() {
                     onClick={() => setVerifiedStudent(null)}
                     className="w-full py-3 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl transition-all cursor-pointer"
                   >
-                    Done / Close Certificate
+                    Close Verification Seal
                   </button>
                 </div>
               </div>
@@ -262,7 +324,7 @@ function LoginContent() {
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-slate-50 text-xs font-bold text-slate-400">Loading Portal...</div>}>
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-slate-900 text-xs font-bold text-slate-400">Loading Portal...</div>}>
       <LoginContent />
     </Suspense>
   );

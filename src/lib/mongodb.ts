@@ -1,20 +1,36 @@
-import { MongoClient } from 'mongodb';
+import { MongoClient, MongoClientOptions } from 'mongodb';
 
-const options = {
-  maxPoolSize: 20,
+const options: MongoClientOptions = {
+  maxPoolSize: 25,
   minPoolSize: 2,
-  connectTimeoutMS: 20000,
-  socketTimeoutMS: 45000,
-  serverSelectionTimeoutMS: 15000,
+  maxIdleTimeMS: 30000, // Recycle sockets idle for >30s before Atlas drops them
+  connectTimeoutMS: 15000,
+  socketTimeoutMS: 20000,
+  serverSelectionTimeoutMS: 10000,
+  retryWrites: true,
+  retryReads: true,
 };
-
 
 declare global {
   var _mongoClientPromise: Promise<MongoClient> | undefined;
+  var _rawMongoClient: MongoClient | undefined;
 }
 
 let client: MongoClient;
 let actualClientPromise: Promise<MongoClient> | null = null;
+
+export function resetMongoClient(): void {
+  try {
+    if (global._rawMongoClient) {
+      global._rawMongoClient.close(true).catch(() => {});
+    }
+  } catch {
+    // ignore
+  }
+  global._mongoClientPromise = undefined;
+  global._rawMongoClient = undefined;
+  actualClientPromise = null;
+}
 
 function getActualClientPromise(): Promise<MongoClient> {
   if (actualClientPromise) return actualClientPromise;
@@ -26,7 +42,14 @@ function getActualClientPromise(): Promise<MongoClient> {
 
   if (!global._mongoClientPromise) {
     client = new MongoClient(uri, options);
-    global._mongoClientPromise = client.connect();
+    global._rawMongoClient = client;
+    global._mongoClientPromise = client.connect().catch((err) => {
+      // If initial connect fails, clear cached promise so next attempt retries fresh
+      global._mongoClientPromise = undefined;
+      global._rawMongoClient = undefined;
+      actualClientPromise = null;
+      throw err;
+    });
   }
   actualClientPromise = global._mongoClientPromise;
   return actualClientPromise;

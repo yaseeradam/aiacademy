@@ -4,7 +4,7 @@ import { getParentByPhone, getStudentsByParentId, getAllStudents, getSchoolSetti
 import VerificationCard from '@/components/VerificationCard';
 import AdminControl from '@/components/AdminControl';
 import { logoutAction } from '../actions';
-import { LogOut, Info, ShieldAlert, Award, MessageSquareHeart, ArrowRight } from 'lucide-react';
+import { LogOut, Info, ShieldAlert, Award, MessageSquareHeart, ArrowRight, School, User, CheckCircle2 } from 'lucide-react';
 
 export const revalidate = 0; // Dynamic rendering
 
@@ -21,8 +21,20 @@ export default async function DashboardPage() {
 
   if (isAdmin) {
     // Run settings + students + staff in parallel with safe error fallbacks
-    const [, allStudents, allStaff] = await Promise.all([
-      getSchoolSettings().catch(() => ({ schoolName: 'AI INTEGRATED ACADEMY ARGUNGU', motto: 'Learning Today, Leading Tomorrow', address: '', phones: '', logo: '/logo.jpg' })),
+    const [settings, allStudents, allStaff] = await Promise.all([
+      getSchoolSettings().catch(() => ({ 
+        schoolName: 'AI INTEGRATED ACADEMY ARGUNGU', 
+        motto: 'Learning Today, Leading Tomorrow', 
+        address: "Behind Buben Ta'Ololo's Residence, Tudun Wada, Argungu", 
+        phones: '08069676697, 07034784861', 
+        logo: '/logo.jpg',
+        customClasses: ['Nursery 1', 'Basic 1', 'Basic 2'],
+        customSubclasses: [
+          'Nursery 1 Gold', 'Nursery 1 Silver', 'Nursery 1 Green',
+          'Basic 1 Gold', 'Basic 1 Silver', 'Basic 1 Green',
+          'Basic 2 Gold', 'Basic 2 Silver', 'Basic 2 Green'
+        ]
+      })),
       getAllStudents().catch(err => {
         console.error('Error fetching students for admin:', err);
         return [];
@@ -30,8 +42,8 @@ export default async function DashboardPage() {
       getAllStaff().catch(() => INITIAL_STAFF),
     ]);
     return (
-      <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
-        <AdminControl students={allStudents || []} initialStaff={allStaff || INITIAL_STAFF} />
+      <div className="min-h-screen bg-slate-100 flex flex-col font-sans">
+        <AdminControl students={allStudents || []} initialStaff={allStaff || INITIAL_STAFF} settings={settings} />
       </div>
     );
   }
@@ -49,143 +61,169 @@ export default async function DashboardPage() {
   const studentsData = await getStudentsByParentId(parent.id);
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
+    <div className="min-h-screen bg-slate-100/70 flex flex-col font-sans selection:bg-emerald-600 selection:text-white">
       {/* PARENT PORTAL LAYOUT */}
       <div className="flex flex-col flex-1">
-          {/* Header */}
-          <header className="bg-white border-b border-slate-200/80 sticky top-0 z-40">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-              <div className="flex justify-between items-center h-14">
-                {/* Logo and school name exactly matches children list.png */}
-                <div className="flex items-center gap-3">
-                  <div className="relative w-9 h-9 rounded-full overflow-hidden shrink-0 border border-slate-200 flex items-center justify-center p-0.5 bg-white">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={settings.logo || '/logo.jpg'}
-                      alt={settings.schoolName || "AI Integrated Academy Logo"}
-                      className="w-full h-full object-contain rounded-full"
-                    />
-                  </div>
-                  <span className="font-bold text-slate-900 text-lg md:text-xl tracking-tight">
+        {/* Institutional Top Bar */}
+        <header className="bg-white border-b border-slate-200/90 sticky top-0 z-40 shadow-xs">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex justify-between items-center h-16">
+              {/* Logo and school crest */}
+              <div className="flex items-center gap-3.5">
+                <div className="relative w-10 h-10 rounded-xl overflow-hidden shrink-0 border border-slate-200 flex items-center justify-center p-1 bg-white shadow-xs">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={settings.logo || '/logo.jpg'}
+                    alt={settings.schoolName || "AI Integrated Academy Logo"}
+                    className="w-full h-full object-contain rounded-lg"
+                  />
+                </div>
+                <div>
+                  <span className="font-black text-slate-900 text-base sm:text-lg tracking-tight block leading-tight">
                     {settings.schoolName || 'AI Integrated Academy Argungu'}
+                  </span>
+                  <span className="text-[11px] font-semibold text-emerald-700 uppercase tracking-wider block">
+                    Official Parent & Guardian Portal • 2025/2026 Session
+                  </span>
+                </div>
+              </div>
+
+              {/* Logged in parent display & Logout */}
+              <div className="flex items-center gap-3 sm:gap-4">
+                <div className="hidden sm:flex flex-col text-right leading-tight">
+                  <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                    Logged in as Parent
+                  </span>
+                  <span className="text-sm font-black text-slate-800 flex items-center justify-end gap-1.5 mt-0.5">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                    {parent.parentName || displayPhone}
                   </span>
                 </div>
 
-                {/* Logged in parent display & Logout (Matches layout) */}
-                <div className="flex items-center gap-5">
-                  <div className="text-right leading-tight">
-                    <span className="block text-[11px] font-semibold text-slate-400">
-                      Logged in as Parent
-                    </span>
-                    <span className="block text-sm font-bold text-slate-800">
-                      {displayPhone}
-                    </span>
-                  </div>
+                <form action={logoutAction}>
+                  <button
+                    type="submit"
+                    className="flex items-center gap-2 py-2 px-3.5 sm:px-4 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold text-xs sm:text-sm transition-all cursor-pointer bg-white shadow-2xs hover:border-slate-300"
+                  >
+                    <span>Sign Out</span>
+                    <LogOut className="w-4 h-4 text-slate-400" />
+                  </button>
+                </form>
+              </div>
+            </div>
+          </div>
+        </header>
 
-                  <form action={logoutAction}>
-                    <button
-                      type="submit"
-                      className="flex items-center gap-2 py-2 px-4 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold text-sm transition-all cursor-pointer bg-white"
-                    >
-                      <span>Logout</span>
-                      <LogOut className="w-4 h-4 text-slate-400" />
-                    </button>
-                  </form>
+        {/* Profiles Content */}
+        <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+          <div className="space-y-6">
+            {/* Academic Greeting & Instructions Banner */}
+            <div className="bg-white rounded-3xl p-6 sm:p-7 border border-slate-200/80 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-6">
+              <div className="space-y-1.5 max-w-2xl">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 text-xs font-black uppercase tracking-wider border border-emerald-200/60 mb-1">
+                  <Award className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>Student Enrollment Verification Active</span>
+                </div>
+                <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
+                  Welcome, {parent.parentName || 'Parent / Guardian'}
+                </h1>
+                <p className="text-slate-500 text-sm font-medium leading-relaxed">
+                  Please carefully review the personal information, class arm allocation, and date of birth for each registered child below. If correct, confirm the profile to authorize issuance of the Official A4 Admission Letter.
+                </p>
+              </div>
+
+              {/* Progress Summary Pill */}
+              <div className="bg-slate-50 rounded-2xl p-4 border border-slate-200/70 shrink-0 sm:min-w-[220px]">
+                <div className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">
+                  Profiles on Record
+                </div>
+                <div className="text-2xl font-black text-slate-900 flex items-baseline gap-2">
+                  <span>{studentsData.length}</span>
+                  <span className="text-xs font-bold text-slate-400">Child{studentsData.length !== 1 ? 'ren' : ''} Listed</span>
+                </div>
+                <div className="mt-2 text-[11px] text-emerald-700 font-semibold flex items-center gap-1.5">
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  <span>Verified phone: {displayPhone}</span>
                 </div>
               </div>
             </div>
-          </header>
 
-          {/* Profiles Content */}
-          <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-4">
-            <div className="space-y-4">
-              <div className="flex items-center justify-between gap-3">
+            {/* Parent Feedback Survey Banner */}
+            <div className="bg-gradient-to-r from-emerald-900 via-emerald-800 to-teal-900 text-white p-5 sm:p-6 rounded-3xl shadow-md border border-emerald-700/50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex items-start sm:items-center gap-4">
+                <div className="w-12 h-12 rounded-2xl bg-white/10 backdrop-blur-md flex items-center justify-center shrink-0 border border-white/20 shadow-inner">
+                  <MessageSquareHeart className="w-6 h-6 text-amber-300" />
+                </div>
                 <div>
-                  <h1 className="text-2xl font-black text-slate-900 tracking-tight">Student Profiles</h1>
-                  <p className="text-slate-500 text-xs font-semibold mt-0.5">Review and confirm your children&apos;s enrollment details.</p>
-                </div>
-                <div className="inline-flex items-center gap-2 p-2.5 px-4 rounded-xl bg-[#f8fafc] border border-slate-200 text-slate-700 text-xs font-bold shrink-0">
-                  <Info className="w-3.5 h-3.5 text-[#137333]" />
-                  <span>Action required by Sep 14th</span>
-                </div>
-              </div>
-
-              {/* Parent Feedback Survey Banner */}
-              <div className="bg-gradient-to-r from-[#07361e] via-[#0f7343] to-[#145a35] text-white p-4 sm:p-5 rounded-3xl shadow-md border border-emerald-700/40 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div className="flex items-start sm:items-center gap-3.5">
-                  <div className="w-11 h-11 rounded-2xl bg-white/15 backdrop-blur-md flex items-center justify-center shrink-0 border border-white/20 shadow-inner">
-                    <MessageSquareHeart className="w-6 h-6 text-amber-300" />
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-black text-base sm:text-lg text-white tracking-tight">Parent Experience & Quality Survey</h3>
+                    <span className="px-2 py-0.5 rounded-full bg-amber-400 text-slate-950 font-black text-[10px] uppercase tracking-wider">
+                      2 Min
+                    </span>
                   </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <h3 className="font-black text-sm sm:text-base text-white tracking-tight">Parent Experience Survey</h3>
-                      <span className="px-2 py-0.5 rounded-full bg-amber-400 text-slate-950 font-black text-[10px] uppercase tracking-wider">
-                        2 Min
-                      </span>
-                    </div>
-                    <p className="text-xs text-emerald-100 font-medium mt-0.5">
-                      Your voice shapes our school! Share your feedback on teaching, safety, and care.
-                    </p>
-                  </div>
-                </div>
-                <a
-                  href={`/survey?phone=${encodeURIComponent(phone)}`}
-                  className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-white hover:bg-emerald-50 text-[#0f7343] font-black text-xs shadow-md transition-all shrink-0 cursor-pointer"
-                >
-                  <span>Take Survey</span>
-                  <ArrowRight className="w-4 h-4" />
-                </a>
-              </div>
-
-              {/* Profiles Grid */}
-              {studentsData.length > 0 ? (
-                <div className={
-                  studentsData.length === 1 
-                    ? "max-w-2xl mx-auto w-full" 
-                    : "grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8 max-w-5xl mx-auto"
-                }>
-                  {studentsData.map((student) => (
-                    <VerificationCard
-                      key={student.id}
-                      student={student}
-                      isAdmin={isAdmin}
-                    />
-                  ))}
-                </div>
-              ) : (
-                <div className="soft-card p-12 text-center bg-white border border-slate-200 rounded-[2rem]">
-                  <ShieldAlert className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-                  <h3 className="text-lg font-bold text-slate-800 mb-1">No Child Profiles Found</h3>
-                  <p className="text-slate-400 text-sm font-semibold mb-6">
-                    There are no student profiles registered under this phone number ({phone}).
+                  <p className="text-xs sm:text-sm text-emerald-100/90 font-medium mt-0.5 max-w-xl">
+                    Your direct feedback helps the School Governing Board maintain high educational standards.
                   </p>
-                  <div className="max-w-md mx-auto text-xs text-slate-400 leading-relaxed bg-slate-50 p-4 rounded-xl border border-slate-100">
-                    Please contact the school administration office to register or correct your phone number:
-                    <strong className="block text-slate-600 mt-1">{settings.phones || '08069676697, 07034784861'}</strong>
-                  </div>
                 </div>
-              )}
+              </div>
+              <a
+                href={`/survey?phone=${encodeURIComponent(phone)}`}
+                className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-white hover:bg-emerald-50 text-emerald-900 font-extrabold text-xs sm:text-sm shadow-md transition-all shrink-0 cursor-pointer"
+              >
+                <span>Complete Survey</span>
+                <ArrowRight className="w-4 h-4" />
+              </a>
             </div>
-          </main>
 
-          {/* Footer */}
-          <footer className="bg-white border-t border-slate-200/80 py-6 mt-8">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-xs text-slate-400 font-semibold space-y-3">
-              <div className="sm:flex sm:justify-between sm:items-center space-y-2 sm:space-y-0">
-                <div>
-                  &copy; {new Date().getFullYear()} AI Integrated Academy Argungu. All rights reserved.
-                </div>
-                <div className="flex justify-center items-center gap-1.5 text-slate-400">
-                  <Award className="w-4 h-4 text-green-600" />
-                  <span>Learning Today, Leading Tomorrow</span>
+            {/* Profiles Grid */}
+            {studentsData.length > 0 ? (
+              <div className={
+                studentsData.length === 1 
+                  ? "max-w-2xl mx-auto w-full" 
+                  : "grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8 max-w-6xl mx-auto"
+              }>
+                {studentsData.map((student) => (
+                  <VerificationCard
+                    key={student.id}
+                    student={student}
+                    isAdmin={isAdmin}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="soft-card p-12 text-center bg-white border border-slate-200 rounded-3xl shadow-xs">
+                <ShieldAlert className="w-12 h-12 text-slate-300 mx-auto mb-4" />
+                <h3 className="text-lg font-bold text-slate-800 mb-1">No Child Profiles Found</h3>
+                <p className="text-slate-400 text-sm font-semibold mb-6">
+                  There are no student profiles registered under this phone number ({phone}).
+                </p>
+                <div className="max-w-md mx-auto text-xs text-slate-500 leading-relaxed bg-slate-50 p-4 rounded-xl border border-slate-200">
+                  Please contact the school administration office to register or correct your phone number:
+                  <strong className="block text-slate-800 mt-1">{settings.phones || '08069676697, 07034784861'}</strong>
                 </div>
               </div>
-              <div className="pt-2 border-t border-slate-100 text-[11px] text-slate-400">
-                Made by <span className="font-bold text-slate-600">FrontalMinds</span> — If you&apos;d like to own a website, call <a href="tel:08104827838" className="font-bold text-[#137333] hover:underline">08104827838</a>
+            )}
+          </div>
+        </main>
+
+        {/* School Standard Footer */}
+        <footer className="bg-white border-t border-slate-200 py-6 mt-12">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-xs text-slate-500 font-semibold space-y-3">
+            <div className="sm:flex sm:justify-between sm:items-center space-y-2 sm:space-y-0">
+              <div>
+                &copy; {new Date().getFullYear()} AI Integrated Academy Argungu. Official Portal.
+              </div>
+              <div className="flex justify-center items-center gap-1.5 text-slate-600 font-bold">
+                <Award className="w-4 h-4 text-emerald-700" />
+                <span>Learning Today, Leading Tomorrow</span>
               </div>
             </div>
-          </footer>
-        </div>
+            <div className="pt-2 border-t border-slate-100 text-[11px] text-slate-400">
+              {settings.address || "Behind Buben Ta'Ololo's Residence, Tudun Wada, Argungu"} • Helpline: {settings.phones || '08069676697, 07034784861'}
+            </div>
+          </div>
+        </footer>
+      </div>
     </div>
   );
 }

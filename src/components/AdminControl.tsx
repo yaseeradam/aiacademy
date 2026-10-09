@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { Student, AuditLog, Staff, SurveyConfig, SurveyQuestion, SurveyResponse } from '@/types';
+import { Student, AuditLog, Staff, SurveyConfig, SurveyQuestion, SurveyResponse, SchoolSettings } from '@/types';
 import { useRouter } from 'next/navigation';
 import JSZip from 'jszip';
 import { 
@@ -23,9 +23,10 @@ import { printOfficialClassEnrolmentRoster } from '@/lib/printUtils';
 interface AdminControlProps {
   students: Student[];
   initialStaff?: Staff[];
+  settings?: SchoolSettings;
 }
 
-export default function AdminControl({ students, initialStaff = [] }: AdminControlProps) {
+export default function AdminControl({ students, initialStaff = [], settings }: AdminControlProps) {
   const router = useRouter();
 
   // Helper functions for Date of Birth picker
@@ -189,16 +190,16 @@ export default function AdminControl({ students, initialStaff = [] }: AdminContr
     customClasses?: string[];
     customSubclasses?: string[];
   }>({
-    name: 'AI Integrated Academy Argungu',
-    motto: 'Learning Today, Leading Tomorrow',
-    address: "Behind Buben Ta'Ololo's Residence, Tudun Wada, Argungu",
-    tel1: '08069676697',
-    tel2: '07034784861',
+    name: settings?.schoolName || 'AI Integrated Academy Argungu',
+    motto: settings?.motto || 'Learning Today, Leading Tomorrow',
+    address: settings?.address || "Behind Buben Ta'Ololo's Residence, Tudun Wada, Argungu",
+    tel1: settings?.phones?.split(',')[0]?.trim() || '08069676697',
+    tel2: settings?.phones?.split(',')[1]?.trim() || '07034784861',
     email: 'alijabahintegratedacademyarg@gmail.com',
-    logo: '/logo.jpg',
+    logo: settings?.logo || '/logo.jpg',
     geminiApiKey: '',
-    customClasses: ['Nursery 1', 'Basic 1', 'Basic 2'],
-    customSubclasses: [
+    customClasses: settings?.customClasses || ['Nursery 1', 'Basic 1', 'Basic 2'],
+    customSubclasses: settings?.customSubclasses || [
       'Nursery 1 Gold', 'Nursery 1 Silver', 'Nursery 1 Green',
       'Basic 1 Gold', 'Basic 1 Silver', 'Basic 1 Green',
       'Basic 2 Gold', 'Basic 2 Silver', 'Basic 2 Green'
@@ -2730,20 +2731,20 @@ export default function AdminControl({ students, initialStaff = [] }: AdminContr
               {/* Header: Logo & Title, Close Button */}
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="relative w-8 h-8 rounded-full overflow-hidden bg-white shadow-sm border border-slate-100 flex items-center justify-center shrink-0 p-0.5">
+                  <div className="relative w-9 h-9 rounded-xl overflow-hidden bg-white shadow-2xs border border-slate-200 flex items-center justify-center shrink-0 p-0.5">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={schoolSettings.logo || '/logo.jpg'}
                       alt="School Logo"
-                      className="w-full h-full object-contain rounded-full"
+                      className="w-full h-full object-contain rounded-lg"
                     />
                   </div>
                   <div>
-                    <span className="block font-black text-slate-800 text-sm leading-tight tracking-tight">
-                      Admin Portal
+                    <span className="block font-black text-slate-900 text-sm leading-tight tracking-tight">
+                      AI Integrated Academy
                     </span>
-                    <span className="block text-[10px] font-bold text-slate-400">
-                      Private Academy v2.0
+                    <span className="block text-[10px] font-bold text-emerald-700 uppercase tracking-wider">
+                      Argungu SIS • 2025/2026
                     </span>
                   </div>
                 </div>
@@ -2978,21 +2979,21 @@ export default function AdminControl({ students, initialStaff = [] }: AdminContr
       <aside className="w-64 bg-white border-r border-slate-200/80 p-6 flex flex-col justify-between shrink-0 hidden md:flex h-screen sticky top-0 overflow-y-auto">
         <div className="space-y-8">
           {/* Brand Logo and Name */}
-          <div className="flex items-center gap-3">
-            <div className="relative w-8 h-8 rounded-full overflow-hidden bg-white shadow-sm border border-slate-100 flex items-center justify-center shrink-0 p-0.5">
+          <div className="flex items-center gap-3 pb-3 border-b border-slate-100">
+            <div className="relative w-10 h-10 rounded-xl overflow-hidden bg-white shadow-2xs border border-slate-200 flex items-center justify-center shrink-0 p-1">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={schoolSettings.logo || '/logo.jpg'}
                 alt="School Logo"
-                className="w-full h-full object-contain rounded-full"
+                className="w-full h-full object-contain rounded-lg"
               />
             </div>
-            <div>
-              <span className="block font-black text-slate-800 text-sm leading-tight tracking-tight">
-                Admin Portal
+            <div className="min-w-0">
+              <span className="block font-black text-slate-900 text-sm leading-tight tracking-tight truncate">
+                AI Integrated Academy
               </span>
-              <span className="block text-[10px] font-bold text-slate-400">
-                Private Academy v2.0
+              <span className="block text-[10px] font-bold text-emerald-700 uppercase tracking-wider">
+                Argungu SIS • 2025/2026
               </span>
             </div>
           </div>
@@ -3225,14 +3226,14 @@ export default function AdminControl({ students, initialStaff = [] }: AdminContr
             >
               <Menu className="w-6 h-6" />
             </button>
-            <div className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-full overflow-hidden bg-white border border-slate-100 flex items-center justify-center p-0.5">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-xl overflow-hidden bg-white border border-slate-200 flex items-center justify-center p-0.5 shadow-2xs">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={schoolSettings.logo || '/logo.jpg'} alt="Logo" className="w-full h-full object-contain rounded-full" />
+                <img src={schoolSettings.logo || '/logo.jpg'} alt="Logo" className="w-full h-full object-contain rounded-lg" />
               </div>
               <div>
-                <span className="block font-black text-slate-800 text-sm leading-tight">Admin Portal</span>
-                <span className="block text-[9px] font-bold text-slate-400">Private Academy v2.0</span>
+                <span className="block font-black text-slate-900 text-xs sm:text-sm leading-tight">AI Integrated Academy</span>
+                <span className="block text-[9px] font-bold text-emerald-700 uppercase tracking-wider">Admin SIS Portal</span>
               </div>
             </div>
           </div>

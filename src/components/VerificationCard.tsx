@@ -345,12 +345,12 @@ export default function VerificationCard({ student, isAdmin = false }: Verificat
   };
 
   return (
-    <div className="soft-card p-4 md:p-6 bg-white flex flex-col justify-between h-full rounded-[2rem]">
+    <div className="soft-card p-5 md:p-7 bg-white flex flex-col justify-between h-full rounded-3xl border border-slate-200/90 shadow-xs">
       <div>
-        <div className="flex items-center gap-4 mb-4">
+        <div className="flex items-start gap-4 mb-5">
           <AvatarIcon />
           <div className="flex-1 min-w-0">
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2 mb-1.5">
               {getStatusBadge(student.verificationStatus)}
               {isPaid ? (
                 <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-black bg-emerald-100 text-emerald-800 border border-emerald-300">
@@ -364,12 +364,14 @@ export default function VerificationCard({ student, isAdmin = false }: Verificat
                 </span>
               )}
             </div>
-            <h3 className="text-lg font-black text-slate-800 leading-tight mt-1">
+            <h3 className="text-xl font-black text-slate-900 leading-tight">
               {student.firstName} {student.lastName}
             </h3>
-            <p className="text-xs font-semibold text-slate-400 mt-0.5">
-              Form: <span className="text-slate-600 font-mono font-bold">{student.formNumber}</span>
-            </p>
+            <div className="flex items-center gap-2 mt-1">
+              <span className="text-xs font-medium text-slate-500">
+                Admission No: <strong className="font-mono text-emerald-900 bg-emerald-50/80 px-2 py-0.5 rounded border border-emerald-200/70">{student.admissionNumber || student.formNumber}</strong>
+              </span>
+            </div>
           </div>
         </div>
 

@@ -1,4 +1,5 @@
-import clientPromise from './mongodb';
+import clientPromise, { resetMongoClient } from './mongodb';
+import { Db } from 'mongodb';
 import { Parent, Student, VerificationStatus, AuditLog, SchoolSettings, Staff, SurveyConfig, SurveyQuestion, SurveyResponse } from '../types';
 import { normalizeAdmissionNumber } from './classUtils';
 
@@ -67,6 +68,32 @@ export function normalizePhone(phone: string | undefined | null): string {
 async function getDB() {
   const client = await clientPromise;
   return client.db(DB_NAME);
+}
+
+export async function withDBRetry<T>(operation: (db: Db) => Promise<T>, maxRetries = 2): Promise<T> {
+  let lastError: unknown;
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      const db = await getDB();
+      return await operation(db);
+    } catch (err: any) {
+      lastError = err;
+      const isNetworkError =
+        err?.name === 'MongoNetworkTimeoutError' ||
+        err?.name === 'MongoServerSelectionError' ||
+        err?.name === 'MongoNetworkError' ||
+        /timed out|closed|topology was destroyed|ENOTFOUND|ECONNREFUSED/i.test(err?.message || '');
+
+      if (isNetworkError && attempt < maxRetries) {
+        console.warn(`[MongoDB] Query attempt ${attempt} failed (${err?.name}: ${err?.message}). Resetting client and retrying...`);
+        resetMongoClient();
+        await new Promise((r) => setTimeout(r, 400));
+        continue;
+      }
+      throw err;
+    }
+  }
+  throw lastError;
 }
 
 let seeded = false;
@@ -187,45 +214,48 @@ export async function restoreMissingSeedStudents(): Promise<number> {
 
 export async function getParentByPhone(phone: string): Promise<Parent | undefined> {
   await ensureSeeded();
-  const db = await getDB();
   const normalizedSearch = normalizePhone(phone);
   if (!normalizedSearch) return undefined;
 
-  const doc = await db.collection<Parent>(PARENTS_COL).findOne({
-    $or: [
-      { phoneNumber: phone },
-      { phoneNumber: { $regex: `${normalizedSearch}$` } }
-    ]
-  });
+  return withDBRetry(async (db) => {
+    const doc = await db.collection<Parent>(PARENTS_COL).findOne({
+      $or: [
+        { phoneNumber: phone },
+        { phoneNumber: { $regex: `${normalizedSearch}$` } }
+      ]
+    });
 
-  if (doc) {
-    const { _id, ...rest } = doc;
-    void _id;
-    return rest as Parent;
-  }
-  return undefined;
+    if (doc) {
+      const { _id, ...rest } = doc;
+      void _id;
+      return rest as Parent;
+    }
+    return undefined;
+  });
 }
 
 export async function getParentById(parentId: string): Promise<Parent | undefined> {
   await ensureSeeded();
-  const db = await getDB();
-  const doc = await db.collection<Parent>(PARENTS_COL).findOne({ id: parentId });
-  if (!doc) return undefined;
-  const { _id, ...rest } = doc;
-  void _id;
-  return rest as Parent;
+  return withDBRetry(async (db) => {
+    const doc = await db.collection<Parent>(PARENTS_COL).findOne({ id: parentId });
+    if (!doc) return undefined;
+    const { _id, ...rest } = doc;
+    void _id;
+    return rest as Parent;
+  });
 }
 
 export async function getStudentsByParentId(parentId: string): Promise<Student[]> {
   await ensureSeeded();
-  const db = await getDB();
-  const docs = await db.collection<Student>(STUDENTS_COL).find({ parentId }).toArray();
-  return docs.map(({ _id, ...rest }) => {
-    void _id;
-    const s = rest as Student;
-    if (/Primary/i.test(s.intendedClass)) s.intendedClass = 'Basic 1';
-    if (s.admissionNumber) s.admissionNumber = normalizeAdmissionNumber(s.admissionNumber);
-    return s;
+  return withDBRetry(async (db) => {
+    const docs = await db.collection<Student>(STUDENTS_COL).find({ parentId }).toArray();
+    return docs.map(({ _id, ...rest }) => {
+      void _id;
+      const s = rest as Student;
+      if (/Primary/i.test(s.intendedClass)) s.intendedClass = 'Basic 1';
+      if (s.admissionNumber) s.admissionNumber = normalizeAdmissionNumber(s.admissionNumber);
+      return s;
+    });
   });
 }
 
@@ -314,29 +344,31 @@ export async function updateStudentStatus(
 
 export async function getAllStudents(): Promise<Student[]> {
   await ensureSeeded();
-  const db = await getDB();
-  const docs = await db.collection<Student>(STUDENTS_COL).find(
-    {},
-    { projection: { photo: 0 } }
-  ).toArray();
-  return docs.map(({ _id, ...rest }) => {
-    void _id;
-    const s = rest as Student;
-    if (/Primary/i.test(s.intendedClass)) s.intendedClass = 'Basic 1';
-    if (s.admissionNumber) s.admissionNumber = normalizeAdmissionNumber(s.admissionNumber);
-    // Point photo to high-speed cached streaming endpoint
-    s.photo = `/api/student-photo?id=${s.id}`;
-    return s;
+  return withDBRetry(async (db) => {
+    const docs = await db.collection<Student>(STUDENTS_COL).find(
+      {},
+      { projection: { photo: 0 } }
+    ).toArray();
+    return docs.map(({ _id, ...rest }) => {
+      void _id;
+      const s = rest as Student;
+      if (/Primary/i.test(s.intendedClass)) s.intendedClass = 'Basic 1';
+      if (s.admissionNumber) s.admissionNumber = normalizeAdmissionNumber(s.admissionNumber);
+      // Point photo to high-speed cached streaming endpoint
+      s.photo = `/api/student-photo?id=${s.id}`;
+      return s;
+    });
   });
 }
 
 export async function getAllParents(): Promise<Parent[]> {
   await ensureSeeded();
-  const db = await getDB();
-  const docs = await db.collection<Parent>(PARENTS_COL).find({}).toArray();
-  return docs.map(({ _id, ...rest }) => {
-    void _id;
-    return rest as Parent;
+  return withDBRetry(async (db) => {
+    const docs = await db.collection<Parent>(PARENTS_COL).find({}).toArray();
+    return docs.map(({ _id, ...rest }) => {
+      void _id;
+      return rest as Parent;
+    });
   });
 }
 
@@ -448,7 +480,6 @@ export async function getSchoolSettings(): Promise<SchoolSettings> {
     return cachedSettings;
   }
   await ensureSeeded();
-  const db = await getDB();
 
   const fallback: SchoolSettings = {
     schoolName: 'AI INTEGRATED ACADEMY ARGUNGU',
@@ -464,22 +495,24 @@ export async function getSchoolSettings(): Promise<SchoolSettings> {
     ]
   };
 
-  const doc = await db.collection<{ id: string } & SchoolSettings>(SETTINGS_COL).findOne({ id: 'school_settings' });
-  if (doc) {
-    const { _id, id, ...rest } = doc;
-    void _id; void id;
-    cachedSettings = {
-      ...fallback,
-      ...rest,
-      customClasses: rest.customClasses || fallback.customClasses,
-      customSubclasses: rest.customSubclasses || fallback.customSubclasses,
-    };
+  return withDBRetry(async (db) => {
+    const doc = await db.collection<{ id: string } & SchoolSettings>(SETTINGS_COL).findOne({ id: 'school_settings' });
+    if (doc) {
+      const { _id, id, ...rest } = doc;
+      void _id; void id;
+      cachedSettings = {
+        ...fallback,
+        ...rest,
+        customClasses: rest.customClasses || fallback.customClasses,
+        customSubclasses: rest.customSubclasses || fallback.customSubclasses,
+      };
+      cachedSettingsTime = now;
+      return cachedSettings;
+    }
+    cachedSettings = fallback;
     cachedSettingsTime = now;
-    return cachedSettings;
-  }
-  cachedSettings = fallback;
-  cachedSettingsTime = now;
-  return fallback;
+    return fallback;
+  });
 }
 
 export async function updateSchoolSettings(settings: SchoolSettings): Promise<void> {
@@ -592,39 +625,40 @@ export async function getNextStaffSequence(): Promise<number> {
 
 export async function getAllStaff(): Promise<Staff[]> {
   try {
-    const db = await getDB();
-    const rawList = await db.collection(STAFF_COL).find({}).toArray();
+    return await withDBRetry(async (db) => {
+      const rawList = await db.collection(STAFF_COL).find({}).toArray();
 
-    if (!rawList || rawList.length === 0) {
-      if (INITIAL_STAFF.length > 0) {
-        const ops = INITIAL_STAFF.map(st => ({
-          updateOne: {
-            filter: { idNumber: st.idNumber },
-            update: { $setOnInsert: st },
-            upsert: true
-          }
-        }));
-        await db.collection(STAFF_COL).bulkWrite(ops, { ordered: false }).catch(() => {});
+      if (!rawList || rawList.length === 0) {
+        if (INITIAL_STAFF.length > 0) {
+          const ops = INITIAL_STAFF.map(st => ({
+            updateOne: {
+              filter: { idNumber: st.idNumber },
+              update: { $setOnInsert: st },
+              upsert: true
+            }
+          }));
+          await db.collection(STAFF_COL).bulkWrite(ops, { ordered: false }).catch(() => {});
+        }
+        return INITIAL_STAFF;
       }
-      return INITIAL_STAFF;
-    }
 
-    return rawList.map(doc => {
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { _id, ...staff } = doc as unknown as Staff & { _id?: unknown };
-      return {
-        id: String(staff.id || `staff_${doc._id}`),
-        name: String(staff.name || ''),
-        phone: String(staff.phone || ''),
-        idNumber: String(staff.idNumber || ''),
-        section: String(staff.section || 'General'),
-        classAllocated: String(staff.classAllocated || ''),
-        role: String(staff.role || 'Teacher'),
-        bankName: String(staff.bankName || ''),
-        accountNumber: String(staff.accountNumber || ''),
-        salary: String(staff.salary || ''),
-        createdAt: String(staff.createdAt || new Date().toISOString()),
-      };
+      return rawList.map(doc => {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { _id, ...staff } = doc as unknown as Staff & { _id?: unknown };
+        return {
+          id: String(staff.id || `staff_${doc._id}`),
+          name: String(staff.name || ''),
+          phone: String(staff.phone || ''),
+          idNumber: String(staff.idNumber || ''),
+          section: String(staff.section || 'General'),
+          classAllocated: String(staff.classAllocated || ''),
+          role: String(staff.role || 'Teacher'),
+          bankName: String(staff.bankName || ''),
+          accountNumber: String(staff.accountNumber || ''),
+          salary: String(staff.salary || ''),
+          createdAt: String(staff.createdAt || new Date().toISOString()),
+        };
+      });
     });
   } catch (err) {
     console.error('Error fetching staff from DB, falling back to INITIAL_STAFF:', err);
