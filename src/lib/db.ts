@@ -564,68 +564,87 @@ export async function fixDuplicateAndMissingAdmissionNumbers(): Promise<{
   const students = await db.collection<Student>(STUDENTS_COL).find({}).toArray();
   const currentYearShort = new Date().getFullYear().toString().slice(-2);
 
-  const seenAdmNumbers = new Set<string>();
-  const updatedStudents: { id: string; name: string; oldAdm: string; newAdm: string }[] = [];
+  // Group students by existing admission number (normalized)
+  const admMap = new Map<string, Student[]>();
+  const occupiedNumbers = new Set<number>();
 
   for (const s of students) {
-    const rawAdm = s.admissionNumber?.trim();
-    let isDuplicateOrMissing = false;
-
-    if (!rawAdm) {
-      isDuplicateOrMissing = true;
-    } else if (rawAdm.includes('2026') || rawAdm.includes('/') || !/^AIAA-B26-\d{3,}$/i.test(rawAdm)) {
-      // Standardize to B26 format: AIAA-B26-XXX
-      const standardized = normalizeAdmissionNumber(rawAdm);
-      if (standardized && !seenAdmNumbers.has(standardized.toLowerCase())) {
-        seenAdmNumbers.add(standardized.toLowerCase());
-        await db.collection<Student>(STUDENTS_COL).updateOne(
-          { id: s.id },
-          { $set: { admissionNumber: standardized } }
-        );
-        updatedStudents.push({
-          id: s.id,
-          name: `${s.firstName} ${s.lastName || ''}`.trim(),
-          oldAdm: rawAdm,
-          newAdm: standardized
-        });
-        continue;
-      } else {
-        isDuplicateOrMissing = true;
+    let norm = (s.admissionNumber || '').trim();
+    if (norm) {
+      norm = normalizeAdmissionNumber(norm);
+      const match = norm.match(/^AIAA-B26-(\d+)$/i);
+      if (match) {
+        occupiedNumbers.add(parseInt(match[1], 10));
       }
+    }
+    const key = norm || '(none)';
+    if (!admMap.has(key)) admMap.set(key, []);
+    admMap.get(key)!.push(s);
+  }
+
+  // Find students that need reassignment:
+  // - Students with no admission number
+  // - Excess students in any duplicate admission number group (index > 0)
+  const studentsToFix: { student: Student; oldAdm: string }[] = [];
+
+  for (const [adm, list] of admMap.entries()) {
+    if (adm === '(none)') {
+      list.forEach(s => studentsToFix.push({ student: s, oldAdm: '(None)' }));
+    } else if (list.length > 1) {
+      for (let i = 1; i < list.length; i++) {
+        studentsToFix.push({ student: list[i], oldAdm: adm });
+      }
+    }
+  }
+
+  if (studentsToFix.length === 0) {
+    return { fixedCount: 0, updatedStudents: [] };
+  }
+
+  // Collect free sequential integer slots between 1 and 260 first, then sequentially beyond
+  const freeSlots: number[] = [];
+  for (let i = 1; i <= Math.max(students.length, 260); i++) {
+    if (!occupiedNumbers.has(i)) {
+      freeSlots.push(i);
+    }
+  }
+
+  let slotIdx = 0;
+  let nextHigh = Math.max(students.length, 260) + 1;
+  const updatedStudents: { id: string; name: string; oldAdm: string; newAdm: string }[] = [];
+
+  const bulkOps: any[] = [];
+
+  for (const item of studentsToFix) {
+    let chosenNum: number;
+    if (slotIdx < freeSlots.length) {
+      chosenNum = freeSlots[slotIdx++];
     } else {
-      const normalized = rawAdm.toLowerCase();
-      if (seenAdmNumbers.has(normalized)) {
-        isDuplicateOrMissing = true;
-      } else {
-        seenAdmNumbers.add(normalized);
+      while (occupiedNumbers.has(nextHigh)) nextHigh++;
+      chosenNum = nextHigh++;
+    }
+    occupiedNumbers.add(chosenNum);
+
+    const newAdm = `AIAA-B${currentYearShort}-${String(chosenNum).padStart(3, '0')}`;
+    const name = `${item.student.firstName} ${item.student.lastName || ''}`.trim();
+
+    bulkOps.push({
+      updateOne: {
+        filter: { id: item.student.id },
+        update: { $set: { admissionNumber: newAdm } }
       }
-    }
+    });
 
-    if (isDuplicateOrMissing) {
-      let candidate = '';
-      do {
-        const seq = await getNextAdmissionSequence(currentYearShort);
-        const nextNumStr = String(seq).padStart(3, '0');
-        candidate = `AIAA-B${currentYearShort}-${nextNumStr}`;
-      } while (seenAdmNumbers.has(candidate.toLowerCase()));
+    updatedStudents.push({
+      id: item.student.id,
+      name,
+      oldAdm: item.oldAdm,
+      newAdm
+    });
+  }
 
-      seenAdmNumbers.add(candidate.toLowerCase());
-
-      const oldAdm = rawAdm || '(None)';
-      const name = `${s.firstName} ${s.lastName || ''}`.trim();
-
-      await db.collection<Student>(STUDENTS_COL).updateOne(
-        { id: s.id },
-        { $set: { admissionNumber: candidate } }
-      );
-
-      updatedStudents.push({
-        id: s.id,
-        name,
-        oldAdm,
-        newAdm: candidate
-      });
-    }
+  if (bulkOps.length > 0) {
+    await db.collection<Student>(STUDENTS_COL).bulkWrite(bulkOps);
   }
 
   return {
