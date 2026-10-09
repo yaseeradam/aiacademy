@@ -11,7 +11,7 @@ import {
   Grid, Settings, Plus, LogOut, Trash2, Save, BookOpen,
   Loader2, Scan, History, MessageSquare, Camera, FileText, CheckCircle2, CreditCard, Printer,
   GraduationCap, Folder, FolderOpen, Edit3, Briefcase, Phone, MessageSquareHeart, Star, ThumbsUp, ExternalLink, Copy, Check,
-  ArrowUp, ArrowDown, Sparkles, Calendar, CheckSquare, Layers
+  ArrowUp, ArrowDown, Sparkles, Calendar, CheckSquare, Layers, FileSpreadsheet
 } from 'lucide-react';
 import { logoutAction, adminUpdateStudentAction, adminDeleteStudentAction, adminDeleteMultipleStudentsAction, unassignStudentFromSubclassAction, unassignMultipleStudentsFromSubclassAction, assignMultipleStudentsToSubclassAction, restoreMissingSeedStudentsAction, clearAllDatabaseDataAction, adminCreateStudentAction, adminVerifyAction, adminTogglePaymentStatusAction, getAuditLogsAction, scanAdmissionFormOCRAction, getSchoolSettingsAction, updateSchoolSettingsAction, findDuplicateStudentsAction, fixDuplicateAdmissionNumbersAction, DuplicateGroup, getAllStaffAction, adminCreateStaffAction, adminUpdateStaffAction, adminDeleteStaffAction, adminImportStaffCSVAction, adminSeedStaffFromExcelAction, adminGetSurveyDataAction, adminUpdateSurveyConfigAction, adminDeleteSurveyResponseAction, adminSaveSurveyAction, adminSetActiveSurveyAction, adminDeleteSurveyAction, adminCreateClassAction, adminCreateSubclassArmAction, adminDeleteCustomClassAction, adminDeleteCustomSubclassArmAction } from '@/app/actions';
 import AdmissionLetterModal, { printBulkAdmissionLetters, printPaidStudentsPDF, getStudentClassArm, getStudentAdmissionNumber } from './AdmissionLetterModal';
@@ -2840,6 +2840,19 @@ export default function AdminControl({ students, initialStaff = [], settings }: 
                     </span>
                   )}
                 </button>
+                <a 
+                  href="/payroll"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl font-bold text-sm text-emerald-700 hover:text-emerald-800 bg-emerald-50/60 hover:bg-emerald-100/60 transition-all border border-emerald-200/50 cursor-pointer"
+                >
+                  <div className="flex items-center gap-3">
+                    <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
+                    <span>Payroll & Excel</span>
+                  </div>
+                  <span className="bg-emerald-600 text-white text-[10px] font-black px-1.5 py-0.5 rounded-full">
+                    Finance
+                  </span>
+                </a>
                 <button 
                   onClick={() => {
                     setActiveTab('surveys');
@@ -3090,6 +3103,18 @@ export default function AdminControl({ students, initialStaff = [], settings }: 
                 </span>
               )}
             </button>
+            <a 
+              href="/payroll"
+              className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl font-bold text-sm text-emerald-700 hover:text-emerald-800 bg-emerald-50/60 hover:bg-emerald-100/60 transition-all border border-emerald-200/50 cursor-pointer group"
+            >
+              <div className="flex items-center gap-3">
+                <FileSpreadsheet className="w-4 h-4 text-emerald-600 group-hover:scale-110 transition-transform" />
+                <span>Payroll & Excel</span>
+              </div>
+              <span className="bg-emerald-600 text-white text-[9px] font-black px-1.5 py-0.5 rounded-full uppercase tracking-wider">
+                Finance
+              </span>
+            </a>
             <button 
               onClick={() => { setSelectedSubgroupRoster(null); setActiveTab('surveys'); }}
               className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl font-bold text-sm transition-all text-left cursor-pointer ${
@@ -3421,6 +3446,21 @@ export default function AdminControl({ students, initialStaff = [], settings }: 
                   </div>
                   <ChevronRight className="w-4 h-4 text-amber-500" />
                 </button>
+                <a 
+                  href="/payroll" 
+                  className="w-full flex items-center justify-between p-4 rounded-xl bg-emerald-50/70 border border-emerald-300/80 hover:bg-emerald-100/70 transition-all text-left cursor-pointer group"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-emerald-700 text-white flex items-center justify-center font-bold shrink-0 shadow-xs">
+                      <FileSpreadsheet className="w-4 h-4 text-emerald-100" />
+                    </div>
+                    <div>
+                      <span className="block text-xs font-black text-slate-800 group-hover:text-emerald-800">Staff Payroll Schedule (Excel)</span>
+                      <span className="block text-[10px] text-emerald-700 font-bold">29 staff • Banking format & export</span>
+                    </div>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-emerald-600 group-hover:translate-x-0.5 transition-transform" />
+                </a>
                 <a href="/api/export-csv" className="w-full flex items-center justify-between p-4 rounded-xl bg-[#f8fafc] border border-slate-100 hover:bg-slate-100 transition-all text-left">
                   <div>
                     <span className="block text-xs font-bold text-slate-800">Export Report</span>
@@ -5555,15 +5595,24 @@ export default function AdminControl({ students, initialStaff = [], settings }: 
                   </button>
                 </div>
 
+                <a
+                  href="/payroll"
+                  className="py-2 px-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer shadow-xs whitespace-nowrap shrink-0"
+                  title="Open Staff Payroll Schedule & Modern Finance Excel Export"
+                >
+                  <FileSpreadsheet className="w-4 h-4 text-emerald-100" />
+                  <span>Payroll & Excel (.xlsx)</span>
+                </a>
+
                 <button
                   type="button"
                   onClick={handleSyncOfficialStaff}
                   disabled={isLoadingStaff}
                   className="py-2 px-3 bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-800 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer shadow-xs disabled:opacity-50 whitespace-nowrap shrink-0"
-                  title="Sync the 22 official staff members from the staff schedule"
+                  title="Sync the official staff members from the staff schedule"
                 >
                   <ShieldCheck className="w-4 h-4 text-amber-600" />
-                  <span>Sync 22 Staff</span>
+                  <span>Sync 29 Staff</span>
                 </button>
 
                 <button
