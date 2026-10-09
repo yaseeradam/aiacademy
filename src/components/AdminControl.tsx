@@ -5769,6 +5769,8 @@ export default function AdminControl({ students, initialStaff = [], settings }: 
                         <th className="py-4 px-6">ID Number</th>
                         <th className="py-4 px-6">Section</th>
                         <th className="py-4 px-6">Class Allocated</th>
+                        <th className="py-4 px-6">Disbursement Bank</th>
+                        <th className="py-4 px-6 text-right">Monthly Salary</th>
                         <th className="py-4 px-6 text-right">Actions</th>
                       </tr>
                     </thead>
@@ -5845,6 +5847,35 @@ export default function AdminControl({ students, initialStaff = [], settings }: 
                                 <span className="text-slate-400 italic text-[11px]">Unassigned</span>
                                 <span className="text-emerald-600 font-black text-[10px] bg-emerald-100/60 px-1 py-0.5 rounded">+ Assign</span>
                               </button>
+                            )}
+                          </td>
+
+                          {/* Disbursement Bank & NUBAN */}
+                          <td className="py-4 px-6">
+                            {staff.bankName ? (
+                              <div className="flex flex-col">
+                                <span className="text-xs font-bold text-slate-800">{staff.bankName}</span>
+                                {staff.accountNumber ? (
+                                  <span className="font-mono text-[11px] text-slate-500 font-semibold tracking-wide">
+                                    {staff.accountNumber}
+                                  </span>
+                                ) : (
+                                  <span className="text-[10px] text-amber-600 font-bold">No Account</span>
+                                )}
+                              </div>
+                            ) : (
+                              <span className="text-xs text-slate-300 italic">Pending Bank</span>
+                            )}
+                          </td>
+
+                          {/* Monthly Salary */}
+                          <td className="py-4 px-6 text-right">
+                            {staff.salary && !isNaN(parseInt(staff.salary.replace(/[^0-9]/g, ''), 10)) ? (
+                              <span className="font-mono text-xs font-black text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200">
+                                ₦{parseInt(staff.salary.replace(/[^0-9]/g, ''), 10).toLocaleString('en-NG')}
+                              </span>
+                            ) : (
+                              <span className="text-[11px] text-slate-400 italic">Pending</span>
                             )}
                           </td>
 
