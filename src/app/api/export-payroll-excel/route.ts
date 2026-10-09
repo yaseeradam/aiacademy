@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import ExcelJS from 'exceljs';
 import { OFFICIAL_PAYROLL_SCHEDULE, calculatePayrollTotals } from '@/lib/payrollData';
 import { getAllStaff } from '@/lib/db';
+import { formatPersonName, formatTitleCase } from '@/lib/formatUtils';
 
 export const dynamic = 'force-dynamic';
 
@@ -166,13 +167,16 @@ export async function GET() {
       const isPendingAcct = !rec.accountNumber || rec.accountNumber.trim().toLowerCase() === 'pending';
       const statusText = isPendingAcct ? 'Pending NUBAN' : 'Verified';
       const acctDisplay = isPendingAcct ? 'Pending' : String(rec.accountNumber).trim();
+      const staffName = formatPersonName(rec.name);
+      const sectionDisplay = formatTitleCase(rec.section || 'Academic');
+      const bankDisplay = formatTitleCase(rec.bankName || 'Pending');
 
       row.values = [
         rec.sn,
-        rec.name,
+        staffName,
         rec.idNumber,
-        rec.section || 'Academic',
-        rec.bankName || 'Pending',
+        sectionDisplay,
+        bankDisplay,
         acctDisplay,
         typeof rec.salary === 'number' && !isNaN(rec.salary) ? rec.salary : null,
         statusText,

@@ -2,6 +2,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import ExcelJS from 'exceljs';
 import { getAllStudents, getAllParents, getAllStudentPhotos } from '@/lib/db';
 import { getStudentAdmissionNumber, getStudentClassArm } from '@/lib/classUtils';
+import {
+  formatPersonName,
+  formatTitleCase,
+  formatClassName,
+  formatSectionName,
+  formatNationality,
+  formatReligion
+} from '@/lib/formatUtils';
 
 export const dynamic = 'force-dynamic';
 
@@ -125,24 +133,35 @@ export async function GET(request: NextRequest) {
 
       const photoUrl = `https://portal.academyhub.com.ng/api/student-photo?id=${student.id}`;
 
+      const fName = formatPersonName(student.firstName);
+      const lName = formatPersonName(student.lastName);
+      const formattedClass = formatClassName(classArm || student.intendedClass);
+      const fatherN = formatPersonName(student.fatherName || parent?.parentName);
+      const motherN = formatPersonName(student.motherName);
+      const guardianN = formatPersonName(student.guardianName || student.fatherName || parent?.parentName || 'Parent / Guardian');
+      const resAddress = formatTitleCase(student.residentialAddress);
+      const guardAddress = formatTitleCase(student.guardianAddress || student.residentialAddress);
+      const nat = formatNationality(student.nationality);
+      const rel = formatReligion(student.religion);
+
       row.values = [
         i + 1,
         '', // Cell B: Reserved for visually embedded passport photo
         admNo,
-        student.firstName || '',
-        student.lastName || '',
-        classArm || student.intendedClass || '',
+        fName,
+        lName,
+        formattedClass,
         student.gender || '',
         student.dateOfBirth || '',
-        student.fatherName || parent?.parentName || '',
-        student.motherName || '',
-        student.residentialAddress || '',
+        fatherN,
+        motherN,
+        resAddress,
         student.phone1 || parent?.phoneNumber || '',
         student.phone2 || '',
-        student.guardianName || '',
-        student.guardianAddress || '',
-        student.nationality || '',
-        student.religion || '',
+        guardianN,
+        guardAddress,
+        nat,
+        rel,
         (student.verificationStatus || 'pending').toUpperCase(),
         (student.paymentStatus || 'pending').toUpperCase(),
         student.academicSession || '2024/2025',
@@ -327,37 +346,55 @@ export async function GET(request: NextRequest) {
       // Normalize gender to 'Male' or 'Female' (strictly required by AcademyHub)
       const gender = (student.gender || 'Male').toLowerCase().startsWith('f') ? 'Female' : 'Male';
 
-      // Normalize guardian contact info
-      const guardianName = student.guardianName || student.fatherName || parent?.parentName || 'Parent / Guardian';
+      // Cleaned & Title-Cased fields
+      const fName = formatPersonName(student.firstName);
+      const lName = formatPersonName(student.lastName);
+      const cName = formatClassName(className);
+      const sName = formatSectionName(sectionName);
+      const fullClassFormatted = formatClassName(classArm || student.intendedClass);
+      const fatherN = formatPersonName(student.fatherName || parent?.parentName);
+      const motherN = formatPersonName(student.motherName);
+      const guardianN = formatPersonName(student.guardianName || student.fatherName || parent?.parentName || 'Parent / Guardian');
       const guardianPhone = student.phone1 || parent?.phoneNumber || '';
-      const guardianAddress = student.guardianAddress || student.residentialAddress || '';
+      const resAddress = formatTitleCase(student.residentialAddress);
+      const guardAddress = formatTitleCase(student.guardianAddress || student.residentialAddress);
+      const nat = formatNationality(student.nationality);
+      const rel = formatReligion(student.religion);
+
+      const verificationStatus = (student.verificationStatus || 'pending') === 'verified'
+        ? 'Verified'
+        : (student.verificationStatus || 'pending') === 'requires_correction'
+        ? 'Requires Correction'
+        : 'Pending';
+
+      const paymentStatus = (student.paymentStatus || 'pending').toLowerCase() === 'paid' ? 'Paid' : 'Pending';
 
       const row = [
         escapeCSV(admNo),
-        escapeCSV(student.firstName),
-        escapeCSV(student.lastName),
+        escapeCSV(fName),
+        escapeCSV(lName),
         escapeCSV(gender),
-        escapeCSV(className),
-        escapeCSV(sectionName),
+        escapeCSV(cName),
+        escapeCSV(sName),
         escapeCSV(base64Photo),
         escapeCSV(student.dateOfBirth),
-        escapeCSV(guardianName),
+        escapeCSV(guardianN),
         escapeCSV(guardianPhone),
-        escapeCSV(guardianAddress),
+        escapeCSV(guardAddress),
         escapeCSV('Active'), // AcademyHub expects 'Active'
         escapeCSV(photoUrl),
-        escapeCSV(classArm || student.intendedClass),
-        escapeCSV(student.fatherName || parent?.parentName),
-        escapeCSV(student.motherName),
-        escapeCSV(student.residentialAddress),
+        escapeCSV(fullClassFormatted),
+        escapeCSV(fatherN),
+        escapeCSV(motherN),
+        escapeCSV(resAddress),
         escapeCSV(student.phone1 || parent?.phoneNumber),
         escapeCSV(student.phone2),
-        escapeCSV(student.nationality),
-        escapeCSV(student.religion),
-        escapeCSV(student.verificationStatus),
-        escapeCSV(student.correctionNotes),
-        escapeCSV(student.paymentStatus),
-        escapeCSV(student.academicSession),
+        escapeCSV(nat),
+        escapeCSV(rel),
+        escapeCSV(verificationStatus),
+        escapeCSV(formatTitleCase(student.correctionNotes)),
+        escapeCSV(paymentStatus),
+        escapeCSV(student.academicSession || '2024/2025'),
         escapeCSV(student.resumptionDate),
         escapeCSV(student.admissionDate),
       ];
