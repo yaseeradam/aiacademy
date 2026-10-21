@@ -39,3 +39,8 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# generated card assets
+/Parent_Pickup_ID_Cards/
+/New_Missing_Parent_Pickup_ID_Cards/
+

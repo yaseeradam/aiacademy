@@ -18,6 +18,7 @@ import AdmissionLetterModal, { printBulkAdmissionLetters, printPaidStudentsPDF, 
 import AppointmentLetterModal, { printBulkAppointmentLetters, printIndividualAppointmentLetter } from './AppointmentLetterModal';
 import PickupIDCardModal from './PickupIDCardModal';
 import PrintClassRosterModal from './PrintClassRosterModal';
+import StudentOfTheMonthModal from './StudentOfTheMonthModal';
 import { printOfficialClassEnrolmentRoster } from '@/lib/printUtils';
 
 interface AdminControlProps {
@@ -154,6 +155,7 @@ export default function AdminControl({ students, initialStaff = [], settings }: 
   const [staffLetterPickerSearch, setStaffLetterPickerSearch] = useState<string>('');
   const [isPickupModalOpen, setIsPickupModalOpen] = useState<boolean>(false);
   const [isPrintClassModalOpen, setIsPrintClassModalOpen] = useState<boolean>(false);
+  const [isStudentOfMonthModalOpen, setIsStudentOfMonthModalOpen] = useState<boolean>(false);
   const [isTogglingFee, setIsTogglingFee] = useState<string | null>(null);
 
   // Audit Logs state
@@ -3059,6 +3061,24 @@ export default function AdminControl({ students, initialStaff = [], settings }: 
               </button>
             </div>
 
+            {/* Prominent Students of the Month Star Awards Button in Sidebar */}
+            <div className="py-1">
+              <button 
+                type="button"
+                onClick={() => setIsStudentOfMonthModalOpen(true)}
+                className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl bg-gradient-to-r from-amber-600 via-amber-500 to-amber-600 hover:from-amber-500 hover:to-amber-400 text-slate-950 font-black text-xs transition-all cursor-pointer shadow-md shadow-amber-500/20 border border-amber-300/40 group"
+                title="Design & Download Students of the Month Star Awards Plaque Poster"
+              >
+                <div className="flex items-center gap-2.5">
+                  <Star className="w-4 h-4 text-slate-950 fill-slate-950 group-hover:scale-110 transition-transform shrink-0" />
+                  <span className="tracking-wide">Students of the Month</span>
+                </div>
+                <span className="bg-slate-950 text-amber-300 text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider shadow-xs shrink-0">
+                  Poster
+                </span>
+              </button>
+            </div>
+
             {/* If a subclass page is active, show its active badge link */}
             {selectedSubgroupRoster && (
               <div className="pl-4 py-1">
@@ -3440,6 +3460,21 @@ export default function AdminControl({ students, initialStaff = [], settings }: 
                   <ChevronRight className="w-4 h-4 text-[#0f7343]" />
                 </button>
                 <button 
+                  onClick={() => setIsStudentOfMonthModalOpen(true)} 
+                  className="w-full flex items-center justify-between p-4 rounded-xl bg-gradient-to-r from-amber-50 to-amber-100/70 border border-amber-300 hover:from-amber-100 hover:to-amber-200/80 transition-all text-left cursor-pointer group shadow-xs"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-amber-500 to-amber-400 text-slate-950 flex items-center justify-center font-bold shrink-0 shadow-xs">
+                      <Star className="w-4 h-4 fill-slate-950" />
+                    </div>
+                    <div>
+                      <span className="block text-xs font-black text-slate-900 group-hover:text-amber-800">Students of the Month Poster</span>
+                      <span className="block text-[10px] text-amber-700 font-bold">Star awards plaque generator (PNG & PDF)</span>
+                    </div>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-amber-700" />
+                </button>
+                <button 
                   onClick={() => setActiveTab('staff')} 
                   className="w-full flex items-center justify-between p-4 rounded-xl bg-amber-50/60 border border-amber-200/70 hover:bg-amber-100/60 transition-all text-left cursor-pointer group"
                 >
@@ -3534,6 +3569,16 @@ export default function AdminControl({ students, initialStaff = [], settings }: 
                     >
                       <Printer className="w-4 h-4 text-amber-300" />
                       <span>Print Class Lists</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setIsStudentOfMonthModalOpen(true)}
+                      className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-slate-950 font-black text-xs rounded-xl shadow-sm transition-all cursor-pointer border border-amber-300"
+                      title="Students of the Month Award Plaque Poster"
+                    >
+                      <Star className="w-4 h-4 fill-slate-950 text-slate-950" />
+                      <span>Students of Month</span>
                     </button>
 
                     <button
@@ -6788,6 +6833,15 @@ export default function AdminControl({ students, initialStaff = [], settings }: 
         classList={classList}
         classStudentMap={classStudentMap}
         schoolSettings={schoolSettings}
+      />
+
+      {/* Official Students of the Month Star Awards Plaque Modal */}
+      <StudentOfTheMonthModal
+        isOpen={isStudentOfMonthModalOpen}
+        onClose={() => setIsStudentOfMonthModalOpen(false)}
+        students={students}
+        logoSrc={schoolSettings.logo || '/logo.jpg'}
+        schoolName={schoolSettings.name || 'AI INTEGRATED ACADEMY'}
       />
 
       {/* Individual Parent Survey Response Modal */}

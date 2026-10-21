@@ -38,16 +38,34 @@ export default function PickupIDCardModal({
   const [isExportingZip, setIsExportingZip] = useState<boolean>(false);
   const [zipProgress, setZipProgress] = useState<{ current: number; total: number }>({ current: 0, total: 0 });
 
+  const [filterMissingOnly, setFilterMissingOnly] = useState<boolean>(false);
+
+  // Missing students set from recent enrollment audit
+  const MISSING_55_ADMISSION_NUMBERS = new Set([
+    "AIAA-B26-052","AIAA-B26-112","AIAA-B26-113","AIAA-B26-114","AIAA-B26-195","AIAA-B26-116",
+    "AIAA-B26-117","AIAA-B26-118","AIAA-B26-119","AIAA-B26-120","AIAA-B26-121","AIAA-B26-122",
+    "AIAA-B26-123","AIAA-B26-194","AIAA-B26-125","AIAA-B26-126","AIAA-B26-127","AIAA-B26-128",
+    "AIAA-B26-129","AIAA-B26-130","AIAA-B26-131","AIAA-B26-132","AIAA-B26-133","AIAA-B26-134",
+    "AIAA-B26-135","AIAA-B26-137","AIAA-B26-138","AIAA-B26-139","AIAA-B26-140","AIAA-B26-141",
+    "AIAA-B26-142","AIAA-B26-143","AIAA-B26-144","AIAA-B26-145","AIAA-B26-146","AIAA-B26-147",
+    "AIAA-B26-148","AIAA-B26-149","AIAA-B26-150","AIAA-B26-151","AIAA-B26-152","AIAA-B26-153",
+    "AIAA-B26-154","AIAA-B26-155","AIAA-B26-156","AIAA-B26-157","AIAA-B26-158","AIAA-B26-159",
+    "AIAA-B26-160","AIAA-B26-161","AIAA-B26-162","AIAA-B26-163","AIAA-B26-164","AIAA-B26-165",
+    "AIAA-B26-166"
+  ]);
+
   if (!isOpen) return null;
 
   // Filter students for ID Card batch preview
   const displayStudents = students.filter(student => {
     const arm = getStudentClassArm(student.intendedClass, student.id, students);
+    const adm = getStudentAdmissionNumber(student);
     const matchesClass = selectedClassFilter === 'all' || arm.startsWith(selectedClassFilter) || arm === selectedClassFilter;
     const matchesSearch = !searchQuery || 
       `${student.firstName} ${student.lastName}`.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (student.formNumber || '').toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesClass && matchesSearch;
+    const matchesMissing = !filterMissingOnly || MISSING_55_ADMISSION_NUMBERS.has(adm);
+    return matchesClass && matchesSearch && matchesMissing;
   });
 
   const uniqueClasses = Array.from(new Set(students.map(s => s.intendedClass))).filter(Boolean);
@@ -197,6 +215,20 @@ export default function PickupIDCardModal({
                     <option key={c} value={c}>{c}</option>
                   ))}
                 </select>
+
+                <button
+                  type="button"
+                  onClick={() => setFilterMissingOnly(prev => !prev)}
+                  className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all border cursor-pointer flex items-center gap-1.5 shrink-0 ${
+                    filterMissingOnly
+                      ? 'bg-amber-500/20 text-amber-300 border-amber-500/60 shadow-[0_0_15px_rgba(245,158,11,0.25)]'
+                      : 'bg-slate-950 text-slate-400 border-slate-800 hover:text-white hover:border-slate-700'
+                  }`}
+                  title="Filter only the 55 newly enrolled students who didn't have cards in the initial batch"
+                >
+                  <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                  <span>New Batch Only (55)</span>
+                </button>
               </div>
 
               <div className="flex items-center gap-3 w-full sm:w-auto justify-end flex-wrap">

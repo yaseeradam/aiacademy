@@ -1,0 +1,992 @@
+========================================================================================================================
+                                    AI INTEGRATED ACADEMY (AIAA) — ARGUNGU                                              
+                       PARENT PICKUP ID CARDS COMPREHENSIVE RECONCILIATION & EXTRACTION REPORT                          
+Generated Date : October 10, 2026
+Archive Folder : C:\Users\AI ACADEMY\Desktop\Projects\aiacademy\Parent_Pickup_ID_Cards
+========================================================================================================================
+
+------------------------------------------------------------------------------------------------------------------------
+EXECUTIVE AUDIT SUMMARY & COMPARISON
+------------------------------------------------------------------------------------------------------------------------
+  • Total Active Students in Official School Register : 260 Students (100%)
+  • Total Parent Pickup ID Cards in Archive Folder     : 207 Image Files
+  • ID Cards Already Produced & Matched (COMPLETED)    : 205 Students ( 78.8% )
+  • ID Cards Not Yet Produced (STILL MISSING)          :  55 Students ( 21.2% )
+  • Extra / Withdrawn Card Files in Archive Folder     :   2 Files
+------------------------------------------------------------------------------------------------------------------------
+
+CLASS-BY-CLASS BREAKDOWN OF MISSING ID CARDS (55 STUDENTS TOTAL):
+  - Nursery 1 Blue                 : 14 student(s) missing cards
+  - Basic 2 Gold                   : 10 student(s) missing cards
+  - Basic 1 Diamond                :  8 student(s) missing cards
+  - Basic 1 Green                  :  6 student(s) missing cards
+  - Nursery 1 Green                :  5 student(s) missing cards
+  - Basic 1 Blue                   :  5 student(s) missing cards
+  - Basic 1 Silver                 :  2 student(s) missing cards
+  - Basic 2 (unassigned) General   :  1 student(s) missing cards
+  - Basic 1 (unassigned) General   :  1 student(s) missing cards
+  - Nursery 1 Silver               :  1 student(s) missing cards
+  - Basic 1 Gold                   :  1 student(s) missing cards
+  - Nursery 1 Gold                 :  1 student(s) missing cards
+
+========================================================================================================================
+SECTION 1: EXTRACTED LIST OF MISSING PARENT PICKUP ID CARDS (THOSE WE DID NOT DO — 55 STUDENTS)
+========================================================================================================================
+These are the 55 students who DO NOT have a card in the folder yet. Use this clean roster to generate their ID cards:
+
+S/N  ADM NO          STUDENT FULL NAME               CLASS & ARM                   GENDER    GUARDIAN NAME                 GUARDIAN PHONE
+--------------------------------------------------------------------------------------------------------------------------------------------
+1    AIAA-B26-052    Muhammad Umar Muhammad Sabla    Basic 1 Green                 Male      Umar Muhammad Sabla           09068801771
+2    AIAA-B26-112    Al-Amin Samaila Tunga           Nursery 1 Green               Male      Samaila Muhammad Tuynga       07063894996
+3    AIAA-B26-113    Yasir Adamu                     Basic 2 (unassigned) General  Male      Kabiru Adamu                  08104827838
+4    AIAA-B26-114    Aliyu Shamsu Narima             Basic 1 Silver                Male      Shamsu Abubakar               08065490493
+5    AIAA-B26-195    Aisha Surajo Isah               Basic 1 Silver                Female    Surajo Isah                   08135444833
+6    AIAA-B26-116    Sani Haliru Argungu             Nursery 1 Green               Male      Asmau Sani Alhassan           08140165660
+7    AIAA-B26-117    Yahayya Abdulaziz               Basic 1 Green                 Male      Mohammed Bawa                 07064989364
+8    AIAA-B26-118    Yusuf Adamu Idris               Nursery 1 Blue                Male      Adamu Idris Argungu           07061294815
+9    AIAA-B26-119    Halimatu Ahmad Dan Kano         Nursery 1 Blue                Female    Ahmad                         08104373900
+10   AIAA-B26-120    Ismail Nura T Wada              Basic 1 Diamond               Male      Nura T Wada                   07064854039
+11   AIAA-B26-121    Ahmed Nura T Wada               Basic 2 Gold                  Male      Nura Abubakar T Wada          07064854039
+12   AIAA-B26-122    Muhsin Bashar                   Basic 2 Gold                  Male      Bashar Dan Farashi            08066140465
+13   AIAA-B26-123    Zainab Abdulkarim               Basic 2 Gold                  Female    Abdulkarim                    07033071478
+14   AIAA-B26-194    Rabi'Atu Sanusi Bachaka         Nursery 1 Blue                Female    Rabi'a M Danmaliki            08147677429
+15   AIAA-B26-125    Abdul-Malik Hassan Adamu        Basic 1 Blue                  Male      Hassan Adamu Kaoje            08069653577
+16   AIAA-B26-126    Yahaya A Abdulaziz              Basic 1 (unassigned) General  Male      Mohammed Bawa                 08129709643
+17   AIAA-B26-127    Khalid Abdul-Rahman             Basic 1 Diamond               Male      Zainab Zubairu                07064615839
+18   AIAA-B26-128    Al'Ameen Ibrahim Bachaka        Nursery 1 Green               Male      Ibrahim Bachaka               08147677429
+19   AIAA-B26-129    Aliyu Ibrahim Bachaka           Nursery 1 Blue                Male      Ibrahim Bachaka               08147677429
+20   AIAA-B26-130    Fatima Sanusi Bachaka           Nursery 1 Silver              Male      Sanusi Bachaka                08147677429
+21   AIAA-B26-131    Hassan Mahmud                   Basic 2 Gold                  Male      Mahmud Uthman                 08035075888
+22   AIAA-B26-132    Maryam Ibrahim Abubakar         Nursery 1 Blue                Female    Ibrahim Abubakar              07063531057
+23   AIAA-B26-133    Muhammad Mustapha Sani          Basic 1 Diamond               Male      Hasan Adamu Kaoje             08064990537
+24   AIAA-B26-134    Abubakar Lukman Abubakar        Nursery 1 Blue                Male      Lukman Abubakar               08068155590
+25   AIAA-B26-135    Khadija Zubairu Maikatako       Basic 1 Green                 Male      Bilya Abdullahi Augie         08062575508
+26   AIAA-B26-137    Muhammadu Ahassan Ibrahim       Basic 1 Diamond               Male      Ahassan Ibrahim               08065680089
+27   AIAA-B26-138    Muhammadu Aminullahi Ibrahim    Basic 1 Blue                  Male      Ibrahim                       08065680089
+28   AIAA-B26-139    Mohammadu Habibullahi Ibrahim   Basic 2 Gold                  Male      Ibrahim                       08065680089
+29   AIAA-B26-140    Hamida Hadi Maidume             Nursery 1 Blue                Female    Hadi Maidume                  08130234862
+30   AIAA-B26-141    Hafsat Nura Suleiman            Basic 2 Gold                  Male      Alh Nura Dankanawa            07031953177
+31   AIAA-B26-142    Mudahara Abdulrahman            Basic 1 Blue                  Female    Abdulrahman                   07035895893
+32   AIAA-B26-143    Khadija Sani Bayawa             Basic 1 Diamond               Female    Muhammad Bello Sani           08136682997
+33   AIAA-B26-144    Umar Faruk Musa                 Nursery 1 Blue                Female    Musa Fadama                   09034690383
+34   AIAA-B26-145    Abdallah Abdulrazak             Nursery 1 Blue                Male      Abdulrazak Umar               08062399312
+35   AIAA-B26-146    Khadija Nasir Goga              Basic 1 Green                 Female    Nasiru Abubakar               08033352036
+36   AIAA-B26-147    Muhammad Muzaffar Aliyu         Basic 2 Gold                  Male      Aliyu Tukur Sani              07060754979
+37   AIAA-B26-148    Halima Usman Mani               Basic 1 Green                 Female    Usman Ibrahim                 08035043808
+38   AIAA-B26-149    Hauwa'u Abubakar Masha          Nursery 1 Blue                Female    Alhj Aminu Bakin Tasha        08146196075
+39   AIAA-B26-150    Abdullahi Sufiyanu Abdullahi    Basic 1 Blue                  Male      Usman Ibrahim Mari            08035043808
+40   AIAA-B26-151    Abdulrashid Usman Mani          Basic 1 Gold                  Male      Usman Ibrahim Mani            08035043808
+41   AIAA-B26-152    Khalid Usman Mani               Basic 2 Gold                  Male      Usman Ibrahim Mani            08035043808
+42   AIAA-B26-153    Ibrahim Bashir Kangiwa          Basic 2 Gold                  Male      Bashir Garba Kangiwa          07038697593
+43   AIAA-B26-154    Aisha Aminu Muhammad            Basic 1 Blue                  Female    Aminu Muhammad                08036547553
+44   AIAA-B26-155    Abdulnasir Usman Sa'idu         Basic 1 Diamond               Male      Malan Usman Sa'idu Arg        08024104143
+45   AIAA-B26-156    Aisha Aliyu Mohd                Basic 1 Diamond               Female    Aliyu                         08062617141
+46   AIAA-B26-157    Muhammad Ibrahim Dan Jumma      Basic 1 Green                 Male      Ibrahim Dan Jumma             08064984651
+47   AIAA-B26-158    Aisha Surajo                    Nursery 1 Green               Female    Yahaya Umar                   08131877357
+48   AIAA-B26-159    Umar Faruk Surajo               Nursery 1 Gold                Female    Yahaya Umar                   08131877357
+49   AIAA-B26-160    Asiya Adamu Idris               Basic 1 Diamond               Female    Adamu Idris                   08035170179
+50   AIAA-B26-161    Yahaya Surajo                   Nursery 1 Blue                Male      Yahaya Umar                   08131877357
+51   AIAA-B26-162    Muhammad Sani Shamsu            Nursery 1 Blue                Male      Shamsu Aliyu                  08149988984
+52   AIAA-B26-163    Areef Kabiru Malami             Nursery 1 Green               Male      Kabiru Malami                 07039112367
+53   AIAA-B26-164    Al Amin Nafi'u                  Nursery 1 Blue                Male      Nafiu                         08169872713
+54   AIAA-B26-165    Muhammad Yusuf Majidadi         Nursery 1 Blue                Male      Maji Dadi                     07037388340
+55   AIAA-B26-166    Fahad Abdullahi                 Basic 2 Gold                  Male      Abdullahi Ibrahim             08139414616
+
+============================================================================================================================================
+DETAILED PROFILE CARDS FOR EACH OF THE 55 MISSING STUDENTS (FOR DIRECT CARD PRINTING):
+============================================================================================================================================
+
+[ 1 / 55] ------------------------------------------------------------------------------------------------
+  Student Name       : Muhammad Umar Muhammad Sabla
+  Admission Number   : AIAA-B26-052
+  Class & Arm        : Basic 1 Green
+  Gender             : Male | Date of Birth: 2019/8/24
+  Father's Name      : Umar Muhammad Sabla
+  Mother's Name      : Saratu Muhammad Sabla
+  Primary Guardian   : Umar Muhammad Sabla
+  Contact Phone(s)   : 09068801771 / 08036312167
+  Residential Addr   : Shagunan KC
+  Status / Payment   : Verification: Pending | Tuition: Paid
+
+[ 2 / 55] ------------------------------------------------------------------------------------------------
+  Student Name       : Al-Amin Samaila Tunga
+  Admission Number   : AIAA-B26-112
+  Class & Arm        : Nursery 1 Green
+  Gender             : Male | Date of Birth: 18/4/2022
+  Father's Name      : Samaila Muhammad Tunga
+  Mother's Name      : Ramatu Aminu Zangina
+  Primary Guardian   : Samaila Muhammad Tuynga
+  Contact Phone(s)   : 07063894996 / 09060943736
+  Residential Addr   : Gwazange Bayan Police Station
+  Status / Payment   : Verification: Pending | Tuition: Paid
+
+[ 3 / 55] ------------------------------------------------------------------------------------------------
+  Student Name       : Yasir Adamu
+  Admission Number   : AIAA-B26-113
+  Class & Arm        : Basic 2 (unassigned) General
+  Gender             : Male | Date of Birth: 10/10/2000
+  Father's Name      : Kabir Adamu
+  Mother's Name      : Ummukhairi
+  Primary Guardian   : Kabiru Adamu
+  Contact Phone(s)   : 08104827838 / 08104827838
+  Residential Addr   : No. 37 Dutsin Mariya Gwazange, Musa Ma'Aji Street
+  Status / Payment   : Verification: Verified | Tuition: Pending
+
+[ 4 / 55] ------------------------------------------------------------------------------------------------
+  Student Name       : Aliyu Shamsu Narima
+  Admission Number   : AIAA-B26-114
+  Class & Arm        : Basic 1 Silver
+  Gender             : Male | Date of Birth: 2020-12-01
+  Father's Name      : Shamsu Abubakar
+  Mother's Name      : Asmau Aliyu Gandu
+  Primary Guardian   : Shamsu Abubakar
+  Contact Phone(s)   : 08065490493 / 07030637471
+  Residential Addr   : Gwazange Shagunan Umaru Soja
+  Status / Payment   : Verification: Verified | Tuition: Pending
+
+[ 5 / 55] ------------------------------------------------------------------------------------------------
+  Student Name       : Aisha Surajo Isah
+  Admission Number   : AIAA-B26-195
+  Class & Arm        : Basic 1 Silver
+  Gender             : Female | Date of Birth: 4/9/2020
+  Father's Name      : Surajo Isah Yeldu
+  Mother's Name      : Samira Aliyu Argungu
+  Primary Guardian   : Surajo Isah
+  Contact Phone(s)   : 08135444833 / 08061348746
+  Residential Addr   : Farin Tanki Near Dan Ghana
+  Status / Payment   : Verification: Pending | Tuition: Paid
+
+[ 6 / 55] ------------------------------------------------------------------------------------------------
+  Student Name       : Sani Haliru Argungu
+  Admission Number   : AIAA-B26-116
+  Class & Arm        : Nursery 1 Green
+  Gender             : Male | Date of Birth: 11/15/2023
+  Father's Name      : Haliru Salisu Argungu
+  Mother's Name      : Asmau Sani Alhassan
+  Primary Guardian   : Asmau Sani Alhassan
+  Contact Phone(s)   : 08140165660 / 07035021875
+  Residential Addr   : Low Cost Argungu
+  Status / Payment   : Verification: Verified | Tuition: Paid
+
+[ 7 / 55] ------------------------------------------------------------------------------------------------
+  Student Name       : Yahayya Abdulaziz
+  Admission Number   : AIAA-B26-117
+  Class & Arm        : Basic 1 Green
+  Gender             : Male | Date of Birth: 1/6/2018
+  Father's Name      : Alh Abdulaziz
+  Mother's Name      : Fatima Abdulaziz
+  Primary Guardian   : Mohammed Bawa
+  Contact Phone(s)   : 07064989364 / 08129709643
+  Residential Addr   : Near KC House
+  Status / Payment   : Verification: Pending | Tuition: Pending
+
+[ 8 / 55] ------------------------------------------------------------------------------------------------
+  Student Name       : Yusuf Adamu Idris
+  Admission Number   : AIAA-B26-118
+  Class & Arm        : Nursery 1 Blue
+  Gender             : Male | Date of Birth: 27/10/2023
+  Father's Name      : Adamu Idris Argungu
+  Mother's Name      : Rabiatu Idris Arguungu
+  Primary Guardian   : Adamu Idris Argungu
+  Contact Phone(s)   : 07061294815 / 07031194989
+  Residential Addr   : Gwazange
+  Status / Payment   : Verification: Verified | Tuition: Pending
+
+[ 9 / 55] ------------------------------------------------------------------------------------------------
+  Student Name       : Halimatu Ahmad Dan Kano
+  Admission Number   : AIAA-B26-119
+  Class & Arm        : Nursery 1 Blue
+  Gender             : Female | Date of Birth: 22/3/2023
+  Father's Name      : Ahmad
+  Mother's Name      : Farida
+  Primary Guardian   : Ahmad
+  Contact Phone(s)   : 08104373900 / 07034224773
+  Residential Addr   : Buben ta Ololo
+  Status / Payment   : Verification: Pending | Tuition: Pending
+
+[10 / 55] ------------------------------------------------------------------------------------------------
+  Student Name       : Ismail Nura T Wada
+  Admission Number   : AIAA-B26-120
+  Class & Arm        : Basic 1 Diamond
+  Gender             : Male | Date of Birth: 14/10/2020
+  Father's Name      : Nura T Wada
+  Mother's Name      : Shamsiyya Usman
+  Primary Guardian   : Nura T Wada
+  Contact Phone(s)   : 07064854039 / 08068323629
+  Residential Addr   : Kanta College Staff Quaters
+  Status / Payment   : Verification: Verified | Tuition: Paid
+
+[11 / 55] ------------------------------------------------------------------------------------------------
+  Student Name       : Ahmed Nura T Wada
+  Admission Number   : AIAA-B26-121
+  Class & Arm        : Basic 2 Gold
+  Gender             : Male | Date of Birth: 1/8/2018
+  Father's Name      : Nura Abubakar T Wada
+  Mother's Name      : Shamsiyya Usman
+  Primary Guardian   : Nura Abubakar T Wada
+  Contact Phone(s)   : 07064854039 / 08068323629
+  Residential Addr   : Kanta College Staff Quaters
+  Status / Payment   : Verification: Verified | Tuition: Paid
+
+[12 / 55] ------------------------------------------------------------------------------------------------
+  Student Name       : Muhsin Bashar
+  Admission Number   : AIAA-B26-122
+  Class & Arm        : Basic 2 Gold
+  Gender             : Male | Date of Birth: 24/4/2019
+  Father's Name      : Bashar Hamidu
+  Mother's Name      : Aisha Bello Aliyu
+  Primary Guardian   : Bashar Dan Farashi
+  Contact Phone(s)   : 08066140465 / 07011340257
+  Residential Addr   : Bachaka Area
+  Status / Payment   : Verification: Pending | Tuition: Pending
+
+[13 / 55] ------------------------------------------------------------------------------------------------
+  Student Name       : Zainab Abdulkarim
+  Admission Number   : AIAA-B26-123
+  Class & Arm        : Basic 2 Gold
+  Gender             : Female | Date of Birth: 5/2/2018
+  Father's Name      : Abdulkarim Usman
+  Mother's Name      : Luba Zubairu
+  Primary Guardian   : Abdulkarim
+  Contact Phone(s)   : 07033071478 / 07035619104
+  Residential Addr   : Rijiyar Bandado
+  Status / Payment   : Verification: Pending | Tuition: Pending
+
+[14 / 55] ------------------------------------------------------------------------------------------------
+  Student Name       : Rabi'Atu Sanusi Bachaka
+  Admission Number   : AIAA-B26-194
+  Class & Arm        : Nursery 1 Blue
+  Gender             : Female | Date of Birth: 01/07/2021
+  Father's Name      : Sanusi Bachaka
+  Mother's Name      : Rabi'a
+  Primary Guardian   : Rabi'a M Danmaliki
+  Contact Phone(s)   : 08147677429 / 07044350729
+  Residential Addr   : Gwazenge Area Argungu
+  Status / Payment   : Verification: Pending | Tuition: Pending
+
+[15 / 55] ------------------------------------------------------------------------------------------------
+  Student Name       : Abdul-Malik Hassan Adamu
+  Admission Number   : AIAA-B26-125
+  Class & Arm        : Basic 1 Blue
+  Gender             : Male | Date of Birth: 12/8/2020
+  Father's Name      : Hassan Adamu Kaoje
+  Mother's Name      : A'Isha Maigari
+  Primary Guardian   : Hassan Adamu Kaoje
+  Contact Phone(s)   : 08069653577 / 08064990537
+  Residential Addr   : No. 12 Farin Tanki Area Argungu
+  Status / Payment   : Verification: Pending | Tuition: Pending
+
+[16 / 55] ------------------------------------------------------------------------------------------------
+  Student Name       : Yahaya A Abdulaziz
+  Admission Number   : AIAA-B26-126
+  Class & Arm        : Basic 1 (unassigned) General
+  Gender             : Male | Date of Birth: 6/1/2018
+  Father's Name      : Alh Abdulaziz
+  Mother's Name      : Fati Alh Abdulaziz
+  Primary Guardian   : Mohammed Bawa
+  Contact Phone(s)   : 08129709643 / 07064989364
+  Residential Addr   : Near K.c House
+  Status / Payment   : Verification: Pending | Tuition: Pending
+
+[17 / 55] ------------------------------------------------------------------------------------------------
+  Student Name       : Khalid Abdul-Rahman
+  Admission Number   : AIAA-B26-127
+  Class & Arm        : Basic 1 Diamond
+  Gender             : Male | Date of Birth: 01/04/2020
+  Father's Name      : Abdul-Rahman Yusuf
+  Mother's Name      : Zainab Zubairu
+  Primary Guardian   : Zainab Zubairu
+  Contact Phone(s)   : 07064615839 / 09031832768
+  Residential Addr   : Gwazenge Area
+  Status / Payment   : Verification: Pending | Tuition: Pending
+
+[18 / 55] ------------------------------------------------------------------------------------------------
+  Student Name       : Al'Ameen Ibrahim Bachaka
+  Admission Number   : AIAA-B26-128
+  Class & Arm        : Nursery 1 Green
+  Gender             : Male | Date of Birth: 4/4/2021
+  Father's Name      : Ibrahim Bachaka
+  Mother's Name      : Rabi'Ah
+  Primary Guardian   : Ibrahim Bachaka
+  Contact Phone(s)   : 08147677429 / 07044350729
+  Residential Addr   : Gwazange Area Argungu
+  Status / Payment   : Verification: Pending | Tuition: Pending
+
+[19 / 55] ------------------------------------------------------------------------------------------------
+  Student Name       : Aliyu Ibrahim Bachaka
+  Admission Number   : AIAA-B26-129
+  Class & Arm        : Nursery 1 Blue
+  Gender             : Male | Date of Birth: 4/2/2021
+  Father's Name      : Ibrahim Bachaka
+  Mother's Name      : Rabi'Ah Dan Maliki
+  Primary Guardian   : Ibrahim Bachaka
+  Contact Phone(s)   : 08147677429 / 07044350729
+  Residential Addr   : Gwazange Area Argungu
+  Status / Payment   : Verification: Pending | Tuition: Pending
+
+[20 / 55] ------------------------------------------------------------------------------------------------
+  Student Name       : Fatima Sanusi Bachaka
+  Admission Number   : AIAA-B26-130
+  Class & Arm        : Nursery 1 Silver
+  Gender             : Male | Date of Birth: 10/06/20
+  Father's Name      : Sanusi Bachaka
+  Mother's Name      : Rabi'Ah Danmaliki
+  Primary Guardian   : Sanusi Bachaka
+  Contact Phone(s)   : 08147677429 / 07044350729
+  Residential Addr   : Gwazange Area Argungu
+  Status / Payment   : Verification: Pending | Tuition: Pending
+
+[21 / 55] ------------------------------------------------------------------------------------------------
+  Student Name       : Hassan Mahmud
+  Admission Number   : AIAA-B26-131
+  Class & Arm        : Basic 2 Gold
+  Gender             : Male | Date of Birth: 29/9/2020
+  Father's Name      : Mahmud Uthman
+  Mother's Name      : A'Isha Jafar
+  Primary Guardian   : Mahmud Uthman
+  Contact Phone(s)   : 08035075888 / 08069262741
+  Residential Addr   : Justice Hassan Uthman High Court of Justice Birnin Kebbi
+  Status / Payment   : Verification: Pending | Tuition: Pending
+
+[22 / 55] ------------------------------------------------------------------------------------------------
+  Student Name       : Maryam Ibrahim Abubakar
+  Admission Number   : AIAA-B26-132
+  Class & Arm        : Nursery 1 Blue
+  Gender             : Female | Date of Birth: 9/3/2023
+  Father's Name      : Ibrahim Abubakar
+  Mother's Name      : Farida Ahmad
+  Primary Guardian   : Ibrahim Abubakar
+  Contact Phone(s)   : 07063531057 / 08133501751
+  Residential Addr   : Bayawa Road Opp A Goje Table Water
+  Status / Payment   : Verification: Pending | Tuition: Pending
+
+[23 / 55] ------------------------------------------------------------------------------------------------
+  Student Name       : Muhammad Mustapha Sani
+  Admission Number   : AIAA-B26-133
+  Class & Arm        : Basic 1 Diamond
+  Gender             : Male | Date of Birth: 14/6/2019
+  Father's Name      : Mustapha Sani Muhammad
+  Mother's Name      : Amina Maigari
+  Primary Guardian   : Hasan Adamu Kaoje
+  Contact Phone(s)   : 08064990537 / 08069653577
+  Residential Addr   : Farin Tanki Argungu
+  Status / Payment   : Verification: Pending | Tuition: Pending
+
+[24 / 55] ------------------------------------------------------------------------------------------------
+  Student Name       : Abubakar Lukman Abubakar
+  Admission Number   : AIAA-B26-134
+  Class & Arm        : Nursery 1 Blue
+  Gender             : Male | Date of Birth: 20/9/2023
+  Father's Name      : Lukman Abubakar
+  Mother's Name      : Aisha Lawal Adamu
+  Primary Guardian   : Lukman Abubakar
+  Contact Phone(s)   : 08068155590
+  Residential Addr   : Bayan Kara
+  Status / Payment   : Verification: Verified | Tuition: Paid
+
+[25 / 55] ------------------------------------------------------------------------------------------------
+  Student Name       : Khadija Zubairu Maikatako
+  Admission Number   : AIAA-B26-135
+  Class & Arm        : Basic 1 Green
+  Gender             : Male | Date of Birth: 2/6/2019
+  Father's Name      : Zubairu Mai Katako
+  Mother's Name      : Basira Abdullahi Augie
+  Primary Guardian   : Bilya Abdullahi Augie
+  Contact Phone(s)   : 08062575508 / 07061391772
+  Residential Addr   : Sabon Garin Kanta
+  Status / Payment   : Verification: Pending | Tuition: Pending
+
+[26 / 55] ------------------------------------------------------------------------------------------------
+  Student Name       : Muhammadu Ahassan Ibrahim
+  Admission Number   : AIAA-B26-137
+  Class & Arm        : Basic 1 Diamond
+  Gender             : Male | Date of Birth: 20/06/2022
+  Father's Name      : Ahassan Ibrahim
+  Mother's Name      : Suwaiba Umar Mohammed
+  Primary Guardian   : Ahassan Ibrahim
+  Contact Phone(s)   : 08065680089 / 09133153414
+  Residential Addr   : Bachaka
+  Status / Payment   : Verification: Pending | Tuition: Paid
+
+[27 / 55] ------------------------------------------------------------------------------------------------
+  Student Name       : Muhammadu Aminullahi Ibrahim
+  Admission Number   : AIAA-B26-138
+  Class & Arm        : Basic 1 Blue
+  Gender             : Male | Date of Birth: 05/04/2021
+  Father's Name      : Ibrahim
+  Mother's Name      : Suwaiba Umar Mohammed
+  Primary Guardian   : Ibrahim
+  Contact Phone(s)   : 08065680089 / 09133153414
+  Residential Addr   : Bachaka
+  Status / Payment   : Verification: Pending | Tuition: Paid
+
+[28 / 55] ------------------------------------------------------------------------------------------------
+  Student Name       : Mohammadu Habibullahi Ibrahim
+  Admission Number   : AIAA-B26-139
+  Class & Arm        : Basic 2 Gold
+  Gender             : Male | Date of Birth: 12/18/2017
+  Father's Name      : Ibrahim
+  Mother's Name      : Suwaiba Umar Mohammed
+  Primary Guardian   : Ibrahim
+  Contact Phone(s)   : 08065680089 / 09133153414
+  Residential Addr   : Bachaka
+  Status / Payment   : Verification: Pending | Tuition: Paid
+
+[29 / 55] ------------------------------------------------------------------------------------------------
+  Student Name       : Hamida Hadi Maidume
+  Admission Number   : AIAA-B26-140
+  Class & Arm        : Nursery 1 Blue
+  Gender             : Female | Date of Birth: 10/10/2021
+  Father's Name      : Hadi Maidume
+  Mother's Name      : Haulatu Abdullahi
+  Primary Guardian   : Hadi Maidume
+  Contact Phone(s)   : 08130234862 / 08039870426
+  Residential Addr   : Hilin Idi Tsoho
+  Status / Payment   : Verification: Pending | Tuition: Pending
+
+[30 / 55] ------------------------------------------------------------------------------------------------
+  Student Name       : Hafsat Nura Suleiman
+  Admission Number   : AIAA-B26-141
+  Class & Arm        : Basic 2 Gold
+  Gender             : Male | Date of Birth: 25/6/2026
+  Father's Name      : Alh Nura Dan Farashi
+  Mother's Name      : Habibat Abdullahi Barde
+  Primary Guardian   : Alh Nura Dankanawa
+  Contact Phone(s)   : 07031953177 / 07061185896
+  Residential Addr   : Opp Ai Academy
+  Status / Payment   : Verification: Pending | Tuition: Pending
+
+[31 / 55] ------------------------------------------------------------------------------------------------
+  Student Name       : Mudahara Abdulrahman
+  Admission Number   : AIAA-B26-142
+  Class & Arm        : Basic 1 Blue
+  Gender             : Female | Date of Birth: 13/2/2020
+  Father's Name      : Abdulrahman
+  Mother's Name      : Maryam
+  Primary Guardian   : Abdulrahman
+  Contact Phone(s)   : 07035895893
+  Residential Addr   : Gwazange Argungu.
+  Status / Payment   : Verification: Pending | Tuition: Pending
+
+[32 / 55] ------------------------------------------------------------------------------------------------
+  Student Name       : Khadija Sani Bayawa
+  Admission Number   : AIAA-B26-143
+  Class & Arm        : Basic 1 Diamond
+  Gender             : Female | Date of Birth: 5/08/2020
+  Father's Name      : Sani Umar Bayawa
+  Mother's Name      : Maryam Bello Bayawa
+  Primary Guardian   : Muhammad Bello Sani
+  Contact Phone(s)   : 08136682997 / 07036043189
+  Residential Addr   : Farin Tanki Area Argungu
+  Status / Payment   : Verification: Verified | Tuition: Pending
+
+[33 / 55] ------------------------------------------------------------------------------------------------
+  Student Name       : Umar Faruk Musa
+  Admission Number   : AIAA-B26-144
+  Class & Arm        : Nursery 1 Blue
+  Gender             : Female | Date of Birth: N/A
+  Father's Name      : Musa Fadama
+  Mother's Name      : Aisha Umar Felende
+  Primary Guardian   : Musa Fadama
+  Contact Phone(s)   : 09034690383 / 08032102454
+  Residential Addr   : Sabon Garin Bariki
+  Status / Payment   : Verification: Pending | Tuition: Pending
+
+[34 / 55] ------------------------------------------------------------------------------------------------
+  Student Name       : Abdallah Abdulrazak
+  Admission Number   : AIAA-B26-145
+  Class & Arm        : Nursery 1 Blue
+  Gender             : Male | Date of Birth: 4/5/2021
+  Father's Name      : Abdulrazak Umar
+  Mother's Name      : Aisha Umar
+  Primary Guardian   : Abdulrazak Umar
+  Contact Phone(s)   : 08062399312 / 08066126595
+  Residential Addr   : Gwazange
+  Status / Payment   : Verification: Pending | Tuition: Paid
+
+[35 / 55] ------------------------------------------------------------------------------------------------
+  Student Name       : Khadija Nasir Goga
+  Admission Number   : AIAA-B26-146
+  Class & Arm        : Basic 1 Green
+  Gender             : Female | Date of Birth: 14/8/2026
+  Father's Name      : Nasiru Abubakar
+  Mother's Name      : Aisha Ibrahim
+  Primary Guardian   : Nasiru Abubakar
+  Contact Phone(s)   : 08033352036 / 07039060606
+  Residential Addr   : Behind Buben Taololo Resident
+  Status / Payment   : Verification: Pending | Tuition: Pending
+
+[36 / 55] ------------------------------------------------------------------------------------------------
+  Student Name       : Muhammad Muzaffar Aliyu
+  Admission Number   : AIAA-B26-147
+  Class & Arm        : Basic 2 Gold
+  Gender             : Male | Date of Birth: 18/6/2020
+  Father's Name      : Aliyu Tukur Sani
+  Mother's Name      : Shamsiyya Muhammad Umar
+  Primary Guardian   : Aliyu Tukur Sani
+  Contact Phone(s)   : 07060754979 / 09163342358
+  Residential Addr   : Dayan Dawakin Sarki
+  Status / Payment   : Verification: Pending | Tuition: Pending
+
+[37 / 55] ------------------------------------------------------------------------------------------------
+  Student Name       : Halima Usman Mani
+  Admission Number   : AIAA-B26-148
+  Class & Arm        : Basic 1 Green
+  Gender             : Female | Date of Birth: 10/10/2019
+  Father's Name      : Usman Ibrahim Mani
+  Mother's Name      : Samira Usman
+  Primary Guardian   : Usman Ibrahim
+  Contact Phone(s)   : 08035043808
+  Residential Addr   : Tudun Wada Argungu
+  Status / Payment   : Verification: Pending | Tuition: Pending
+
+[38 / 55] ------------------------------------------------------------------------------------------------
+  Student Name       : Hauwa'u Abubakar Masha
+  Admission Number   : AIAA-B26-149
+  Class & Arm        : Nursery 1 Blue
+  Gender             : Female | Date of Birth: N/A
+  Father's Name      : Abubakar Masha
+  Mother's Name      : Maryam Abdullahi
+  Primary Guardian   : Alhj Aminu Bakin Tasha
+  Contact Phone(s)   : 08146196075 / 08069984774
+  Residential Addr   : Bakin Tasha Argungu
+  Status / Payment   : Verification: Pending | Tuition: Pending
+
+[39 / 55] ------------------------------------------------------------------------------------------------
+  Student Name       : Abdullahi Sufiyanu Abdullahi
+  Admission Number   : AIAA-B26-150
+  Class & Arm        : Basic 1 Blue
+  Gender             : Male | Date of Birth: 25/9/2021
+  Father's Name      : Sufiyanu Abdullahi
+  Mother's Name      : Aisha Usman Mari
+  Primary Guardian   : Usman Ibrahim Mari
+  Contact Phone(s)   : 08035043808 / 07030382025
+  Residential Addr   : Rugga Fulani Birnin Kebbi
+  Status / Payment   : Verification: Pending | Tuition: Pending
+
+[40 / 55] ------------------------------------------------------------------------------------------------
+  Student Name       : Abdulrashid Usman Mani
+  Admission Number   : AIAA-B26-151
+  Class & Arm        : Basic 1 Gold
+  Gender             : Male | Date of Birth: 01/4/2017
+  Father's Name      : Usman Ibrahim Mani
+  Mother's Name      : Luba Musa
+  Primary Guardian   : Usman Ibrahim Mani
+  Contact Phone(s)   : 08035043808
+  Residential Addr   : Tudun Wada Area
+  Status / Payment   : Verification: Pending | Tuition: Pending
+
+[41 / 55] ------------------------------------------------------------------------------------------------
+  Student Name       : Khalid Usman Mani
+  Admission Number   : AIAA-B26-152
+  Class & Arm        : Basic 2 Gold
+  Gender             : Male | Date of Birth: 10/10/2017
+  Father's Name      : Usman Ibrahim Mani
+  Mother's Name      : Samira Usman
+  Primary Guardian   : Usman Ibrahim Mani
+  Contact Phone(s)   : 08035043808
+  Residential Addr   : Tudun Wada Area
+  Status / Payment   : Verification: Pending | Tuition: Pending
+
+[42 / 55] ------------------------------------------------------------------------------------------------
+  Student Name       : Ibrahim Bashir Kangiwa
+  Admission Number   : AIAA-B26-153
+  Class & Arm        : Basic 2 Gold
+  Gender             : Male | Date of Birth: 30/9/2018
+  Father's Name      : Bashir Kangiwa
+  Mother's Name      : Hauwa'u Yusuf Kangiwa
+  Primary Guardian   : Bashir Garba Kangiwa
+  Contact Phone(s)   : 07038697593 / 07034321339
+  Residential Addr   : Dokajin Kabi Road
+  Status / Payment   : Verification: Verified | Tuition: Pending
+
+[43 / 55] ------------------------------------------------------------------------------------------------
+  Student Name       : Aisha Aminu Muhammad
+  Admission Number   : AIAA-B26-154
+  Class & Arm        : Basic 1 Blue
+  Gender             : Female | Date of Birth: 2018-06-24
+  Father's Name      : Aminu Muhammad
+  Mother's Name      : Umaima Isah
+  Primary Guardian   : Aminu Muhammad
+  Contact Phone(s)   : 08036547553 / 09038129476
+  Residential Addr   : Gwazange Argungu
+  Status / Payment   : Verification: Verified | Tuition: Paid
+
+[44 / 55] ------------------------------------------------------------------------------------------------
+  Student Name       : Abdulnasir Usman Sa'idu
+  Admission Number   : AIAA-B26-155
+  Class & Arm        : Basic 1 Diamond
+  Gender             : Male | Date of Birth: 12/11/2020
+  Father's Name      : Usman Sa'idu Argungu
+  Mother's Name      : Rukayya Yahayya
+  Primary Guardian   : Malan Usman Sa'idu Arg
+  Contact Phone(s)   : 08024104143 / 08060935680
+  Residential Addr   : T Wada Area Argungu
+  Status / Payment   : Verification: Pending | Tuition: Pending
+
+[45 / 55] ------------------------------------------------------------------------------------------------
+  Student Name       : Aisha Aliyu Mohd
+  Admission Number   : AIAA-B26-156
+  Class & Arm        : Basic 1 Diamond
+  Gender             : Female | Date of Birth: N/A
+  Father's Name      : Aliyu
+  Mother's Name      : Nafisa Yaro
+  Primary Guardian   : Aliyu
+  Contact Phone(s)   : 08062617141 / 08037060225
+  Residential Addr   : Gidan Justice
+  Status / Payment   : Verification: Pending | Tuition: Pending
+
+[46 / 55] ------------------------------------------------------------------------------------------------
+  Student Name       : Muhammad Ibrahim Dan Jumma
+  Admission Number   : AIAA-B26-157
+  Class & Arm        : Basic 1 Green
+  Gender             : Male | Date of Birth: N/A
+  Father's Name      : Ibrahim Dan Jumma
+  Mother's Name      : Maryam Sa Idu
+  Primary Guardian   : Ibrahim Dan Jumma
+  Contact Phone(s)   : 08064984651 / 08064984651
+  Residential Addr   : House NO 3 Dawakin Sarki
+  Status / Payment   : Verification: Pending | Tuition: Pending
+
+[47 / 55] ------------------------------------------------------------------------------------------------
+  Student Name       : Aisha Surajo
+  Admission Number   : AIAA-B26-158
+  Class & Arm        : Nursery 1 Green
+  Gender             : Female | Date of Birth: 1/1/2018
+  Father's Name      : Surajo Umar
+  Mother's Name      : Hadiza
+  Primary Guardian   : Yahaya Umar
+  Contact Phone(s)   : 08131877357 / 08060655940
+  Residential Addr   : Tudun Wada
+  Status / Payment   : Verification: Pending | Tuition: Pending
+
+[48 / 55] ------------------------------------------------------------------------------------------------
+  Student Name       : Umar Faruk Surajo
+  Admission Number   : AIAA-B26-159
+  Class & Arm        : Nursery 1 Gold
+  Gender             : Female | Date of Birth: 1/1/2020
+  Father's Name      : Surajo Umar
+  Mother's Name      : Hadiza
+  Primary Guardian   : Yahaya Umar
+  Contact Phone(s)   : 08131877357 / 08060655940
+  Residential Addr   : Tudun Wada
+  Status / Payment   : Verification: Pending | Tuition: Pending
+
+[49 / 55] ------------------------------------------------------------------------------------------------
+  Student Name       : Asiya Adamu Idris
+  Admission Number   : AIAA-B26-160
+  Class & Arm        : Basic 1 Diamond
+  Gender             : Female | Date of Birth: 3/4/2020
+  Father's Name      : Adamu Idris
+  Mother's Name      : Suwaiba Idris
+  Primary Guardian   : Adamu Idris
+  Contact Phone(s)   : 08035170179 / 08167827111
+  Residential Addr   : Bello Bayawa Road House NO 9
+  Status / Payment   : Verification: Pending | Tuition: Pending
+
+[50 / 55] ------------------------------------------------------------------------------------------------
+  Student Name       : Yahaya Surajo
+  Admission Number   : AIAA-B26-161
+  Class & Arm        : Nursery 1 Blue
+  Gender             : Male | Date of Birth: 1/1/2022
+  Father's Name      : Surajo Umar
+  Mother's Name      : Hadiza
+  Primary Guardian   : Yahaya Umar
+  Contact Phone(s)   : 08131877357 / 07068586992
+  Residential Addr   : Tudun Wada
+  Status / Payment   : Verification: Pending | Tuition: Pending
+
+[51 / 55] ------------------------------------------------------------------------------------------------
+  Student Name       : Muhammad Sani Shamsu
+  Admission Number   : AIAA-B26-162
+  Class & Arm        : Nursery 1 Blue
+  Gender             : Male | Date of Birth: 4/2/2021
+  Father's Name      : Shamsu Aliyu
+  Mother's Name      : Mariya Samaila
+  Primary Guardian   : Shamsu Aliyu
+  Contact Phone(s)   : 08149988984 / 09165228500
+  Residential Addr   : Gwazange
+  Status / Payment   : Verification: Pending | Tuition: Pending
+
+[52 / 55] ------------------------------------------------------------------------------------------------
+  Student Name       : Areef Kabiru Malami
+  Admission Number   : AIAA-B26-163
+  Class & Arm        : Nursery 1 Green
+  Gender             : Male | Date of Birth: 28/3/2023
+  Father's Name      : Kabiru Malami
+  Mother's Name      : Faiza Yakubu Magishiri
+  Primary Guardian   : Kabiru Malami
+  Contact Phone(s)   : 07039112367 / 09060867059
+  Residential Addr   : Rijiyar Bandado
+  Status / Payment   : Verification: Pending | Tuition: Pending
+
+[53 / 55] ------------------------------------------------------------------------------------------------
+  Student Name       : Al Amin Nafi'u
+  Admission Number   : AIAA-B26-164
+  Class & Arm        : Nursery 1 Blue
+  Gender             : Male | Date of Birth: 18/6/2023
+  Father's Name      : Nafiu
+  Mother's Name      : Asma'u
+  Primary Guardian   : Nafiu
+  Contact Phone(s)   : 08169872713 / 08169872713
+  Residential Addr   : Gwazange
+  Status / Payment   : Verification: Pending | Tuition: Pending
+
+[54 / 55] ------------------------------------------------------------------------------------------------
+  Student Name       : Muhammad Yusuf Majidadi
+  Admission Number   : AIAA-B26-165
+  Class & Arm        : Nursery 1 Blue
+  Gender             : Male | Date of Birth: 15/6/2022
+  Father's Name      : Yusuf Muhammad Majidadi
+  Mother's Name      : Firdausi Isah Jantullu
+  Primary Guardian   : Maji Dadi
+  Contact Phone(s)   : 07037388340 / 08133184643
+  Residential Addr   : Dawakin Sarki
+  Status / Payment   : Verification: Pending | Tuition: Pending
+
+[55 / 55] ------------------------------------------------------------------------------------------------
+  Student Name       : Fahad Abdullahi
+  Admission Number   : AIAA-B26-166
+  Class & Arm        : Basic 2 Gold
+  Gender             : Male | Date of Birth: 8/8/2019
+  Father's Name      : Abdullahi Ibrahim
+  Mother's Name      : Fatima Adamu
+  Primary Guardian   : Abdullahi Ibrahim
+  Contact Phone(s)   : 08139414616
+  Residential Addr   : Unguwar Malamai
+  Status / Payment   : Verification: Pending | Tuition: Pending
+
+
+========================================================================================================================
+SECTION 2: DIRECTORY OF COMPLETED PARENT PICKUP ID CARDS (THOSE ALREADY DONE — 205 STUDENTS)
+========================================================================================================================
+These 205 students already have verified Parent Pickup ID cards generated and saved in the folder:
+
+S/N  ADM NO          STUDENT FULL NAME               CLASS & ARM                   GUARDIAN NAME               EXISTING CARD FILENAME
+-----------------------------------------------------------------------------------------------------------------------------------------------------------
+1    AIAA-B26-007    Muhammad Imam Muhammad Bashir   Basic 2 Gold                  Hauwa'u Abubakar Kigo       Muh_d_Imam_muh_d_Bashir_N-3000.png
+2    AIAA-B26-023    Musa Lawal                      Nursery 1 Gold                Hadiza Musa                 Musa_Lawal_FORM-2026-003.png
+3    AIAA-B26-998    Maryam Ibrahim                  Nursery 1 Gold                Ibrahim Shu'aibu            Maryam_Ibrahim_FORM-2026-004.png
+4    AIAA-B26-1027   Aisha Murtala Marafa            Nursery 1 Gold                Murtala Sulaiman Marafa     Aisha_Murtala_Marafa_FORM-2026-005.png
+5    AIAA-B26-015    Amina Anas Augie                Nursery 1 Gold                Anas Adamu Augie            Amina_Anas_Augie_FORM-2026-006.png
+6    AIAA-B26-001    Maryam Mustapha Musa            Nursery 1 Gold                Mustapha Musa               Maryam_Mustapha_Musa_FORM-2026-007.png
+7    AIAA-B26-029    Ibrahim Ibrahim Zangina         Nursery 1 Gold                Farin Tanki Area            Ibrahim_Ibrahim_Zangina_FORM-2026-008.png
+8    AIAA-B26-019    Zainab Ibrahim                  Nursery 1 Gold                Ibrahim Sabon Garin Kanta   Zainab_Ibrahim_FORM-2026-011.png
+9    AIAA-B26-010    Saudat Bilyameen Bawa           Nursery 1 Gold                Bilyameen Bawa No.18 Kyang  Saudat_Bilyameen_Bawa_FORM-2026-013.png
+10   AIAA-B26-017    Yusuf Bashir Kangiwa            Nursery 1 Gold                Bashir Garba Kangiwa        Yusuf_Bashir_Kangiwa_FORM-2026-014.png
+11   AIAA-B26-016    Salamatu Muhammad Ibrahim       Nursery 1 Gold                Ibrahim Usman Manzo         Salamatu_Muhammad_Ibrahim_FORM-2026-015.png
+12   AIAA-B26-997    Hassana Ibrahim Shu'aibu        Nursery 1 Gold                Ibrahim Shuaibu Argungu     Hassana_Ibrahim_Shu_aibu_FORM-2026-016.png
+13   AIAA-B26-003    Aisha Abdulsalam Gande          Nursery 1 Gold                Alh Abdulsalam Gande        Aisha_AbdulSalam_Gande_FORM-2026-017.png
+14   AIAA-B26-1019   Aisha Lawal Maina               Nursery 1 Gold                Lawali Maina                Aisha_Lawal_Maina_FORM-2026-018.png
+15   AIAA-B26-020    Ahmad Salisu Sani               Nursery 1 Blue                Salisu Sani                 Ahmad_Salisu_Sani_FORM-2026-019.png
+16   AIAA-B26-018    Hauwa'u Sani                    Nursery 1 Gold                Farin Tanki Area Dawakin S  Hauwa_u_Sani_FORM-2026-020.png
+17   AIAA-B26-1023   Abubakar Lawal Bagudu           Basic 1 Silver                Lawal Bagudu                Abubakar_Lawal_Bagudu_FORM-2026-M9894.png
+18   AIAA-B26-008    Amaturahman Fahad Muhammad      Nursery 1 Gold                Fahad Muhammad              Amaturahman_Fahad_Muhammad_FORM-2026-M0851.png
+19   AIAA-B26-028    Fatima Sanusi Muhammad          Nursery 1 Blue                Sanusi Muhammad             Fatima_Sanusi_Muhammad_FORM-2026-M9655.png
+20   AIAA-B26-006    Yusuf Musa Magawata             Basic 1 Green                 Musa Magawata               Yusuf__Musa_Magawata_FORM-2026-M8246.png
+21   AIAA-B26-009    Salma Bint Umar                 Nursery 1 Gold                Shafa,atu Musa              Salma_Bint__Umar_FORM-2026-M1181.png
+22   AIAA-B26-064    Khalid Bin Umar                 Basic 1 Gold                  Shafa,atu Musa              Khalid_Bin_Umar_FORM-2026-M7417.png
+23   AIAA-B26-1029   Muhammad Abubakar               Nursery 1 Silver              Abubakar Ibrahim            Muhammad_Abubakar_FORM-2026-M8488.png
+24   AIAA-B26-1017   Bilkisu Hamza Dan Yammawa       Nursery 1 Silver              Nura Dan Yammawa            Bilkisu_Hamza_Dan_Yammawa_FORM-2026-M7957.png
+25   AIAA-B26-011    Fatima Abubakar                 Nursery 1 (unassigned) GeneralNura Muhammad Dan Yammawa   Fatima_Abubakar_FORM-2026-M7261.png
+26   AIAA-B26-027    Abdurrahman Alhassan Maishanu   Nursery 1 Gold                Alhassan Lawal              Abdurraham_Alhassan_Mai_Shanu_FORM-2026-M0946.png
+27   AIAA-B26-012    Abubakar Bello Bayawa           Nursery 1 Silver              Bello Bayawa                Abubakar__Bello_Bayawa_FORM-2026-M7539.png
+28   AIAA-B26-066    Zubairu Ansar Nasir             Basic 2 Gold                  Alhaji Nasir Muhammad       Zubairu_Ansar_Nasir_FORM-2026-M3225.png
+29   AIAA-B26-032    Yusuf Yunusa Muhammad           Nursery 1 Silver              Yunusa Muhammad             Yusuf__Yunusa_Muhammad_FORM-2026-M4622.png
+30   AIAA-B26-022    Nanah Khadija Nasir             Nursery 1 Silver              Alhaji Nasir Muhammad       Nanah_Khadija_Nasir_FORM-2026-M6275.png
+31   AIAA-B26-1015   Mohammad Nurudeen               Nursery 1 Silver              Nurudeen Mohammad           Mohammad_Nurudeen_FORM-2026-M4260.png
+32   AIAA-B26-013    Mukhtar Abdulmalik Tafarki      Nursery 1 Blue                Mukhtar Muhammad Tafarki    Mukhtar_Abdulmalik_Tafarki_FORM-2026-M1448.png
+33   AIAA-B26-014    Fadila Abubakar Muhammad        Basic 2 Gold                  Abubakar Muhammad           Fadila_Abubakar_Muhammad_FORM-2026-M7966.png
+34   AIAA-B26-1033   Abdulsalam Yakubu Adamu         Nursery 1 Silver              Yakubu Adamu Gulma          Abdulsalam_Yakubu_Adamu_FORM-2026-M6383.png
+35   AIAA-B26-983    Abdulrahman Adamu Garba         Nursery 1 Blue                Adamu Garba Argungu         Abdulrahman_Adamu_Garba_FORM-2026-M0295.png
+36   AIAA-B26-1026   Aisha Mustapha Sulaiman         Nursery 1 Silver              Sa'idu Sulaiman             Aisha_Mustapha_Sulaiman__FORM-2026-M5569.png
+37   AIAA-B26-004    Hafsat Haruna Hamdala           Nursery 1 Gold                Hassan Garba                HAFSAT_HARUNA_HAMDALA_FORM-2026-M0545.png
+38   AIAA-B26-072    Aliyu Abubakar Injiniya         Nursery 1 Green               Kwanar Makabarta            ALIYU_ABUBAKAR_INJINIYA_FORM-2026-M8291.png
+39   AIAA-B26-021    Ibrahim Abdulrahman             Nursery 1 Gold                Wasila Ibrahim Alkali       IBRAHIM_ABDULRAHMAN_FORM-2026-M0353.png
+40   AIAA-B26-002    Khadija Tijjani Fakkai          Basic 1 Gold                  Tijjani Musa Fakkai         KHADIJA_TIJJANI_FAKKAI_FORM-2026-M7602.png
+41   AIAA-B26-056    Aisha Yusuf Umar                Basic 1 Blue                  Muhammad Umar Barmu         Aisha_Yusuf_Umar_FORM-2026-M8949.png
+42   AIAA-B26-176    Yusuf Yusuf Umar                Nursery 1 Silver              Muhammad Umar Barmu         Yusuf_Yusuf_Umar_FORM-2026-M8229.png
+43   AIAA-B26-025    Habiba Murtala                  Nursery 1 Gold                Murtalah Saidu              HABIBA_Murtala_FORM-2026-M1074.png
+44   AIAA-B26-070    Amina Abdulmumin Shuaibu        Nursery 1 Blue                Sani Shu'Aib                AMINA_ABDUL_MUMIN_SHUAIBU_FORM-2026-M0960.png
+45   AIAA-B26-081    Zainab Ibrahim Musa             Nursery 1 Silver              Ibrahim Musa Gulma          ZAINAB_IBRAHIM_MUSA_FORM-2026-M4574.png
+46   AIAA-B26-1030   Hamida Mansur                   Basic 2 Gold                  Hanan Mansur                Hamida_Mansur_FORM-2026-M5771.png
+47   AIAA-B26-062    Haruna Haruna Musa              Basic 2 Gold                  Haruna Musa                 HARUNA_HARUNA_MUSA_FORM-2026-M9340.png
+48   AIAA-B26-077    Aliyu Haruna Musa               Basic 1 Diamond               Haruna Musa                 ALIYU_HARUNA_MUSA_FORM-2026-M6540.png
+49   AIAA-B26-089    Muhammad Kabir Kokani           Basic 1 Silver                Kabiru Abdullahi Sarkin     MUHAMMAD_KABIR_KOKANI_FORM-2026-M7760.png
+50   AIAA-B26-1006   Sulaiman Muktar Balarabe        Nursery 1 Silver              Muktar Balarabe             SULAIMAN_Muktar_Balarabe_FORM-2026-M5728.png
+51   AIAA-B26-174    Amina Haruna Musa               Nursery 1 Silver              Haruna Musa                 AMINA_HARUNA_MUSA_FORM-2026-M5397.png
+52   AIAA-B26-058    Muhammad Kabir Yusuf            Nursery 1 Gold                Kabiru Yusuf Balarabe       MUHAMMAD_KABIR_Yusuf_FORM-2026-M0972.png
+53   AIAA-B26-041    Abubakar Bashar Sani            Nursery 1 Gold                Bashar Sani                 ABUBAKAR_BASHAR_SANI_FORM-2026-M2956.png
+54   AIAA-B26-005    Hafsat Kabir Kokani             Nursery 1 Silver              Kabiru Abdullahi Sarki      HAFSAT_KABIR_KOKANI_FORM-2026-M4963.png
+55   AIAA-B26-170    Ummul Aiman Aminu               Nursery 1 Silver              Aminu Sani Arzika           Ummul_Aiman_Aminu_FORM-2026-M8184.png
+56   AIAA-B26-034    Aliyu Musa Haliru               Nursery 1 Silver              Asiya Abubakar              ALIYU_MUSA_HALIRU_FORM-2026-M4616.png
+57   AIAA-B26-031    Yusra Salihu Ahmad              Nursery 1 Green               Ramatu Abubakar             YUSRA_SALIHU_AHMAD_FORM-2026-M9880.png
+58   AIAA-B26-094    Khadija Muhammad Bello          Nursery 1 Silver              Bello Abubakar              KHADIJA_MUHAMMAD_BELLO_FORM-2026-M6498.png
+59   AIAA-B26-098    Khadija Anas Umar               Nursery 1 Gold                Anas Umar                   KHADIJA_ANAS_UMAR_FORM-2026-M3322.png
+60   AIAA-B26-172    Khadija A. Shehu                Nursery 1 Silver              Anas A. Shehu               KHADIJA_A._SHEHU_FORM-2026-M3638.png
+61   AIAA-B26-048    Adamu Yusuf Gulma               Nursery 1 Silver              Yusuf Sani Gulma            ADAMU_YUSUF_GULMA_FORM-2026-M4180.png
+62   AIAA-B26-024    Musa Muhammad Bello             Nursery 1 (unassigned) GeneralN/a                         MUSA_MUHAMMAD_BELLO_FORM-2026-M3351.png
+63   AIAA-B26-075    Aisha Bashir Ambursa            Basic 2 Gold                  Bashir Nasir Ambursa        AISHA_BASHIR_AMBURSA_FORM-2026-M5932.png
+64   AIAA-B26-178    Abdussamad Yahaya               Nursery 1 Silver              Yahaya Abubakar             ABDUSSAMAD_YAHAYA_FORM-2026-M9177.png
+65   AIAA-B26-026    Ibrahim Mansur                  Basic 1 Blue                  Mansur Yahuza               IBRAHIM_MANSUR_FORM-2026-M7803.png
+66   AIAA-B26-1016   Fatima Mubarak Illo             Nursery 1 Blue                Hamsa Ibrahim Illo          FATIMA_MUBARAK_ILLO_FORM-2026-M7231.png
+67   AIAA-B26-102    Fatima Yusuf Ladan              Nursery 1 (unassigned) GeneralZakariyyau Maishanu         FATIMA_YUSUF_LADAN_FORM-2026-M0502.png
+68   AIAA-B26-1034   Sa'Id Murtala Idris             Nursery 1 Silver              Murtala Idris               Sa_id_Murtala__Idris_FORM-2026-M7641.png
+69   AIAA-B26-036    Muhammad Bashir Ambursa         Nursery 1 Gold                Bashir Nasir Ambursa        MUHAMMAD_BASHIR_AMBURSA_FORM-2026-M2689.png
+70   AIAA-B26-087    Khadija Yakubu Abubakar         Nursery 1 Blue                Yakubu Abubakar             KHADIJA_YAKUBU_ABUBAKAR_FORM-2026-M1835.png
+71   AIAA-B26-171    Zubairu Nura Dankanawa          Nursery 1 Blue                Nura Dan-Kanawa             ZUBAIRU_NURA_DANKANAWA_FORM-2026-M3141.png
+72   AIAA-B26-104    Hussaini Shuaibu Ladan          Basic 1 Blue                  Shuaibu Yakubu Ladan        Hussaini_Shuaibu_Ladan_FORM-2026-M6808.png
+73   AIAA-B26-060    Maryam Tukur Majidadi           Nursery 1 Blue                Musa Bagaye                 MARYAM_TUKUR_MAJIDADI_FORM-2026-M1273.png
+74   AIAA-B26-033    Suleiman Isah Hamisu            Basic 1 Silver                Amina Salihu Haruna         Suleiman_Isah_Hamisu_FORM-2026-M6888.png
+75   AIAA-B26-180    Muhammadu Inuwa Akilu           Nursery 1 Green               Akilu Abdullahi             Muhammadu_Inuwa_Akilu_FORM-2026-M9775.png
+76   AIAA-B26-184    Amna Ibn Aliyu Abubakar         Nursery 1 Gold                Ramatu Abubakar             AMNA_IBN_ALIYU_ABUBAKAR_FORM-2026-M1715.png
+77   AIAA-B26-167    Hamida Abdulmajid               Basic 1 Blue                  Abubakar Suleiman           Hamida_Abdulmajid_FORM-2026-M3240.png
+78   AIAA-B26-030    Abdulrahaman Zakariya'u MaishanuNursery 1 Silver              Zakariya'u Maishanu         ABDULRAHAMAN_ZAKARIYA_U_MAISHANU_FORM-2026-M6016.png
+79   AIAA-B26-189    Hayat Abubakar                  Nursery 1 Silver              Rabi Muhammad Sama          HAYAT_ABUBAKAR_FORM-2026-M5756.png
+80   AIAA-B26-1020   Ismail Suleiman Mai-Yaki        Nursery 1 Blue                Suleman Sama'ila            Ismail_Suleiman_Mai-yaki_FORM-2026-M7422.png
+81   AIAA-B26-085    Amina Aminu Dalhatu             Nursery 1 Blue                Hadiza Garba                AMINA_AMINU_DALHATU_FORM-2026-M3397.png
+82   AIAA-B26-092    Zainab Murtala Zaki             Nursery 1 Silver              Murtala Abubakar Zaki       ZAINAB_MURTALA_ZAKI_FORM-2026-M9286.png
+83   AIAA-B26-1031   Abdul Rahman Mansur             Nursery 1 Blue                Fairin Tanki                ABDUL_RAHMAN_MANSUR_FORM-2026-M7805.png
+84   AIAA-B26-183    Khadijah Nura Musa              Basic 1 Diamond               Ali Nura Musa               KHADIJAH_NURA_MUSA_FORM-2026-M9279.png
+85   AIAA-B26-168    Abdul-Gaffar Tukur Abubakar     Basic 1 (unassigned) General  Tukur Abubakar              Abdul-Gaffar_Tukur_Abubakar_FORM-2026-M8917.png
+86   AIAA-B26-188    Nana Khadija Abubakar           Basic 2 Gold                  Abubakar Maiyau             NANA_KHADIJA_ABUBAKAR_FORM-2026-M8729.png
+87   AIAA-B26-182    Abdulhamid Nuraddeen            Basic 2 Gold                  Nuraddeen Muhammad Yeldu    ABDULHAMID_NURADDEEN_FORM-2026-M1170.png
+88   AIAA-B26-186    Nuhu Umar Madawaki              Basic 1 Green                 Dr. Umar Farouk Mohammed    NUHU_UMAR_MADAWAKI_FORM-2026-M8061.png
+89   AIAA-B26-035    Muhammad Yusuf                  Basic 1 Silver                Yusuf Adamu Gulma           Muhammad_Yusuf_FORM-2026-M7494.png
+90   AIAA-B26-073    Sulaiman Tahir Sama             Basic 2 Gold                  Tahir Muhammed Sama         SULAIMAN_TAHIR_SAMA_FORM-2026-M8692.png
+91   AIAA-B26-187    Abdurrahman Abdullahi           Basic 1 Diamond               Abdullahi Sama'ila Baraya   Abdurrahman_Abdullahi_FORM-2026-M7088.png
+92   AIAA-B26-985    Salim Murtala Shuaibu           Basic 2 Gold                  Murtala Shuaibu Tiggi       SALIM_MURTALA_SHUAIBU_FORM-2026-M9690.png
+93   AIAA-B26-190    Yusuf Shuaibu Magaji            Nursery 1 Blue                Shuaibu Magaji              Yusuf_Shuaibu_Magaji_FORM-2026-M0465.png
+94   AIAA-B26-989    Sa'Adatu Aliyu                  Nursery 1 Green               Aliyu Isiyaka               Sa_adatu_Aliyu_FORM-2026-M2260.png
+95   AIAA-B26-986    Zainab Adamu                    Nursery 1 Gold                Ado Marhaba's Residence     Zainab_Adamu_FORM-2026-M6416.png
+96   AIAA-B26-185    Muhammad Salihu Ahmad           Basic 2 Gold                  Ramatu Abubakar             Muhammad__Salihu_Ahmad_FORM-2026-M6292.png
+97   AIAA-B26-987    Abdul Aziz Jibril               Nursery 1 Green               Jibril Aliyu                Abdul_Aziz_Jibril_FORM-2026-M2323.png
+98   AIAA-B26-039    Hauwau Abdullahi                Nursery 1 Silver              Abdullahi Musa Argungu      Hauwau_Abdullahi_FORM-2026-M8795.png
+99   AIAA-B26-988    Abdurrahman Aliyu Tukur         Nursery 1 Green               Adamu Aliyu                 Abdurrahman_Aliyu_Tukur_FORM-2026-M0751.png
+100  AIAA-B26-1000   Aliyu Kabiru Abdullahi          Nursery 1 Silver              Kabiru Abdullahi            Aliyu_Kabiru_Abdullahi_FORM-2026-M5821.png
+101  AIAA-B26-037    Mazeedat Abdulrahman            Nursery 1 Green               Abdulrahman Lawal           Mazeedat_Abdulrahman_FORM-2026-M1251.png
+102  AIAA-B26-992    Fatima Basiru Ladan             Nursery 1 Silver              Mubarak Ladan               Fatima__Basiru_Ladan_FORM-2026-M5348.png
+103  AIAA-B26-169    Muhammad Abdulrahman            Basic 1 Green                 Abdulrahman Lawal           Muhammad_Abdulrahman_FORM-2026-M7195.png
+104  AIAA-B26-994    Fatima Umar Madawaki            Nursery 1 Green               Ramatu Muhammad Kangiwa     Fatima__Umar_Madawaki_FORM-2026-M0116.png
+105  AIAA-B26-192    Suleiman Yusuf Yakubu           Basic 2 Gold                  Yusuf Yakubu                Suleiman__Yusuf_Yakubu_FORM-2026-M7977.png
+106  AIAA-B26-038    Al-Amin Muhammad Mahadi         Basic 2 (unassigned) General  Mahadi Abubakar             Al-amin_Muhammad_Mahadi_FORM-2026-M8918.png
+107  AIAA-B26-050    Aisha Musa Haliru               Basic 2 Gold                  Asiya Abubakar              Aisha__Musa_Haliru_FORM-2026-M8373.png
+108  AIAA-B26-993    Zubairu Ansar Nasir Muhammad    Basic 2 (unassigned) General  Nasir Muhammad              Zubairu_Ansar_Nasir_Muhammad__FORM-2026-M3986.png
+109  AIAA-B26-1024   Hauwa'u Ahmed Abubakar          Basic 2 Gold                  Mustafa Ahmed               Hauwa_u__Ahmed_Abubakar__FORM-2026-M5437.png
+110  AIAA-B26-193    Musa Ahmed Goje                 Nursery 1 Silver              Ahmed Goje                  Musa_Ahmed_Goje_FORM-2026-M3734.png
+111  AIAA-B26-1007   Jafar M. Muhammad               Nursery 1 Green               Suleiman Samaila            Jafar__M._Muhammad_FORM-2026-M6131.png
+112  AIAA-B26-999    Abdulrahman Bello El-Yakub      Nursery 1 Green               Bello El-Yakub              Abdulrahman_Bello_El-yakub_FORM-2026-M3854.png
+113  AIAA-B26-191    Hamza Abubakar                  Basic 1 Green                 Alh Lawali Yeldu            Hamza_Abubakar_FORM-2026-M7232.png
+114  AIAA-B26-1003   Maryam Nuraddeen                Basic 1 Blue                  Nuraddeen Hashim            Maryam__Nuraddeen__FORM-2026-M4973.png
+115  AIAA-B26-990    Maimuna Sama'ila                Basic 1 Gold                  Sama'ila Lamne Bubuche      Maimuna_Sama_ila_FORM-2026-009.png
+116  AIAA-B26-991    Faruk Umar Madawaki             Basic 2 Gold                  Laila Muhammad Kangiwa      Faruk_Umar_Madawaki_FORM-2026-010.png
+117  AIAA-B26-982    Ibrahim Ibrahim Illo            Basic 1 Blue                  Ibrahim Illo                Ibrahim_Ibrahim_Illo_FORM-2026-M1982.png
+118  AIAA-B26-490    Balkisu Abubakar                Basic 1 (unassigned) General  Abubakar Muhammad           Balkisu_Abubakar_FORM-2026-M1490.png
+119  AIAA-B26-755    Aisha Lukman Isah               Basic 1 Blue                  Lukman Isah                 Aisha_Lukman_Isah_FORM-2026-M3755.png
+120  AIAA-B26-312    Aisha Bello Bayawa              Basic 1 Blue                  Bello Bayawa                Aisha_Bello_Bayawa_FORM-2026-M5312.png
+121  AIAA-B26-720    Aisha Yunusa Muhammad           Basic 1 Gold                  Yanusa Muhammad             Aisha_Yanusa_Muhammad_FORM-2026-M1720.png
+122  AIAA-B26-209    Amatu-Mannan Abubakar Torankawa Basic 1 Silver                Abubakar Hashimu Torankawa  Amatu-Mannan_Abubakar_Torankawa_FORM-2026-M1209.png
+123  AIAA-B26-124    Abdulmalik Yakubu Adamu         Basic 2 Gold                  Yakubu Adamu Gulma          Abdulmalik_Yakubu_Adamu_FORM-2026-M5124.png
+124  AIAA-B26-674    Ummulkhairi Anas                Basic 1 Green                 Anas Abubakar               UmmulKhairi_Anas_FORM-2026-M4674.png
+125  AIAA-B26-083    Hauwa'u Al-Mustapha             Basic 1 Gold                  Al Mustapha Yusuf           HAUWA_U_AL-MUSTAPHA_FORM-2026-M3361.png
+126  AIAA-B26-100    Aareef Ibni-Aliyu Abubakar      Basic 1 Gold                  Aliyu Abubakar              AAREEF_IBNI-ALIYU_ABUBAKAR_FORM-2026-M1378.png
+127  AIAA-B26-717    Hauwau Hamisu                   Basic 1 Blue                  Hamisu Ango                 Hauwau_Hamisu_FORM-2026-M3717.png
+128  AIAA-B26-054    Khadija Isah Hali               Basic 1 Blue                  Isah Hali                   KHADIJA_ISAH_HALI_FORM-2026-M2479.png
+129  AIAA-B26-899    Fatima Nafiu Aliyu              Basic 1 Green                 Nafiu Aliyu Argungu         FATIMA_NAFIU_ALIYU_FORM-2026-M5899.png
+130  AIAA-B26-173    Ameenah Imrana Sama             Basic 1 Silver                Muhammad Imrana Sama        AMEENAH_IMRANA_SAMA_FORM-2026-M5131.png
+131  AIAA-B26-277    Abbas Yusuf                     Basic 1 Silver                Yusuf Adamu Gulma           ABBAS_YUSUF_FORM-2026-M3277.png
+132  AIAA-B26-454    Ibrahim Shuaibu Magaji          Basic 1 Diamond               Shuaibu Magaji              Ibrahim_shuaibu_Magaji_FORM-2026-M0454.png
+133  AIAA-B26-090    Maimunatu Murtala Idris         Basic 2 Gold                  Murtala Idris               Maimunatu_Murtala_Idris_FORM-2026-M3090.png
+134  AIAA-B26-047    Jamila Aminu Dalhatu            Basic 1 Silver                Aminu Dalhatu               Jamila_Aminu_Dalhatu_FORM-2026-M1768.png
+135  AIAA-B26-658    Muhammad Bashar Mubarak Yakubu MaiarewaBasic 1 Silver                Mubarak Yakubu Maiarewa     Muhammad_Bashar_Mubarak_Yakubu_Maiarewa_FORM-2026-M2658.png
+136  AIAA-B26-175    Hassana Ibrahim Mu'Azu          Basic 1 Gold                  Ibrahim Mu'Azu              Hassana_Ibrahim_Mu_azu_FORM-2026-M0370.png
+137  AIAA-B26-079    Hussaini Ibrahim Mu'Azu         Basic 1 Green                 Ibrahim Mu'Azu              Hussaini_Ibrahim_Mu_azu_FORM-2026-M3792.png
+138  AIAA-B26-068    Sumayya Abdullahi               Basic 2 Gold                  Abdullahi Umar              Sumayya_Abdullahi_Umar_FORM-2026-M5068.png
+139  AIAA-B26-179    Ummulkhairi A Bashar            Basic 1 Silver                Hussaini Arzika             Ummulkhairi_A_Bashar_FORM-2026-M0074.png
+140  AIAA-B26-827    Sa'Id Nura Musa                 Basic 1 Blue                  Nura Musa                   Sa_id_Nura_Musa_FORM-2026-M3827.png
+141  AIAA-B26-115    Al-Amin Aliyu Sani              Basic 1 Green                 Aliyu Sani                  Al-Amin_Aliyu_sani_FORM-2026-M5115.png
+142  AIAA-B26-096    Asma'u Aliyu Musa               Basic 1 Gold                  Aliyu Musa                  Asma_u_Aliyu_Musa_FORM-2026-002.png
+143  AIAA-B26-996    Bashar Yusuf Yakubu             Basic 1 Silver                Yusuf Yakubu                Bashar_Yusuf_Yakubu_FORM-2026-012.png
+144  AIAA-B26-995    Hassan Shuaibu                  Basic 1 Diamond               Shuaibu Yakubu Ladan        Hassan_Shuaibu_FORM-2026-M1525.png
+145  AIAA-B26-040    Khalid Abdul'Aziz               Basic 1 Gold                  Abdul'Aziz Aminu            Khalid__Abdul_aziz_FORM-2026-M7301.png
+146  AIAA-B26-1002   Maryam Lawal Maishanu           Basic 1 Gold                  Lawal Labbo Maishanu        MARYAM_LAWAL_MAISHANU_FORM-2026-M0614.png
+147  AIAA-B26-1001   Ibrahim Sahabi                  Basic 1 Gold                  Zara'u Abubakar             Ibrahim_Sahabi_FORM-2026-M9779.png
+148  AIAA-B26-042    Fatima Zayyanu Bello            Basic 1 Silver                Zayyanu Bello               Fatima__Zayyanu_Bello_FORM-2026-M3155.png
+149  AIAA-B26-1014   Amina Yakubu Abubakar           Basic 1 Silver                Yakubu Abubakar             Amina__Yakubu_Abubakar__FORM-2026-M4569.png
+150  AIAA-B26-984    Nana Raudat Anas Ahmed          Basic 1 Green                 Anas Ahmed                  Nana_Raudat_Anas_Ahmed_FORM-2026-M6613.png
+151  AIAA-B26-043    Abdulhakim Yusuf                Nursery 1 Green               Yusuf Adamu Gulma           Abdulhakim__Yusuf_FORM-2026-M7562.png
+152  AIAA-B26-044    Salim Kabir Danmaliki           Basic 1 Silver                Kabiru Musa Danmaliki       Salim__Kabir_Danmaliki_FORM-2026-M6801.png
+153  AIAA-B26-045    Hauwa'u Adamu Gulma             Basic 1 Diamond               Adamu Gulma                 Hauwa_u_Adamu_Abdullahi_gulma_FORM-2026-M0841.png
+154  AIAA-B26-046    Umma Salma Suleman              Basic 1 Silver                Suleman Abubakar            Umma_Salma_Suleman_FORM-2026-M2891.png
+155  AIAA-B26-049    Muhammad Nasiru Illo            Basic 1 Silver                Nasiru Ibrahim Illo         Muhammad_Nasiru_Illo_FORM-2026-M3307.png
+156  AIAA-B26-051    Zalihatu Surajo Ibrahim         Basic 1 Silver                Surajo Illo                 Zalihatu_Surajo_ibrahim_FORM-2026-M0547.png
+157  AIAA-B26-1004   Maryam Sa'Ad                    Nursery 1 Green               Dr Sa'Ad                    Maryam__Sa_ad__FORM-2026-M4732.png
+158  AIAA-B26-1008   Zainab Aliyu Abdulhamid         Nursery 1 Green               Aliyu Abdulhamid            Zainab__Aliyu_Abdulhamid_FORM-2026-M5604.png
+159  AIAA-B26-053    Musaddiq Tukur Abubakar         Nursery 1 Gold                Tukur Abubakar              Musaddiq_Tukur_Abubakar_FORM-2026-M4325.png
+160  AIAA-B26-1012   Ahmed Abubakar                  Basic 1 Gold                  Abubakar Sani               Ahmed_Abubakar__FORM-2026-M5930.png
+161  AIAA-B26-055    Rahima Yusuf                    Nursery 1 Blue                Yusuf Adamu Gulma           Rahima_Yusuf_FORM-2026-M2761.png
+162  AIAA-B26-057    Al-Kasim Yusuf Adamu            Basic 1 Green                 Yusuf Adamu Gulma           Al-kasim__yusuf_adamu_FORM-2026-M2261.png
+163  AIAA-B26-1010   Rahama A Muhammad               Nursery 1 Green               Bello Garba                 Rahama_A_Muhammad__FORM-2026-M1527.png
+164  AIAA-B26-1009   Mus'Ab A Muhammad               Basic 2 Gold                  Bello Garba                 Mus_ab_A_Muhammad__FORM-2026-M6786.png
+165  AIAA-B26-059    Balkisu Musa Illo               Nursery 1 Green               Musa Ibrahim Illo           Balkisu_Musa_Illo_FORM-2026-M8886.png
+166  AIAA-B26-1025   Amina Yusuf Tafarki             Nursery 1 Green               Yusuf Mohammad Tafarki      Amina_Yusuf_Tafarki_FORM-2026-M7838.png
+167  AIAA-B26-061    Khadija Rilwanu                 Nursery 1 Blue                Mubarak Halliru             Ummusalma_Mubarak_FORM-2026-M3423.png
+168  AIAA-B26-1018   Salamatu Ibrahim Adam           Nursery 1 Green               Maryam Abdulkadir Gulma     Salamatu_Ibrahim_Adam_FORM-2026-M7188.png
+169  AIAA-B26-063    Ibrahim Musa Illo               Basic 1 Green                 Musa Ibrahim Illo           Ibrahim__Musa_illo_FORM-2026-M5386.png
+170  AIAA-B26-065    Zubaida Lawal Usman             Nursery 1 Green               Ibrahim Lawal Usman         Zubaida__Lawal_Usman__FORM-2026-M3808.png
+171  AIAA-B26-067    Abdul-Aziz Isma'Il Yeldu        Nursery 1 Green               Sama'ila Musa Yeldu         Abdul-aziz_Isma_il_Yeldu_FORM-2026-M6966.png
+172  AIAA-B26-069    Musa Suleman                    Nursery 1 Green               Fatima Bello                Musa__Suleman_FORM-2026-M6834.png
+173  AIAA-B26-071    Ibrahim Usman                   Basic 1 Green                 Usman Salihu                Ibrahim__Usman_FORM-2026-M8225.png
+174  AIAA-B26-1028   Aliyu Haidar Mansur             Nursery 1 Green               Mansur Nuraddeen Ahmad      Aliyu_Haidar_mansur_FORM-2026-M5581.png
+175  AIAA-B26-074    Muhammad Bashar Galaudu         Basic 1 Silver                Muazu Tsalha                Muhammad__Bashar_galaudu_FORM-2026-M8509.png
+176  AIAA-B26-177    Fatima Umar Abubakar            Nursery 1 Green               Umar Abubakar               Fatima__Umar_Abubakar__FORM-2026-M9043.png
+177  AIAA-B26-1022   Maimuna Mustafa                 Nursery 1 Green               Mustafa Sani                Maimuna__Mustafa__FORM-2026-M5536.png
+178  AIAA-B26-076    Idris Mahmud Idris              Nursery 1 Blue                Mahmud Idris Kampala        Idris_Mahmud_idris_FORM-2026-M4801.png
+179  AIAA-B26-1021   Musaddiq Mustapha               Nursery 1 Green               Mustapha Sani               Musaddiq_Mustapha_FORM-2026-M3683.png
+180  AIAA-B26-1011   Salim Murtala Aliyu             Basic 1 Gold                  Yusuf Murtala Aliyu         Salim__Murtala_Aliyu_FORM-2026-M3017.png
+181  AIAA-B26-1005   Abdullahi Shaaibu Gulma         Basic 2 Gold                  Shu'aibu Abdullahi Gulma    Abdullahi_Shaaibu_Gulma_FORM-2026-M1157.png
+182  AIAA-B26-1032   Abubakar Shaaibu Gulma          Basic 1 Diamond               Shu'aibu Abdullahi Gulma    Abubakar__Shaaibu_Gulma__FORM-2026-M8909.png
+183  AIAA-B26-078    Sama'ila Aliyu Muhammad Merah   Basic 2 Gold                  Aliyu Mera                  Sama_ila__Aliyu_Muhammad_Merah_FORM-2026-M7986.png
+184  AIAA-B26-080    Musa Aliyu Muhammad Mera        Basic 1 Gold                  Aliyu Muhammad              Musa_Aliyu_Muhammad_Mera_FORM-2026-M1124.png
+185  AIAA-B26-082    Ramlat Aliyu Muhammad Merah     Nursery 1 Gold                Aliyu Mera                  Ramlat_Aliyu_Muhammad_Merah_FORM-2026-M9154.png
+186  AIAA-B26-084    Aisha Nuhu Zamawa               Basic 2 Gold                  Ha Rahi Bagudu              Aisha__Nuhu_Zamawa_FORM-2026-M4783.png
+187  AIAA-B26-086    Suleiman Abubakar               Basic 1 Diamond               Abubakar Yakubu             Suleiman__Abubakar__FORM-2026-M3273.png
+188  AIAA-B26-1013   Sani Abubakar                   Basic 2 Gold                  Abubakar Sani               Sani_Abubakar__FORM-2026-M0979.png
+189  AIAA-B26-088    Najamuddin Aminu Jafar          Basic 1 Diamond               Aminu Jafar                 Najamuddin_Aminu_Jafar_FORM-2026-M4220.png
+190  AIAA-B26-091    Umar Bilyamin                   Nursery 1 Green               Bilyamin Adamu              Umar__Bilyamin_FORM-2026-M3892.png
+191  AIAA-B26-093    Adamu Bilyamin                  Basic 1 Green                 Bilyamin Adamu              Adamu__Bilyamin_FORM-2026-M5776.png
+192  AIAA-B26-181    Abubakar Murtala Zaki           Basic 2 Gold                  Murtala Abubakar Zaki       Abubakar__Murtala_zaki_FORM-2026-M7568.png
+193  AIAA-B26-095    Aisha Abubakar                  Basic 1 Gold                  Abubakar Abdullahi          Aisha__Abubakar__FORM-2026-M0107.png
+194  AIAA-B26-097    Fatima Helwa Nazifi             Basic 2 Gold                  Fatima Saidu                Fatima_Helwa_nazifi_FORM-2026-M4446.png
+195  AIAA-B26-099    Aminu Umar Naamore              Nursery 1 Silver              Umar Naamore                Aminu__Umar_naamore_FORM-2026-M1224.png
+196  AIAA-B26-101    Muhammad Bashar Suleiman        Nursery 1 Silver              Bashar Suleiman             Muhammad__Bashar_suleiman__FORM-2026-M7263.png
+197  AIAA-B26-103    Fatima Mahmud Sama              Basic 1 Gold                  Mahmud Muhammad Sama        Fatima__Mahmud_sama_FORM-2026-M7576.png
+198  AIAA-B26-105    Hauwa Kabir Sani                Basic 1 Blue                  Kabiru Sani Argungu         Hauwa__Kabir_FORM-2026-M8030.png
+199  AIAA-B26-106    Michelle Kuve Joel              Nursery 1 Green               Joel Muyi                   Michelle_kuveh_Joel_kuveh_Joel_FORM-2026-M6378.png
+200  AIAA-B26-107    Zalihat Bashir                  Nursery 1 Blue                Bashir Alasan               Zalihat_Bashir_FORM-2026-M9333.png
+201  AIAA-B26-108    Aisha Sama'ila Tafarki          Basic 1 Gold                  Sama'ila Tafarki            Aisha_Sama_ila_Tafarki_FORM-2026-M7124.png
+202  AIAA-B26-109    Bello Sama'ila Tafarki          Basic 1 Gold                  Sama'ila Tafarki            Bello__Sama_ila_Tafarki__FORM-2026-M5737.png
+203  AIAA-B26-110    Al-Amin Almustapha              Nursery 1 Silver              Almustapha Abubakar         Al-amin_Almustapha_FORM-2026-M3530.png
+204  AIAA-B26-111    Abubakar Almustapha             Basic 2 Gold                  Almustapha Abubakar         Abubakar__Almustapha__FORM-2026-M9119.png
+205  AIAA-B26-136    Abdulmalik Yakubu Abubakar      Basic 1 Gold                  Yakubu Abubakar             Abdulmalik_yakubu_Abubakar_FORM-2026-M0599.png
+
+========================================================================================================================
+SECTION 3: AUDIT OF EXTRA / UNASSIGNED CARD FILES IN ARCHIVE FOLDER (2 FILES)
+========================================================================================================================
+These 2 card files exist in the folder but do not correspond to active students in the current 260 register:
+
+1. Filename: Adnan_Abubakar_Torankawa_FORM-2026-M9321.png
+   Card Name   : Adnan Abubakar Torankawa
+   Form Number : FORM-2026-M9321
+   Audit Status: Sibling of enrolled student Amatu-Mannan Abubakar Torankawa (AIAA-B26-209).
+                 Not currently registered as an active student in the 260 academic roster.
+
+2. Filename: Suleiman_Ahmad_Rufai_FORM-2026-M7607.png
+   Card Name   : Suleiman Ahmad Rufai
+   Form Number : FORM-2026-M7607
+   Audit Status: Enrolled under Nursery 1 Silver in early intake, subsequently withdrawn/removed.
+                 Not listed in the 260 active student register.
+
+========================================================================================================================
+                                                  END OF AUDIT REPORT                                                   
+========================================================================================================================
