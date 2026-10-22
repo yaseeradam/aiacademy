@@ -161,6 +161,12 @@ export default function StudentOfTheMonthModal({
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
+  const cleanStudentName = (firstName: string, lastName: string) => {
+    return `${firstName || ''} ${lastName || ''}`
+      .replace(/([a-zA-Z]),([a-zA-Z])/g, "$1'$2")
+      .trim();
+  };
+
   // Initialize winners with first 5-9 students on first open if empty
   useEffect(() => {
     if (students && students.length > 0) {
@@ -182,7 +188,7 @@ export default function StudentOfTheMonthModal({
               defaultTitle: title,
               arabicTitle: arabicTitle,
               studentId: s.id,
-              studentName: `${s.firstName} ${s.lastName}`.trim(),
+              studentName: cleanStudentName(s.firstName, s.lastName),
               studentClass: cls,
               photoUrl: s.photo || '',
             };
@@ -224,7 +230,7 @@ export default function StudentOfTheMonthModal({
           defaultTitle: newTitle,
           arabicTitle: newArabic,
           studentId: student.id,
-          studentName: `${student.firstName} ${student.lastName}`.trim(),
+          studentName: cleanStudentName(student.firstName, student.lastName),
           studentClass: cls,
           photoUrl: student.photo || '',
         }
@@ -250,7 +256,7 @@ export default function StudentOfTheMonthModal({
             defaultTitle: title,
             arabicTitle: arabicTitle,
             studentId: s.id,
-            studentName: `${s.firstName} ${s.lastName}`.trim(),
+            studentName: cleanStudentName(s.firstName, s.lastName),
             studentClass: cls,
             photoUrl: s.photo || '',
           };
@@ -283,7 +289,7 @@ export default function StudentOfTheMonthModal({
     // Dimensions based on mode
     const is5Card = layoutMode === '5-card';
     const W = 2400;
-    const H = is5Card ? 1500 : 1680;
+    const H = is5Card ? 1500 : 1720;
 
     canvas.width = W;
     canvas.height = H;
@@ -805,8 +811,16 @@ export default function StudentOfTheMonthModal({
     // 7. 3D GOLDEN RIBBON BANNER
     // ==========================================
     const bannerCenterY = headerY + 118;
-    const bannerW = 1280;
-    const bannerH = 82;
+    const bannerH = 84;
+
+    const mainBannerTitle = monthYear 
+      ? `STUDENTS OF THE MONTH • ${monthYear.toUpperCase()}`
+      : 'STUDENTS OF THE MONTH';
+
+    ctx.font = '900 38px "Cinzel", "Times New Roman", serif';
+    ctx.letterSpacing = '4px';
+    const measuredBannerTextW = ctx.measureText(mainBannerTitle).width;
+    const bannerW = Math.max(1360, measuredBannerTextW + 180);
     const bannerX = W / 2 - bannerW / 2;
 
     ctx.save();
@@ -898,10 +912,6 @@ export default function StudentOfTheMonthModal({
 
     // D. Ribbon Embossed Title: "STUDENTS OF THE MONTH • [MONTH YEAR]"
     ctx.textAlign = 'center';
-    const mainBannerTitle = monthYear 
-      ? `STUDENTS OF THE MONTH • ${monthYear.toUpperCase()}`
-      : 'STUDENTS OF THE MONTH';
-
     ctx.font = '900 38px "Cinzel", "Times New Roman", serif';
     ctx.letterSpacing = '4px';
 
@@ -1166,11 +1176,11 @@ export default function StudentOfTheMonthModal({
       // ==========================================
       // STUDENT NAME PILL (Midnight Navy + Gold Rim)
       // ==========================================
-      const pillMargin = isSmallMode ? 10 : 14;
+      const pillMargin = isSmallMode ? 8 : 14;
       const pillW = innerCardW - 2 * pillMargin;
-      const pillH = isSmallMode ? 42 : 48;
+      const pillH = isSmallMode ? 40 : 48;
       const pillX = innerCardX + pillMargin;
-      const pillY = photoY + photoH + (isSmallMode ? 10 : 16);
+      const pillY = photoY + photoH + (isSmallMode ? 9 : 16);
       const pillR = pillH / 2;
 
       ctx.save();
@@ -1195,21 +1205,34 @@ export default function StudentOfTheMonthModal({
       ctx.lineWidth = 2.2;
       ctx.stroke();
 
-      // Student Name Text
+      // Sanitize student name (fix comma typos like "Muh,d" -> "Muh'd")
+      const rawName = role.studentName || 'STUDENT NAME';
+      const sanitizedName = rawName
+        .replace(/([a-zA-Z]),([a-zA-Z])/g, "$1'$2")
+        .trim()
+        .toUpperCase();
+
+      // Dynamic font sizing for student name to prevent pill edge collision
+      let nameFontSize = isSmallMode ? 15 : 18;
+      ctx.font = `bold ${nameFontSize}px "Montserrat", "Arial", sans-serif`;
+      const maxTextWidth = pillW - 16;
+      const textW = ctx.measureText(sanitizedName).width;
+
+      if (textW > maxTextWidth) {
+        nameFontSize = Math.max(isSmallMode ? 11 : 13, Math.floor(nameFontSize * (maxTextWidth / textW)));
+        ctx.font = `bold ${nameFontSize}px "Montserrat", "Arial", sans-serif`;
+      }
+
       ctx.textAlign = 'center';
       ctx.fillStyle = '#ffffff';
-      ctx.font = isSmallMode
-        ? 'bold 16px "Montserrat", "Arial", sans-serif'
-        : 'bold 18px "Montserrat", "Arial", sans-serif';
-      ctx.letterSpacing = '1px';
-      const displayName = role.studentName ? role.studentName.toUpperCase() : 'STUDENT NAME';
-      ctx.fillText(displayName, innerCardX + innerCardW / 2, pillY + (isSmallMode ? 26 : 30));
+      ctx.letterSpacing = '0.5px';
+      ctx.fillText(sanitizedName, innerCardX + innerCardW / 2, pillY + (isSmallMode ? 25 : 30));
       ctx.restore();
 
       // ==========================================
       // CLASS LABEL (Resting on Ivory Plaque Base)
       // ==========================================
-      const classY = pillY + pillH + (isSmallMode ? 22 : 28);
+      const classY = pillY + pillH + (isSmallMode ? 24 : 28);
       ctx.textAlign = 'center';
       ctx.fillStyle = '#7a510c'; // Warm bronze gold text on porcelain
       ctx.font = isSmallMode
@@ -1241,10 +1264,10 @@ export default function StudentOfTheMonthModal({
       });
     } else {
       // 9 Cards Layout (Row 1: 5 cards, Row 2: 4 cards centered)
-      const cardW = 390;
-      const cardH = 515;
+      const cardW = 394;
+      const cardH = 490;
       const gapX = 36;
-      const gapY = 36;
+      const gapY = 48; // Generous 48px vertical separation between rows
 
       // Row 1 (5 cards)
       const row1Count = 5;
@@ -1742,7 +1765,7 @@ export default function StudentOfTheMonthModal({
               <div className="flex items-center gap-2">
                 <span className="inline-block w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
                 <span className="text-xs font-bold text-slate-300">
-                  Live Plaque Canvas Rendering ({layoutMode === '5-card' ? '2400 × 1500 px' : '2400 × 1680 px'})
+                  Live Plaque Canvas Rendering ({layoutMode === '5-card' ? '2400 × 1500 px' : '2400 × 1720 px'})
                 </span>
               </div>
               <span className="text-xs text-amber-400/80 font-mono">
