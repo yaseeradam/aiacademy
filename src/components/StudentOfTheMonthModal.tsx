@@ -25,25 +25,53 @@ export interface AwardRoleConfig {
 
 export const OFFICIAL_ROLES: Omit<AwardRoleConfig, 'studentId' | 'studentName' | 'studentClass' | 'photoUrl'>[] = [
   {
+    id: 'math',
+    defaultTitle: 'BEST IN MATH',
+    arabicTitle: 'المتميز في الرياضيات',
+    iconName: 'math',
+    badgeColor: '#1A56DB', // Royal Blue
+  },
+  {
+    id: 'pen',
+    defaultTitle: 'BEST IN HANDWRITING',
+    arabicTitle: 'المتميز في الخط',
+    iconName: 'pen',
+    badgeColor: '#15803D', // Emerald Green
+  },
+  {
     id: 'quran',
-    defaultTitle: "QUR'AN AMBASSADOR",
+    defaultTitle: 'BEST IN QURAN',
     arabicTitle: 'سفير القرآن',
     iconName: 'book',
-    badgeColor: '#059669', // Emerald
+    badgeColor: '#6B21A8', // Royal Purple
+  },
+  {
+    id: 'hadith',
+    defaultTitle: 'BEST IN HADITH',
+    arabicTitle: 'المتميز في الحديث',
+    iconName: 'hadith',
+    badgeColor: '#881337', // Imperial Crimson / Maroon
+  },
+  {
+    id: 'arabiyyah',
+    defaultTitle: 'BEST IN ARABIYYAH',
+    arabicTitle: 'المتميز في العربية',
+    iconName: 'arabiyyah',
+    badgeColor: '#0E7490', // Deep Teal
   },
   {
     id: 'model',
     defaultTitle: 'MODEL AMBASSADOR',
     arabicTitle: 'سفير مثالي',
     iconName: 'star',
-    badgeColor: '#2563eb', // Royal Blue
+    badgeColor: '#2563eb', // Sapphire Blue
   },
   {
     id: 'time',
     defaultTitle: 'TIME CHAMPION',
     arabicTitle: 'بطل الوقت',
     iconName: 'clock',
-    badgeColor: '#d97706', // Amber
+    badgeColor: '#d97706', // Amber Gold
   },
   {
     id: 'neat',
@@ -51,14 +79,7 @@ export const OFFICIAL_ROLES: Omit<AwardRoleConfig, 'studentId' | 'studentName' |
     femaleTitle: 'MISS NEAT AND SMART',
     arabicTitle: 'المتميز بالأناقة',
     iconName: 'sparkles',
-    badgeColor: '#7c3aed', // Purple
-  },
-  {
-    id: 'pen',
-    defaultTitle: 'PEN WIZARD',
-    arabicTitle: 'صاحب القلم الساحر',
-    iconName: 'pen',
-    badgeColor: '#0891b2', // Cyan
+    badgeColor: '#7c3aed', // Violet
   },
   {
     id: 'persuader',
@@ -72,7 +93,7 @@ export const OFFICIAL_ROLES: Omit<AwardRoleConfig, 'studentId' | 'studentName' |
     defaultTitle: 'LANGUAGE MAESTRO',
     arabicTitle: 'فنان في اللغة',
     iconName: 'globe',
-    badgeColor: '#db2777', // Pink / Rose
+    badgeColor: '#db2777', // Rose Pink
   },
   {
     id: 'analytical',
@@ -80,13 +101,6 @@ export const OFFICIAL_ROLES: Omit<AwardRoleConfig, 'studentId' | 'studentName' |
     arabicTitle: 'مفكر تحليلي',
     iconName: 'brain',
     badgeColor: '#4f46e5', // Indigo
-  },
-  {
-    id: 'math',
-    defaultTitle: 'Math Genius',
-    arabicTitle: 'عَبْقَرِيُّ الرِّيَاضِيَّاتِ',
-    iconName: 'calculator',
-    badgeColor: '#0d9488', // Teal
   },
 ];
 
@@ -96,6 +110,7 @@ interface StudentOfTheMonthModalProps {
   students: Student[];
   logoSrc?: string;
   schoolName?: string;
+  schoolSubtitle?: string;
 }
 
 export default function StudentOfTheMonthModal({
@@ -103,7 +118,8 @@ export default function StudentOfTheMonthModal({
   onClose,
   students,
   logoSrc = '/logo.jpg',
-  schoolName = 'AI INTEGRATED ACADEMY',
+  schoolName = 'AI ACADEMY ARGUNGU',
+  schoolSubtitle = 'JUNIOR SECONDARY SCHOOL',
 }: StudentOfTheMonthModalProps) {
   // Mode: 5-card panoramic spotlight (matching reference image) or 9-card full hall of fame
   const [layoutMode, setLayoutMode] = useState<'5-card' | '9-card'>('5-card');
@@ -113,12 +129,12 @@ export default function StudentOfTheMonthModal({
   const [bannerSubtitle, setBannerSubtitle] = useState<string>('EXCELLENCE IN EVERY AREA');
   const [topQuote, setTopQuote] = useState<string>('Small efforts make big results.');
   const [bottomDua, setBottomDua] = useState<string>(
-    'May Allah (SWT) increase you in knowledge and steadfastness. رَبِّ زِدْنِي عِلْمًا'
+    'May Allah (SWT) increase you in knowledge, keep you sincere and make you among the righteous.'
   );
 
-  // Selected 5 role IDs for 5-card mode
+  // Selected 5 role IDs for 5-card mode (Default to the 5 spotlight categories from reference image)
   const [selected5RoleIds, setSelected5RoleIds] = useState<string[]>([
-    'quran', 'model', 'time', 'neat', 'pen'
+    'math', 'pen', 'quran', 'hadith', 'arabiyyah'
   ]);
 
   // Roles state with winner assignments
@@ -137,7 +153,7 @@ export default function StudentOfTheMonthModal({
   });
 
   // UI state
-  const [activeEditingRoleId, setActiveEditingRoleId] = useState<string>('quran');
+  const [activeEditingRoleId, setActiveEditingRoleId] = useState<string>('math');
   const [studentSearchQuery, setStudentSearchQuery] = useState<string>('');
   const [classFilter, setClassFilter] = useState<string>('all');
   const [isGeneratingPdf, setIsGeneratingPdf] = useState<boolean>(false);
@@ -256,7 +272,7 @@ export default function StudentOfTheMonthModal({
     });
   };
 
-  // Canvas Drawing Function
+  // Canvas Drawing Function - Photorealistic Plaque Engine
   const renderCanvas = useCallback(async () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -291,272 +307,625 @@ export default function StudentOfTheMonthModal({
     }
 
     // ==========================================
-    // 1. OUTER WOODEN FRAME (Rich Mahogany / Walnut)
+    // 1. 3D BEVELED BLACK WOODEN FRAME (Mitered Edges + Directional Lighting)
     // ==========================================
-    const frameThickness = 48;
-    const innerBevelThickness = 14;
+    const frameThickness = 52;
+    const innerBevelThickness = 16;
 
-    // Wood gradient border
-    const woodGrad = ctx.createLinearGradient(0, 0, W, H);
-    woodGrad.addColorStop(0, '#1c100a');
-    woodGrad.addColorStop(0.25, '#2e1910');
-    woodGrad.addColorStop(0.5, '#1e110b');
-    woodGrad.addColorStop(0.75, '#2d180f');
-    woodGrad.addColorStop(1, '#170c07');
-    ctx.fillStyle = woodGrad;
-    ctx.fillRect(0, 0, W, H);
+    // Top Mitered Trapezoid (Highlight)
+    const topGrad = ctx.createLinearGradient(0, 0, 0, frameThickness);
+    topGrad.addColorStop(0, '#383a40');
+    topGrad.addColorStop(0.3, '#2a2c30');
+    topGrad.addColorStop(1, '#18191b');
+    ctx.fillStyle = topGrad;
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.lineTo(W, 0);
+    ctx.lineTo(W - frameThickness, frameThickness);
+    ctx.lineTo(frameThickness, frameThickness);
+    ctx.closePath();
+    ctx.fill();
 
-    // Wood bevel highlight (top/left bright line)
-    ctx.lineWidth = 4;
-    ctx.strokeStyle = 'rgba(255, 215, 140, 0.25)';
-    ctx.strokeRect(4, 4, W - 8, H - 8);
+    // Left Mitered Trapezoid (Subtle Highlight)
+    const leftGrad = ctx.createLinearGradient(0, 0, frameThickness, 0);
+    leftGrad.addColorStop(0, '#303236');
+    leftGrad.addColorStop(0.4, '#242529');
+    leftGrad.addColorStop(1, '#151618');
+    ctx.fillStyle = leftGrad;
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.lineTo(frameThickness, frameThickness);
+    ctx.lineTo(frameThickness, H - frameThickness);
+    ctx.lineTo(0, H);
+    ctx.closePath();
+    ctx.fill();
 
-    // Gold Bevel Inlay
+    // Right Mitered Trapezoid (Shadow)
+    const rightGrad = ctx.createLinearGradient(W - frameThickness, 0, W, 0);
+    rightGrad.addColorStop(0, '#151618');
+    rightGrad.addColorStop(0.6, '#0f1011');
+    rightGrad.addColorStop(1, '#09090a');
+    ctx.fillStyle = rightGrad;
+    ctx.beginPath();
+    ctx.moveTo(W, 0);
+    ctx.lineTo(W, H);
+    ctx.lineTo(W - frameThickness, H - frameThickness);
+    ctx.lineTo(W - frameThickness, frameThickness);
+    ctx.closePath();
+    ctx.fill();
+
+    // Bottom Mitered Trapezoid (Deep Shadow)
+    const bottomGrad = ctx.createLinearGradient(0, H - frameThickness, 0, H);
+    bottomGrad.addColorStop(0, '#131415');
+    bottomGrad.addColorStop(0.5, '#0b0b0c');
+    bottomGrad.addColorStop(1, '#040405');
+    ctx.fillStyle = bottomGrad;
+    ctx.beginPath();
+    ctx.moveTo(0, H);
+    ctx.lineTo(frameThickness, H - frameThickness);
+    ctx.lineTo(W - frameThickness, H - frameThickness);
+    ctx.lineTo(W, H);
+    ctx.closePath();
+    ctx.fill();
+
+    // Fine edge highlight line on top and left outer border
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.28)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(1, H - 1);
+    ctx.lineTo(1, 1);
+    ctx.lineTo(W - 1, 1);
+    ctx.stroke();
+
+    // ==========================================
+    // 2. RECESSED METALLIC GOLD FILLET (Inner Frame Liner)
+    // ==========================================
     const goldX = frameThickness;
     const goldY = frameThickness;
     const goldW = W - 2 * frameThickness;
     const goldH = H - 2 * frameThickness;
 
-    const goldGrad = ctx.createLinearGradient(goldX, goldY, goldX + goldW, goldY + goldH);
-    goldGrad.addColorStop(0, '#e5b95c');
-    goldGrad.addColorStop(0.2, '#fff1be');
-    goldGrad.addColorStop(0.4, '#c99632');
-    goldGrad.addColorStop(0.7, '#f4d27e');
-    goldGrad.addColorStop(1, '#9b711a');
+    // Outer gold bevel gradient (light source from top-left)
+    const goldFilletGrad = ctx.createLinearGradient(goldX, goldY, goldX + goldW, goldY + goldH);
+    goldFilletGrad.addColorStop(0, '#fff4c2');   // Bright champagne highlight
+    goldFilletGrad.addColorStop(0.18, '#ecd17d');
+    goldFilletGrad.addColorStop(0.38, '#c99632'); // Rich warm gold
+    goldFilletGrad.addColorStop(0.65, '#f7db8e');
+    goldFilletGrad.addColorStop(0.85, '#a3751e');
+    goldFilletGrad.addColorStop(1, '#543907');    // Deep bronze shadow
 
-    ctx.fillStyle = goldGrad;
+    ctx.fillStyle = goldFilletGrad;
     ctx.fillRect(goldX, goldY, goldW, goldH);
 
-    // Thin inner dark line separating gold from inner content
+    // Inner gold bevel highlight & shadow edges
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(goldX, goldY + goldH);
+    ctx.lineTo(goldX, goldY);
+    ctx.lineTo(goldX + goldW, goldY);
+    ctx.stroke();
+
+    // ==========================================
+    // 3. INNER ROYAL MIDNIGHT NAVY CANVAS
+    // ==========================================
     const innerX = goldX + innerBevelThickness;
     const innerY = goldY + innerBevelThickness;
     const innerW = goldW - 2 * innerBevelThickness;
     const innerH = goldH - 2 * innerBevelThickness;
 
-    // ==========================================
-    // 2. INNER ROYAL NAVY BACKGROUND
-    // ==========================================
+    // Canvas background with radiant royal navy illumination
     const bgGrad = ctx.createRadialGradient(
-      W / 2, H * 0.42, 100,
-      W / 2, H / 2, W * 0.75
+      W / 2, H * 0.40, 100,
+      W / 2, H * 0.50, W * 0.72
     );
-    bgGrad.addColorStop(0, '#0d254c');   // Lighter navy center glow
-    bgGrad.addColorStop(0.45, '#071630'); // Rich deep navy
-    bgGrad.addColorStop(0.85, '#040d1e'); // Darker navy
-    bgGrad.addColorStop(1, '#020610');    // Near midnight blue edge
+    bgGrad.addColorStop(0, '#0f2c5d');   // Royal navy highlight
+    bgGrad.addColorStop(0.35, '#071836'); // Deep midnight navy
+    bgGrad.addColorStop(0.70, '#030d20'); // Dark midnight edge
+    bgGrad.addColorStop(1, '#01050e');    // Near-black edge
 
     ctx.fillStyle = bgGrad;
     ctx.fillRect(innerX, innerY, innerW, innerH);
 
-    // Subtle geometric Islamic background watermark / lattice grid
+    // Inner recessed drop shadow around the canvas edges
     ctx.save();
-    ctx.strokeStyle = 'rgba(212, 175, 55, 0.035)';
-    ctx.lineWidth = 1.5;
-    const step = 80;
-    for (let x = innerX; x <= innerX + innerW; x += step) {
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.85)';
+    ctx.shadowBlur = 24;
+    ctx.shadowOffsetX = 0;
+    ctx.shadowOffsetY = 0;
+    ctx.strokeStyle = 'rgba(0, 0, 0, 0.6)';
+    ctx.lineWidth = 6;
+    ctx.strokeRect(innerX - 3, innerY - 3, innerW + 6, innerH + 6);
+    ctx.restore();
+
+    // Subtle luxury background lattice watermark
+    ctx.save();
+    ctx.strokeStyle = 'rgba(218, 185, 95, 0.025)';
+    ctx.lineWidth = 1.2;
+    const latticeStep = 75;
+    for (let x = innerX - innerH; x <= innerX + innerW + innerH; x += latticeStep) {
       ctx.beginPath();
       ctx.moveTo(x, innerY);
-      ctx.lineTo(x + 200, innerY + innerH);
+      ctx.lineTo(x + innerH, innerY + innerH);
       ctx.stroke();
       ctx.beginPath();
       ctx.moveTo(x, innerY);
-      ctx.lineTo(x - 200, innerY + innerH);
+      ctx.lineTo(x - innerH, innerY + innerH);
       ctx.stroke();
     }
     ctx.restore();
 
     // ==========================================
-    // 3. CORNER ISLAMIC ARABESQUE ORNAMENTS
+    // 4. INTRICATE ISLAMIC ARABESQUE CORNER ARTWORK (Bottom-Left & Bottom-Right)
     // ==========================================
-    const drawCornerOrnament = (cx: number, cy: number, rot: number) => {
+    const drawIslamicCornerMandala = (cx: number, cy: number, flipX: boolean, flipY: boolean) => {
       ctx.save();
       ctx.translate(cx, cy);
-      ctx.rotate(rot);
+      ctx.scale(flipX ? -1 : 1, flipY ? -1 : 1);
 
-      ctx.strokeStyle = goldGrad;
-      ctx.lineWidth = 3;
-      ctx.lineCap = 'round';
+      const goldStroke = '#d4af37';
 
-      // Corner right-angle border
+      // Concentric circular geometric rings
+      const radii = [60, 120, 180, 250, 320, 400];
+      radii.forEach((r, idx) => {
+        ctx.beginPath();
+        ctx.arc(0, 0, r, 0, Math.PI / 2);
+        ctx.strokeStyle = idx % 2 === 0 ? 'rgba(229, 192, 101, 0.35)' : 'rgba(229, 192, 101, 0.18)';
+        ctx.lineWidth = idx === 1 || idx === 3 ? 2.2 : 1.2;
+        ctx.stroke();
+      });
+
+      // 8-Point Geometric Star Rosette at origin
+      ctx.save();
+      for (let rot = 0; rot < 8; rot++) {
+        ctx.save();
+        ctx.rotate((rot * Math.PI) / 8);
+        ctx.strokeStyle = 'rgba(255, 225, 140, 0.5)';
+        ctx.lineWidth = 1.8;
+        // Diamond petal
+        ctx.beginPath();
+        ctx.moveTo(25, 0);
+        ctx.lineTo(75, 20);
+        ctx.lineTo(135, 0);
+        ctx.lineTo(75, -20);
+        ctx.closePath();
+        ctx.stroke();
+        ctx.restore();
+      }
+      ctx.restore();
+
+      // Outer Interlocking Geometric Arcs
+      const outerArcs = [150, 210, 275, 345];
+      outerArcs.forEach(r => {
+        for (let angle = 5; angle <= 85; angle += 15) {
+          const rad = (angle * Math.PI) / 180;
+          const px = Math.cos(rad) * r;
+          const py = Math.sin(rad) * r;
+
+          ctx.strokeStyle = 'rgba(220, 180, 80, 0.3)';
+          ctx.lineWidth = 1.5;
+          ctx.beginPath();
+          ctx.arc(px, py, 32, 0, Math.PI * 2);
+          ctx.stroke();
+
+          // Small golden diamond star at intersections
+          ctx.fillStyle = 'rgba(255, 240, 180, 0.6)';
+          ctx.beginPath();
+          ctx.moveTo(px, py - 5);
+          ctx.lineTo(px + 4, py);
+          ctx.lineTo(px, py + 5);
+          ctx.lineTo(px - 4, py);
+          ctx.closePath();
+          ctx.fill();
+        }
+      });
+
+      // Border framing bracket lines
+      ctx.strokeStyle = 'rgba(240, 205, 110, 0.65)';
+      ctx.lineWidth = 2.5;
       ctx.beginPath();
-      ctx.moveTo(10, 80);
-      ctx.lineTo(10, 10);
-      ctx.lineTo(80, 10);
+      ctx.moveTo(15, 260);
+      ctx.lineTo(15, 15);
+      ctx.lineTo(260, 15);
       ctx.stroke();
-
-      // Outer accent arch
-      ctx.beginPath();
-      ctx.arc(45, 45, 30, Math.PI, 1.5 * Math.PI);
-      ctx.stroke();
-
-      // Small diamond star in corner
-      ctx.fillStyle = '#fff1be';
-      ctx.beginPath();
-      ctx.moveTo(25, 20);
-      ctx.lineTo(28, 25);
-      ctx.lineTo(25, 30);
-      ctx.lineTo(22, 25);
-      ctx.closePath();
-      ctx.fill();
 
       ctx.restore();
     };
 
-    drawCornerOrnament(innerX + 16, innerY + 16, 0);
-    drawCornerOrnament(innerX + innerW - 16, innerY + 16, Math.PI / 2);
-    drawCornerOrnament(innerX + innerW - 16, innerY + innerH - 16, Math.PI);
-    drawCornerOrnament(innerX + 16, innerY + innerH - 16, -Math.PI / 2);
+    // Render elaborate gold mandala art in bottom corners matching reference
+    drawIslamicCornerMandala(innerX + 10, innerY + innerH - 10, false, true);
+    drawIslamicCornerMandala(innerX + innerW - 10, innerY + innerH - 10, true, true);
 
     // ==========================================
-    // 4. TOP HEADER: LOGO, SCHOOL NAME & QUOTE
+    // 5. TOP HEADER: CREST, SCHOOL TITLE & QUOTE
     // ==========================================
     const headerY = innerY + 45;
 
-    // Draw School Logo at top left
-    const logoSize = 100;
-    const logoX = innerX + 70;
-    const logoY = headerY;
+    // A. School Crest on Left
+    const crestCenterX = innerX + 130;
+    const crestCenterY = headerY + 46;
+    const crestRadius = 42;
+
+    ctx.save();
+    // Laurel Wreath Leaves (Left and Right branches)
+    ctx.strokeStyle = '#d4af37';
+    ctx.fillStyle = '#d4af37';
+    ctx.lineWidth = 2.5;
+    for (let side = -1; side <= 1; side += 2) {
+      ctx.beginPath();
+      ctx.arc(crestCenterX + side * 4, crestCenterY, crestRadius + 14, (side === 1 ? -0.3 : 1.3) * Math.PI, (side === 1 ? 0.3 : 0.7) * Math.PI);
+      ctx.stroke();
+
+      for (let i = 0; i < 6; i++) {
+        const leafAngle = (side === 1 ? -0.25 : 1.25) * Math.PI + i * 0.18;
+        const lx = crestCenterX + side * 4 + Math.cos(leafAngle) * (crestRadius + 14);
+        const ly = crestCenterY + Math.sin(leafAngle) * (crestRadius + 14);
+        ctx.beginPath();
+        ctx.ellipse(lx, ly, 7, 3.5, leafAngle + 0.5 * side, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    // 3 Golden Stars above Crest
+    [-18, 0, 18].forEach((xOff, i) => {
+      const sy = crestCenterY - crestRadius - (i === 1 ? 24 : 18);
+      ctx.fillStyle = '#fff4be';
+      ctx.beginPath();
+      ctx.arc(crestCenterX + xOff, sy, i === 1 ? 5 : 4, 0, Math.PI * 2);
+      ctx.fill();
+    });
+
+    // Inner Crest Medallion with Gold Rim
+    ctx.beginPath();
+    ctx.arc(crestCenterX, crestCenterY, crestRadius, 0, Math.PI * 2);
+    ctx.fillStyle = goldFilletGrad;
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.arc(crestCenterX, crestCenterY, crestRadius - 3.5, 0, Math.PI * 2);
+    ctx.fillStyle = '#061633';
+    ctx.fill();
 
     if (schoolLogoImg) {
       ctx.save();
-      // Circular clip with golden border
       ctx.beginPath();
-      ctx.arc(logoX + logoSize / 2, logoY + logoSize / 2, logoSize / 2 + 4, 0, Math.PI * 2);
-      ctx.fillStyle = goldGrad;
-      ctx.fill();
-
-      ctx.beginPath();
-      ctx.arc(logoX + logoSize / 2, logoY + logoSize / 2, logoSize / 2, 0, Math.PI * 2);
+      ctx.arc(crestCenterX, crestCenterY, crestRadius - 4, 0, Math.PI * 2);
       ctx.clip();
-      ctx.drawImage(schoolLogoImg, logoX, logoY, logoSize, logoSize);
+      ctx.drawImage(schoolLogoImg, crestCenterX - crestRadius + 4, crestCenterY - crestRadius + 4, (crestRadius - 4) * 2, (crestRadius - 4) * 2);
       ctx.restore();
+    } else {
+      // Vector Mortarboard (Graduation Cap) & Open Book
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      // Cap diamond
+      ctx.moveTo(crestCenterX, crestCenterY - 14);
+      ctx.lineTo(crestCenterX + 22, crestCenterY - 4);
+      ctx.lineTo(crestCenterX, crestCenterY + 6);
+      ctx.lineTo(crestCenterX - 22, crestCenterY - 4);
+      ctx.closePath();
+      ctx.fill();
+      // Cap base & tassel
+      ctx.fillStyle = '#d4af37';
+      ctx.fillRect(crestCenterX - 11, crestCenterY - 2, 22, 6);
+      ctx.beginPath();
+      ctx.moveTo(crestCenterX, crestCenterY - 4);
+      ctx.lineTo(crestCenterX + 20, crestCenterY + 12);
+      ctx.strokeStyle = '#fce7a1';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      // Open book underneath
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.moveTo(crestCenterX - 18, crestCenterY + 18);
+      ctx.quadraticCurveTo(crestCenterX - 9, crestCenterY + 14, crestCenterX, crestCenterY + 18);
+      ctx.quadraticCurveTo(crestCenterX + 9, crestCenterY + 14, crestCenterX + 18, crestCenterY + 18);
+      ctx.stroke();
     }
 
-    // School Name & Subtitle beside Logo
-    ctx.save();
-    ctx.textAlign = 'left';
-    ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 36px "Montserrat", "Arial Black", sans-serif';
-    ctx.fillText(schoolName, logoX + logoSize + 24, logoY + 42);
-
-    ctx.fillStyle = '#d4af37';
-    ctx.font = '600 20px "Cinzel", "Times New Roman", serif';
-    ctx.letterSpacing = '3px';
-    ctx.fillText('KNOWLEDGE • DISCIPLINE • EXCELLENCE', logoX + logoSize + 26, logoY + 76);
+    // Motto text under Crest
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#e8c973';
+    ctx.font = '600 13px "Cinzel", "Georgia", serif';
+    ctx.letterSpacing = '1px';
+    ctx.fillText('Learning Today • Leading Tomorrow', crestCenterX, crestCenterY + crestRadius + 18);
     ctx.restore();
 
-    // Top Right Quote (from user reference image: "Small efforts make big results.")
+    // B. Center School Title & Subtitle
+    ctx.save();
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#ffffff';
+    ctx.font = '900 42px "Montserrat", "Arial Black", sans-serif';
+    ctx.letterSpacing = '3px';
+    // Subtle text shadow
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.7)';
+    ctx.shadowBlur = 10;
+    ctx.shadowOffsetY = 4;
+    ctx.fillText(schoolName.toUpperCase(), W / 2, headerY + 28);
+    ctx.shadowColor = 'transparent';
+
+    // Subtitle flanked by golden lines: — JUNIOR SECONDARY SCHOOL —
+    const schoolSub = schoolSubtitle || 'JUNIOR SECONDARY SCHOOL';
+    ctx.fillStyle = '#fce7a1';
+    ctx.font = '700 19px "Cinzel", "Times New Roman", serif';
+    ctx.letterSpacing = '4px';
+    ctx.fillText(schoolSub.toUpperCase(), W / 2, headerY + 60);
+
+    // Flanking horizontal gold rules with diamond ends
+    const subTextW = ctx.measureText(schoolSub.toUpperCase()).width;
+    const ruleLeft = W / 2 - subTextW / 2 - 25;
+    const ruleRight = W / 2 + subTextW / 2 + 25;
+    const ruleLength = 160;
+
+    const leftRuleGrad = ctx.createLinearGradient(ruleLeft - ruleLength, 0, ruleLeft, 0);
+    leftRuleGrad.addColorStop(0, 'rgba(212, 175, 55, 0)');
+    leftRuleGrad.addColorStop(1, '#d4af37');
+    ctx.strokeStyle = leftRuleGrad;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(ruleLeft - ruleLength, headerY + 54);
+    ctx.lineTo(ruleLeft, headerY + 54);
+    ctx.stroke();
+
+    const rightRuleGrad = ctx.createLinearGradient(ruleRight, 0, ruleRight + ruleLength, 0);
+    rightRuleGrad.addColorStop(0, '#d4af37');
+    rightRuleGrad.addColorStop(1, 'rgba(212, 175, 55, 0)');
+    ctx.strokeStyle = rightRuleGrad;
+    ctx.beginPath();
+    ctx.moveTo(ruleRight, headerY + 54);
+    ctx.lineTo(ruleRight + ruleLength, headerY + 54);
+    ctx.stroke();
+
+    // Diamonds at rule ends
+    ctx.fillStyle = '#fff4be';
+    [ruleLeft, ruleRight].forEach(rx => {
+      ctx.beginPath();
+      ctx.moveTo(rx, headerY + 50);
+      ctx.lineTo(rx + 4, headerY + 54);
+      ctx.lineTo(rx, headerY + 58);
+      ctx.lineTo(rx - 4, headerY + 54);
+      ctx.closePath();
+      ctx.fill();
+    });
+    ctx.restore();
+
+    // C. Top Right Quote
     if (topQuote) {
       ctx.save();
+      const quoteX = innerX + innerW - 80;
       ctx.textAlign = 'right';
-      ctx.fillStyle = '#fce7a1';
-      ctx.font = 'italic 500 24px "Georgia", "Cinzel", serif';
-      const quoteX = innerX + innerW - 70;
-      ctx.fillText(`“${topQuote}”`, quoteX, logoY + 52);
 
-      // Decorative golden line under quote
-      const quoteGrad = ctx.createLinearGradient(quoteX - 280, 0, quoteX, 0);
-      quoteGrad.addColorStop(0, 'rgba(212, 175, 55, 0)');
-      quoteGrad.addColorStop(1, 'rgba(212, 175, 55, 0.8)');
-      ctx.strokeStyle = quoteGrad;
-      ctx.lineWidth = 2;
+      // Diamond ornament above quote
+      ctx.fillStyle = '#e8c973';
+      ctx.font = '14px sans-serif';
+      ctx.fillText('—  ◆  —', quoteX, headerY + 16);
+
+      // Italic gold quote
+      ctx.fillStyle = '#fce7a1';
+      ctx.font = 'italic 500 24px "Playfair Display", "Cinzel", "Georgia", serif';
+      ctx.fillText(`“${topQuote}”`, quoteX, headerY + 50);
+
+      // Fine golden underline
+      const qGrad = ctx.createLinearGradient(quoteX - 280, 0, quoteX, 0);
+      qGrad.addColorStop(0, 'rgba(212, 175, 55, 0)');
+      qGrad.addColorStop(1, 'rgba(212, 175, 55, 0.7)');
+      ctx.strokeStyle = qGrad;
+      ctx.lineWidth = 1.8;
       ctx.beginPath();
-      ctx.moveTo(quoteX - 300, logoY + 68);
-      ctx.lineTo(quoteX, logoY + 68);
+      ctx.moveTo(quoteX - 300, headerY + 64);
+      ctx.lineTo(quoteX, headerY + 64);
       ctx.stroke();
       ctx.restore();
     }
 
     // ==========================================
-    // 5. 3D GOLDEN RIBBON BANNER & CROWN
+    // 6. IMPERIAL 3D GOLDEN CROWN
     // ==========================================
-    const bannerCenterY = headerY + 105;
-    const bannerW = 1260;
+    const crownCenterX = W / 2;
+    const crownCenterY = headerY + 98;
+    const crownW = 76;
+    const crownH = 50;
+
+    ctx.save();
+    ctx.translate(crownCenterX, crownCenterY);
+
+    // Crown metallic body gradient
+    const crownGrad = ctx.createLinearGradient(-crownW / 2, 0, crownW / 2, 0);
+    crownGrad.addColorStop(0, '#b8861e');
+    crownGrad.addColorStop(0.25, '#ffe596');
+    crownGrad.addColorStop(0.5, '#ffffff');
+    crownGrad.addColorStop(0.75, '#ffe596');
+    crownGrad.addColorStop(1, '#946614');
+
+    // Crown Body Path (5 peaks with curved arches between)
+    ctx.beginPath();
+    ctx.moveTo(-crownW / 2, 0);
+    ctx.lineTo(-crownW / 2 - 4, -crownH * 0.7); // Left peak
+    ctx.quadraticCurveTo(-crownW * 0.35, -crownH * 0.35, -crownW * 0.22, -crownH * 0.82); // Mid-left peak
+    ctx.quadraticCurveTo(-crownW * 0.1, -crownH * 0.45, 0, -crownH); // Center high peak
+    ctx.quadraticCurveTo(crownW * 0.1, -crownH * 0.45, crownW * 0.22, -crownH * 0.82); // Mid-right peak
+    ctx.quadraticCurveTo(crownW * 0.35, -crownH * 0.35, crownW / 2 + 4, -crownH * 0.7); // Right peak
+    ctx.lineTo(crownW / 2, 0);
+    ctx.closePath();
+
+    ctx.fillStyle = crownGrad;
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.6)';
+    ctx.shadowBlur = 12;
+    ctx.shadowOffsetY = 4;
+    ctx.fill();
+    ctx.shadowColor = 'transparent';
+
+    ctx.strokeStyle = '#fff8d6';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    // Golden pearls at each of the 5 peak tips
+    const pearlPoints = [
+      { x: -crownW / 2 - 4, y: -crownH * 0.7, r: 4.5 },
+      { x: -crownW * 0.22, y: -crownH * 0.82, r: 5 },
+      { x: 0, y: -crownH - 1, r: 6.5 },
+      { x: crownW * 0.22, y: -crownH * 0.82, r: 5 },
+      { x: crownW / 2 + 4, y: -crownH * 0.7, r: 4.5 },
+    ];
+
+    pearlPoints.forEach(p => {
+      const pGrad = ctx.createRadialGradient(p.x - 1.5, p.y - 1.5, 0.5, p.x, p.y, p.r);
+      pGrad.addColorStop(0, '#ffffff');
+      pGrad.addColorStop(0.4, '#fff3b8');
+      pGrad.addColorStop(1, '#c59428');
+      ctx.fillStyle = pGrad;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fill();
+    });
+
+    // Crown Base Headband with Jewels
+    ctx.fillStyle = crownGrad;
+    ctx.beginPath();
+    ctx.roundRect(-crownW / 2 - 2, 0, crownW + 4, 12, 3);
+    ctx.fill();
+    ctx.strokeStyle = '#7c530c';
+    ctx.lineWidth = 1.2;
+    ctx.stroke();
+
+    // Inset gemstones on headband (alternating ruby and sapphire)
+    [-24, -12, 0, 12, 24].forEach((jx, idx) => {
+      ctx.fillStyle = idx % 2 === 0 ? '#dc2626' : '#2563eb';
+      ctx.beginPath();
+      ctx.arc(jx, 6, 2.8, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = '#fff3b8';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    });
+
+    ctx.restore();
+
+    // ==========================================
+    // 7. 3D GOLDEN RIBBON BANNER
+    // ==========================================
+    const bannerCenterY = headerY + 118;
+    const bannerW = 1280;
     const bannerH = 82;
     const bannerX = W / 2 - bannerW / 2;
 
     ctx.save();
-    // Crown 👑 above the banner
-    ctx.fillStyle = '#ffd700';
-    ctx.textAlign = 'center';
-    ctx.font = '46px "Segoe UI Emoji", "Apple Color Emoji", sans-serif';
-    ctx.fillText('👑', W / 2, bannerCenterY - 38);
-
-    // Left Ribbon Tail
-    ctx.fillStyle = '#8c6518';
+    // A. Left Ribbon Tail
+    ctx.fillStyle = '#6e4708'; // Dark back fold shadow
     ctx.beginPath();
-    ctx.moveTo(bannerX - 55, bannerCenterY + 10);
-    ctx.lineTo(bannerX + 20, bannerCenterY + 10);
-    ctx.lineTo(bannerX + 20, bannerCenterY + bannerH + 10);
-    ctx.lineTo(bannerX - 55, bannerCenterY + bannerH + 10);
-    ctx.lineTo(bannerX - 28, bannerCenterY + bannerH / 2 + 10);
+    ctx.moveTo(bannerX, bannerCenterY + 16);
+    ctx.lineTo(bannerX - 35, bannerCenterY + 28);
+    ctx.lineTo(bannerX, bannerCenterY + bannerH - 8);
     ctx.closePath();
     ctx.fill();
 
-    // Right Ribbon Tail
+    const leftTailGrad = ctx.createLinearGradient(bannerX - 90, 0, bannerX, 0);
+    leftTailGrad.addColorStop(0, '#ab791c');
+    leftTailGrad.addColorStop(0.6, '#ffd978');
+    leftTailGrad.addColorStop(1, '#8f6112');
+    ctx.fillStyle = leftTailGrad;
     ctx.beginPath();
-    ctx.moveTo(bannerX + bannerW + 55, bannerCenterY + 10);
-    ctx.lineTo(bannerX + bannerW - 20, bannerCenterY + 10);
-    ctx.lineTo(bannerX + bannerW - 20, bannerCenterY + bannerH + 10);
-    ctx.lineTo(bannerX + bannerW + 55, bannerCenterY + bannerH + 10);
-    ctx.lineTo(bannerX + bannerW + 28, bannerCenterY + bannerH / 2 + 10);
+    ctx.moveTo(bannerX - 15, bannerCenterY + 14);
+    ctx.lineTo(bannerX - 85, bannerCenterY + 14);
+    ctx.lineTo(bannerX - 55, bannerCenterY + bannerH / 2 + 14); // Swallowtail notch
+    ctx.lineTo(bannerX - 85, bannerCenterY + bannerH + 14);
+    ctx.lineTo(bannerX - 15, bannerCenterY + bannerH + 14);
+    ctx.closePath();
+    ctx.fill();
+    ctx.strokeStyle = '#5a3d07';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    // B. Right Ribbon Tail
+    ctx.fillStyle = '#6e4708';
+    ctx.beginPath();
+    ctx.moveTo(bannerX + bannerW, bannerCenterY + 16);
+    ctx.lineTo(bannerX + bannerW + 35, bannerCenterY + 28);
+    ctx.lineTo(bannerX + bannerW, bannerCenterY + bannerH - 8);
     ctx.closePath();
     ctx.fill();
 
-    // Main Ribbon Body Gradient
+    const rightTailGrad = ctx.createLinearGradient(bannerX + bannerW, 0, bannerX + bannerW + 90, 0);
+    rightTailGrad.addColorStop(0, '#8f6112');
+    rightTailGrad.addColorStop(0.4, '#ffd978');
+    rightTailGrad.addColorStop(1, '#ab791c');
+    ctx.fillStyle = rightTailGrad;
+    ctx.beginPath();
+    ctx.moveTo(bannerX + bannerW + 15, bannerCenterY + 14);
+    ctx.lineTo(bannerX + bannerW + 85, bannerCenterY + 14);
+    ctx.lineTo(bannerX + bannerW + 55, bannerCenterY + bannerH / 2 + 14); // Swallowtail notch
+    ctx.lineTo(bannerX + bannerW + 85, bannerCenterY + bannerH + 14);
+    ctx.lineTo(bannerX + bannerW + 15, bannerCenterY + bannerH + 14);
+    ctx.closePath();
+    ctx.fill();
+    ctx.strokeStyle = '#5a3d07';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    // C. Main Ribbon Body (Reflective Gold Metallic Sheen)
     const ribbonGrad = ctx.createLinearGradient(bannerX, 0, bannerX + bannerW, 0);
-    ribbonGrad.addColorStop(0, '#c69229');
-    ribbonGrad.addColorStop(0.2, '#fced9c');
-    ribbonGrad.addColorStop(0.5, '#ffffff');
-    ribbonGrad.addColorStop(0.8, '#fced9c');
-    ribbonGrad.addColorStop(1, '#c69229');
+    ribbonGrad.addColorStop(0, '#9e6e18');
+    ribbonGrad.addColorStop(0.12, '#e0b553');
+    ribbonGrad.addColorStop(0.32, '#fff4be');
+    ribbonGrad.addColorStop(0.50, '#ffffff');
+    ribbonGrad.addColorStop(0.68, '#fff4be');
+    ribbonGrad.addColorStop(0.88, '#e0b553');
+    ribbonGrad.addColorStop(1, '#9e6e18');
 
-    // Ribbon drop shadow
-    ctx.shadowColor = 'rgba(0, 0, 0, 0.6)';
-    ctx.shadowBlur = 18;
-    ctx.shadowOffsetY = 8;
+    // Deep drop shadow
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.7)';
+    ctx.shadowBlur = 22;
+    ctx.shadowOffsetY = 10;
 
-    // Draw main ribbon rounded rectangle
-    const rRadius = 14;
+    const ribRadius = 14;
     ctx.beginPath();
-    ctx.roundRect(bannerX, bannerCenterY, bannerW, bannerH, rRadius);
+    ctx.roundRect(bannerX, bannerCenterY, bannerW, bannerH, ribRadius);
     ctx.fillStyle = ribbonGrad;
     ctx.fill();
 
-    // Reset shadow
     ctx.shadowColor = 'transparent';
-    ctx.shadowBlur = 0;
-    ctx.shadowOffsetY = 0;
 
-    // Golden inner border on ribbon
+    // Double Golden Rim on Ribbon
+    ctx.strokeStyle = '#7c530c';
     ctx.lineWidth = 3;
-    ctx.strokeStyle = '#946614';
     ctx.stroke();
 
-    // Ribbon Text: "STUDENTS OF THE MONTH • [MONTH YEAR]"
-    ctx.textAlign = 'center';
-    ctx.fillStyle = '#061328';
-    ctx.font = '900 38px "Cinzel", "Trajan Pro", "Times New Roman", serif';
-    ctx.letterSpacing = '4px';
-    ctx.fillText(
-      monthYear ? `STUDENTS OF THE MONTH • ${monthYear}` : 'STUDENTS OF THE MONTH',
-      W / 2,
-      bannerCenterY + 54
-    );
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.7)';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.roundRect(bannerX + 3.5, bannerCenterY + 3.5, bannerW - 7, bannerH - 7, ribRadius - 2);
+    ctx.stroke();
 
-    // Banner Subtitle underneath: "★   EXCELLENCE IN EVERY AREA   ★"
+    // D. Ribbon Embossed Title: "STUDENTS OF THE MONTH • [MONTH YEAR]"
+    ctx.textAlign = 'center';
+    const mainBannerTitle = monthYear 
+      ? `STUDENTS OF THE MONTH • ${monthYear.toUpperCase()}`
+      : 'STUDENTS OF THE MONTH';
+
+    ctx.font = '900 38px "Cinzel", "Times New Roman", serif';
+    ctx.letterSpacing = '4px';
+
+    // 3D Emboss highlight under text
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.55)';
+    ctx.fillText(mainBannerTitle, W / 2 + 1.5, bannerCenterY + 54.5);
+
+    // Embossed deep midnight navy text
+    ctx.fillStyle = '#061326';
+    ctx.fillText(mainBannerTitle, W / 2, bannerCenterY + 53);
+
+    // E. Banner Subtitle Underneath: "★  EXCELLENCE IN EVERY AREA  ★"
     if (bannerSubtitle) {
       ctx.fillStyle = '#fce7a1';
       ctx.font = 'bold 20px "Cinzel", "Georgia", serif';
       ctx.letterSpacing = '4px';
-      ctx.fillText(`★   ${bannerSubtitle}   ★`, W / 2, bannerCenterY + bannerH + 28);
+      ctx.fillText(`★   ${bannerSubtitle.toUpperCase()}   ★`, W / 2, bannerCenterY + bannerH + 30);
     }
     ctx.restore();
 
     // ==========================================
-    // 6. STUDENT AWARD CARDS
+    // 8. HELPER: DRAW PHOTOREALISTIC PLAQUE CARD
     // ==========================================
-    const renderCard = (
+    const renderPlaqueCard = (
       role: AwardRoleConfig,
       cardX: number,
       cardY: number,
@@ -566,136 +935,192 @@ export default function StudentOfTheMonthModal({
     ) => {
       ctx.save();
 
-      // Card outer shadow
+      // Chamfer size for notched corner polygon
+      const chamfer = isSmallMode ? 16 : 22;
+
+      // Card Chamfered Path Helper
+      const traceChamferedCard = (x: number, y: number, w: number, h: number, c: number) => {
+        ctx.beginPath();
+        ctx.moveTo(x + c, y);
+        ctx.lineTo(x + w - c, y);
+        ctx.lineTo(x + w, y + c);
+        ctx.lineTo(x + w, y + h - c);
+        ctx.lineTo(x + w - c, y + h);
+        ctx.lineTo(x + c, y + h);
+        ctx.lineTo(x, y + h - c);
+        ctx.lineTo(x, y + c);
+        ctx.closePath();
+      };
+
+      // 1. Realistic Outer Drop Shadow
       ctx.shadowColor = 'rgba(0, 0, 0, 0.75)';
-      ctx.shadowBlur = 18;
-      ctx.shadowOffsetY = 8;
+      ctx.shadowBlur = 20;
+      ctx.shadowOffsetY = 10;
 
-      // Card Gold Outer Border
-      const cardRadius = isSmallMode ? 20 : 24;
+      // 2. Outer 3D Gold Bevel Border
       const cardGoldGrad = ctx.createLinearGradient(cardX, cardY, cardX + cardW, cardY + cardH);
-      cardGoldGrad.addColorStop(0, '#f9e497');
-      cardGoldGrad.addColorStop(0.3, '#d4af37');
-      cardGoldGrad.addColorStop(0.7, '#8f681a');
-      cardGoldGrad.addColorStop(1, '#f3d37a');
+      cardGoldGrad.addColorStop(0, '#fff4c2');
+      cardGoldGrad.addColorStop(0.25, '#d4af37');
+      cardGoldGrad.addColorStop(0.7, '#885c13');
+      cardGoldGrad.addColorStop(1, '#f7dc92');
 
+      traceChamferedCard(cardX, cardY, cardW, cardH, chamfer);
       ctx.fillStyle = cardGoldGrad;
-      ctx.beginPath();
-      ctx.roundRect(cardX, cardY, cardW, cardH, cardRadius);
       ctx.fill();
 
       ctx.shadowColor = 'transparent';
-      ctx.shadowBlur = 0;
-      ctx.shadowOffsetY = 0;
 
-      // Inner card body (Deep Navy with subtle gradient)
-      const borderThickness = isSmallMode ? 5 : 6;
-      const innerCardX = cardX + borderThickness;
-      const innerCardY = cardY + borderThickness;
-      const innerCardW = cardW - 2 * borderThickness;
-      const innerCardH = cardH - 2 * borderThickness;
+      // 3. Dark Grooved Inset Line
+      const grooveInset = isSmallMode ? 3.5 : 4.5;
+      traceChamferedCard(
+        cardX + grooveInset,
+        cardY + grooveInset,
+        cardW - 2 * grooveInset,
+        cardH - 2 * grooveInset,
+        chamfer - 2
+      );
+      ctx.strokeStyle = '#061224';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
 
-      const cardBodyGrad = ctx.createLinearGradient(innerCardX, innerCardY, innerCardX, innerCardY + innerCardH);
-      cardBodyGrad.addColorStop(0, '#0a1d3f');
-      cardBodyGrad.addColorStop(0.5, '#07152f');
-      cardBodyGrad.addColorStop(1, '#040d1f');
+      // 4. Soft Ivory / Cream Porcelain Inner Body
+      const innerBorder = isSmallMode ? 6 : 8;
+      const innerCardX = cardX + innerBorder;
+      const innerCardY = cardY + innerBorder;
+      const innerCardW = cardW - 2 * innerBorder;
+      const innerCardH = cardH - 2 * innerBorder;
 
-      ctx.fillStyle = cardBodyGrad;
-      ctx.beginPath();
-      ctx.roundRect(innerCardX, innerCardY, innerCardW, innerCardH, cardRadius - 4);
+      traceChamferedCard(innerCardX, innerCardY, innerCardW, innerCardH, chamfer - 4);
+      const porcelainGrad = ctx.createLinearGradient(innerCardX, innerCardY, innerCardX, innerCardY + innerCardH);
+      porcelainGrad.addColorStop(0, '#ffffff');   // Pure bright porcelain top
+      porcelainGrad.addColorStop(0.5, '#f9fafb'); // Soft ivory
+      porcelainGrad.addColorStop(1, '#edf0f4');   // Gentle cool base
+      ctx.fillStyle = porcelainGrad;
       ctx.fill();
 
-      // Top Icon Medallion Badge
-      const badgeY = isSmallMode ? innerCardY + 34 : innerCardY + 44;
-      const badgeR = isSmallMode ? 26 : 36;
-      const badgeCenterX = innerCardX + innerCardW / 2;
+      // Fine golden inner fillet stroke
+      ctx.strokeStyle = 'rgba(212, 175, 55, 0.5)';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
 
-      // Medallion outer gold ring
+      // ==========================================
+      // TOP CATEGORY BADGE (Header Bar Capsule)
+      // ==========================================
+      const badgeH = isSmallMode ? 46 : 56;
+      const badgeMargin = isSmallMode ? 10 : 14;
+      const badgeX = innerCardX + badgeMargin;
+      const badgeY = innerCardY + badgeMargin;
+      const badgeW = innerCardW - 2 * badgeMargin;
+      const badgeR = 14;
+
+      // Colored Capsule with Luxury Gradient
+      const baseColor = role.badgeColor || '#1A56DB';
+      const badgeGrad = ctx.createLinearGradient(badgeX, badgeY, badgeX, badgeY + badgeH);
+      badgeGrad.addColorStop(0, baseColor);
+      badgeGrad.addColorStop(1, '#0b1626'); // Dark shaded base for depth
+
       ctx.beginPath();
-      ctx.arc(badgeCenterX, badgeY, badgeR + 3, 0, Math.PI * 2);
+      ctx.roundRect(badgeX, badgeY, badgeW, badgeH, badgeR);
+      ctx.fillStyle = badgeGrad;
+      ctx.fill();
+
+      // Fine gold border around category capsule
+      ctx.strokeStyle = '#e5c065';
+      ctx.lineWidth = 1.6;
+      ctx.stroke();
+
+      // Left Circular Icon Medallion
+      const medDiam = isSmallMode ? 34 : 42;
+      const medX = badgeX + (isSmallMode ? 8 : 10);
+      const medY = badgeY + (badgeH - medDiam) / 2;
+      const medCX = medX + medDiam / 2;
+      const medCY = medY + medDiam / 2;
+
+      // Medallion Gold Outer Ring
+      ctx.beginPath();
+      ctx.arc(medCX, medCY, medDiam / 2, 0, Math.PI * 2);
       ctx.fillStyle = cardGoldGrad;
       ctx.fill();
 
-      // Medallion inner colored circle
+      // Medallion Porcelain White Base
       ctx.beginPath();
-      ctx.arc(badgeCenterX, badgeY, badgeR, 0, Math.PI * 2);
-      ctx.fillStyle = role.badgeColor || '#059669';
+      ctx.arc(medCX, medCY, medDiam / 2 - 2, 0, Math.PI * 2);
+      ctx.fillStyle = '#ffffff';
       ctx.fill();
 
-      // Medallion icon / symbol
-      ctx.fillStyle = '#ffffff';
+      // Vector Icon / Symbol
+      ctx.fillStyle = baseColor;
       ctx.textAlign = 'center';
-      ctx.font = isSmallMode 
-        ? '24px "Segoe UI Symbol", "Apple Color Emoji", sans-serif'
-        : '32px "Segoe UI Symbol", "Apple Color Emoji", sans-serif';
-      let symbol = '★';
-      if (role.id === 'quran') symbol = '📖';
-      else if (role.id === 'model') symbol = '⭐';
-      else if (role.id === 'time') symbol = '⏱️';
-      else if (role.id === 'neat') symbol = '✨';
-      else if (role.id === 'pen') symbol = '✒️';
-      else if (role.id === 'persuader') symbol = '📢';
-      else if (role.id === 'language') symbol = '🌐';
-      else if (role.id === 'analytical') symbol = '💡';
-      else if (role.id === 'math') symbol = '📐';
-      ctx.fillText(symbol, badgeCenterX, isSmallMode ? badgeY + 8 : badgeY + 11);
+      ctx.font = isSmallMode ? 'bold 17px sans-serif' : 'bold 22px sans-serif';
 
-      // Award English Title
-      ctx.textAlign = 'center';
-      ctx.fillStyle = '#fce7a1';
-      ctx.font = isSmallMode
-        ? 'bold 16px "Cinzel", "Arial Black", sans-serif'
-        : 'bold 20px "Cinzel", "Arial Black", sans-serif';
-      ctx.letterSpacing = isSmallMode ? '0.8px' : '1px';
-      ctx.fillText(
-        role.defaultTitle.toUpperCase(), 
-        badgeCenterX, 
-        isSmallMode ? badgeY + badgeR + 22 : badgeY + badgeR + 30
-      );
+      let iconText = '★';
+      if (role.id === 'math') iconText = '∑';
+      else if (role.id === 'pen') iconText = '✒';
+      else if (role.id === 'quran') iconText = '📖';
+      else if (role.id === 'hadith') iconText = '🕌';
+      else if (role.id === 'arabiyyah') iconText = 'ض';
+      else if (role.id === 'model') iconText = '⭐';
+      else if (role.id === 'time') iconText = '⏱';
+      else if (role.id === 'neat') iconText = '✨';
+      else if (role.id === 'persuader') iconText = '📢';
+      else if (role.id === 'language') iconText = '🌐';
+      else if (role.id === 'analytical') iconText = '💡';
 
-      // Award Arabic Title (e.g. سفير القرآن)
+      ctx.fillText(iconText, medCX, medCY + (isSmallMode ? 6 : 7.5));
+
+      // Right Header Category Text
+      const textStartX = medX + medDiam + (isSmallMode ? 8 : 12);
+      ctx.textAlign = 'left';
+
+      // English Title
       ctx.fillStyle = '#ffffff';
       ctx.font = isSmallMode
-        ? 'bold 20px "Amiri", "Traditional Arabic", "Scheherazade New", serif'
-        : 'bold 24px "Amiri", "Traditional Arabic", "Scheherazade New", serif';
-      ctx.fillText(
-        role.arabicTitle, 
-        badgeCenterX, 
-        isSmallMode ? badgeY + badgeR + 46 : badgeY + badgeR + 62
-      );
+        ? 'bold 14px "Montserrat", sans-serif'
+        : 'bold 16px "Montserrat", sans-serif';
+      ctx.letterSpacing = '0.5px';
+      ctx.fillText(role.defaultTitle.toUpperCase(), textStartX, badgeY + (isSmallMode ? 19 : 24));
 
-      // Student Photo Container
-      const photoW = isSmallMode ? 260 : cardW * 0.74;
-      const photoH = isSmallMode ? 240 : photoW * 1.15;
-      const photoX = innerCardX + (innerCardW - photoW) / 2;
-      const photoY = isSmallMode ? badgeY + badgeR + 58 : badgeY + badgeR + 80;
+      // Arabic Subtitle
+      ctx.fillStyle = '#fde68a'; // Soft cream gold
+      ctx.font = isSmallMode
+        ? 'bold 15px "Amiri", "Traditional Arabic", serif'
+        : 'bold 17px "Amiri", "Traditional Arabic", serif';
+      ctx.letterSpacing = '0px';
+      ctx.fillText(role.arabicTitle, textStartX, badgeY + (isSmallMode ? 36 : 46));
 
-      // Photo Gold Frame
-      const photoBorder = 4;
+      // ==========================================
+      // STUDENT PORTRAIT PHOTO
+      // ==========================================
+      const photoMargin = isSmallMode ? 12 : 16;
+      const photoX = innerCardX + photoMargin;
+      const photoY = badgeY + badgeH + (isSmallMode ? 10 : 16);
+      const photoW = innerCardW - 2 * photoMargin;
+      const photoH = isSmallMode ? 250 : 420;
+      const photoR = 14;
+
+      // 3D Gold Frame Border for Photo
+      ctx.beginPath();
+      ctx.roundRect(photoX, photoY, photoW, photoH, photoR);
       ctx.fillStyle = cardGoldGrad;
-      ctx.beginPath();
-      ctx.roundRect(photoX, photoY, photoW, photoH, 16);
       ctx.fill();
 
-      // Clip and Draw Photo with aspect-ratio cover
+      // Photo Inner Container
+      const photoBorder = 3;
+      const innerPhotoX = photoX + photoBorder;
+      const innerPhotoY = photoY + photoBorder;
+      const innerPhotoW = photoW - 2 * photoBorder;
+      const innerPhotoH = photoH - 2 * photoBorder;
+
       ctx.save();
       ctx.beginPath();
-      ctx.roundRect(
-        photoX + photoBorder, 
-        photoY + photoBorder, 
-        photoW - 2 * photoBorder, 
-        photoH - 2 * photoBorder, 
-        12
-      );
+      ctx.roundRect(innerPhotoX, innerPhotoY, innerPhotoW, innerPhotoH, photoR - 2);
       ctx.clip();
 
       const studentImg = photoImages[role.id];
-      const targetW = photoW - 2 * photoBorder;
-      const targetH = photoH - 2 * photoBorder;
-
       if (studentImg) {
+        // High Quality Aspect-Ratio Cover Drawing
         const sRatio = studentImg.width / studentImg.height;
-        const tRatio = targetW / targetH;
+        const tRatio = innerPhotoW / innerPhotoH;
         let sx = 0, sy = 0, sw = studentImg.width, sh = studentImg.height;
         if (sRatio > tRatio) {
           sw = studentImg.height * tRatio;
@@ -705,82 +1130,117 @@ export default function StudentOfTheMonthModal({
           sy = (studentImg.height - sh) / 2;
         }
         ctx.drawImage(
-          studentImg, 
+          studentImg,
           sx, sy, sw, sh,
-          photoX + photoBorder, 
-          photoY + photoBorder, 
-          targetW, 
-          targetH
+          innerPhotoX, innerPhotoY, innerPhotoW, innerPhotoH
         );
       } else {
-        // Silhouette placeholder
+        // Elegant Studio Silhouette Placeholder
+        const phGrad = ctx.createLinearGradient(innerPhotoX, innerPhotoY, innerPhotoX, innerPhotoY + innerPhotoH);
+        phGrad.addColorStop(0, '#e2e8f0');
+        phGrad.addColorStop(1, '#cbd5e1');
+        ctx.fillStyle = phGrad;
+        ctx.fillRect(innerPhotoX, innerPhotoY, innerPhotoW, innerPhotoH);
+
+        // Circular monogram
+        const avatarCX = innerPhotoX + innerPhotoW / 2;
+        const avatarCY = innerPhotoY + innerPhotoH / 2 - 10;
+        ctx.beginPath();
+        ctx.arc(avatarCX, avatarCY, 42, 0, Math.PI * 2);
         ctx.fillStyle = '#0f274e';
-        ctx.fillRect(photoX + photoBorder, photoY + photoBorder, targetW, targetH);
-        ctx.fillStyle = '#fce7a1';
-        ctx.font = 'bold 58px sans-serif';
+        ctx.fill();
+        ctx.strokeStyle = '#d4af37';
+        ctx.lineWidth = 2.5;
+        ctx.stroke();
+
+        ctx.fillStyle = '#fff4be';
+        ctx.textAlign = 'center';
+        ctx.font = 'bold 32px "Montserrat", sans-serif';
         const initials = role.studentName
           ? role.studentName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()
           : '?';
-        ctx.fillText(initials, badgeCenterX, photoY + photoH / 2 + 18);
+        ctx.fillText(initials, avatarCX, avatarCY + 11);
       }
       ctx.restore();
 
-      // Student Name Pill (Navy & Gold Pill at bottom of photo)
-      const pillW = cardW * 0.88;
-      const pillH = isSmallMode ? 42 : 46;
-      const pillX = innerCardX + (innerCardW - pillW) / 2;
-      const pillY = isSmallMode ? photoY + photoH + 12 : photoY + photoH + 18;
+      // ==========================================
+      // STUDENT NAME PILL (Midnight Navy + Gold Rim)
+      // ==========================================
+      const pillMargin = isSmallMode ? 10 : 14;
+      const pillW = innerCardW - 2 * pillMargin;
+      const pillH = isSmallMode ? 42 : 48;
+      const pillX = innerCardX + pillMargin;
+      const pillY = photoY + photoH + (isSmallMode ? 10 : 16);
+      const pillR = pillH / 2;
 
       ctx.save();
-      ctx.fillStyle = '#061a38';
+      // Drop shadow for pill
+      ctx.shadowColor = 'rgba(0, 0, 0, 0.25)';
+      ctx.shadowBlur = 8;
+      ctx.shadowOffsetY = 4;
+
+      const pillGrad = ctx.createLinearGradient(pillX, pillY, pillX, pillY + pillH);
+      pillGrad.addColorStop(0, '#0a2142');
+      pillGrad.addColorStop(1, '#040e1c');
+
       ctx.beginPath();
-      ctx.roundRect(pillX, pillY, pillW, pillH, pillH / 2);
+      ctx.roundRect(pillX, pillY, pillW, pillH, pillR);
+      ctx.fillStyle = pillGrad;
       ctx.fill();
 
+      ctx.shadowColor = 'transparent';
+
+      // Metallic Gold Border
       ctx.strokeStyle = cardGoldGrad;
       ctx.lineWidth = 2.2;
       ctx.stroke();
 
+      // Student Name Text
+      ctx.textAlign = 'center';
       ctx.fillStyle = '#ffffff';
       ctx.font = isSmallMode
-        ? 'bold 17px "Montserrat", "Arial", sans-serif'
-        : 'bold 19px "Montserrat", "Arial", sans-serif';
-      const studentDisplayName = role.studentName || 'Student Name';
-      ctx.fillText(studentDisplayName, badgeCenterX, isSmallMode ? pillY + 27 : pillY + 29);
+        ? 'bold 16px "Montserrat", "Arial", sans-serif'
+        : 'bold 18px "Montserrat", "Arial", sans-serif';
+      ctx.letterSpacing = '1px';
+      const displayName = role.studentName ? role.studentName.toUpperCase() : 'STUDENT NAME';
+      ctx.fillText(displayName, innerCardX + innerCardW / 2, pillY + (isSmallMode ? 26 : 30));
       ctx.restore();
 
-      // Student Class Subtitle (e.g. Basic 1 Gold)
-      const classY = isSmallMode ? pillY + pillH + 22 : pillY + pillH + 26;
-      ctx.fillStyle = '#d4af37';
+      // ==========================================
+      // CLASS LABEL (Resting on Ivory Plaque Base)
+      // ==========================================
+      const classY = pillY + pillH + (isSmallMode ? 22 : 28);
+      ctx.textAlign = 'center';
+      ctx.fillStyle = '#7a510c'; // Warm bronze gold text on porcelain
       ctx.font = isSmallMode
         ? 'bold 15px "Cinzel", "Georgia", serif'
         : 'bold 17px "Cinzel", "Georgia", serif';
-      ctx.letterSpacing = '1px';
-      ctx.fillText(role.studentClass || 'Class Name', badgeCenterX, classY);
+      ctx.letterSpacing = '2px';
+      ctx.fillText((role.studentClass || 'CLASS ARM').toUpperCase(), innerCardX + innerCardW / 2, classY);
 
       ctx.restore();
     };
 
     // ==========================================
-    // 7. LAYOUT & CARD POSITIONING
+    // 9. LAYOUT & CARD POSITIONING
     // ==========================================
     if (is5Card) {
-      // 5 Panoramic Cards across the screen
+      // 5 Spotlight Cards Across
       const numCards = 5;
-      const cardW = 400;
+      const cardW = 404;
       const cardH = 780;
       const totalCardsW = numCards * cardW;
       const availableSpace = innerW - 140; // margins
       const gap = (availableSpace - totalCardsW) / (numCards - 1);
       const startX = innerX + 70;
-      const cardsY = bannerCenterY + bannerH + 55;
+      const cardsY = bannerCenterY + bannerH + 52;
 
       activeRoles.slice(0, 5).forEach((role, idx) => {
         const cx = startX + idx * (cardW + gap);
-        renderCard(role, cx, cardsY, cardW, cardH, false);
+        renderPlaqueCard(role, cx, cardsY, cardW, cardH, false);
       });
     } else {
-      // 9 Cards Layout: Row 1 has 5 cards, Row 2 has 4 cards centered
+      // 9 Cards Layout (Row 1: 5 cards, Row 2: 4 cards centered)
       const cardW = 390;
       const cardH = 515;
       const gapX = 36;
@@ -794,7 +1254,7 @@ export default function StudentOfTheMonthModal({
 
       activeRoles.slice(0, 5).forEach((role, idx) => {
         const cx = row1StartX + idx * (cardW + gapX);
-        renderCard(role, cx, row1Y, cardW, cardH, true);
+        renderPlaqueCard(role, cx, row1Y, cardW, cardH, true);
       });
 
       // Row 2 (4 cards centered)
@@ -806,30 +1266,33 @@ export default function StudentOfTheMonthModal({
 
         activeRoles.slice(5, 5 + row2Count).forEach((role, idx) => {
           const cx = row2StartX + idx * (cardW + gapX);
-          renderCard(role, cx, row2Y, cardW, cardH, true);
+          renderPlaqueCard(role, cx, row2Y, cardW, cardH, true);
         });
       }
     }
 
     // ==========================================
-    // 8. BOTTOM FOOTER BLESSING & DUA
+    // 10. BOTTOM FOOTER BLESSING & DUA
     // ==========================================
-    const footerY = innerY + innerH - 42;
+    const footerY = innerY + innerH - 38;
     ctx.save();
     ctx.textAlign = 'center';
+
+    // Ornate Golden Centerpiece Flourish
+    ctx.fillStyle = '#e8c973';
+    ctx.font = '16px sans-serif';
+    ctx.fillText('—  ❖  —', W / 2, footerY - 26);
+
+    // Dua Text
     ctx.fillStyle = '#fce7a1';
-    ctx.font = '600 20px "Cinzel", "Amiri", "Traditional Arabic", serif';
+    ctx.font = 'italic 600 21px "Cinzel", "Amiri", "Traditional Arabic", serif';
     ctx.letterSpacing = '1.5px';
     ctx.fillText(bottomDua, W / 2, footerY);
 
-    // Decorative stars on either side of Dua
-    ctx.fillStyle = '#d4af37';
-    ctx.font = '16px sans-serif';
-    ctx.fillText('✦   ✦   ✦', W / 2, footerY - 26);
     ctx.restore();
 
     setIsCanvasReady(true);
-  }, [layoutMode, monthYear, bannerSubtitle, topQuote, bottomDua, selected5RoleIds, roleAssignments, logoSrc, schoolName]);
+  }, [layoutMode, monthYear, bannerSubtitle, topQuote, bottomDua, selected5RoleIds, roleAssignments, logoSrc, schoolName, schoolSubtitle]);
 
   // Re-render canvas whenever relevant state changes
   useEffect(() => {
