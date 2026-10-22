@@ -267,7 +267,7 @@ export default function StudentOfTheMonthModal({
     // Dimensions based on mode
     const is5Card = layoutMode === '5-card';
     const W = 2400;
-    const H = is5Card ? 1500 : 1720;
+    const H = is5Card ? 1500 : 1680;
 
     canvas.width = W;
     canvas.height = H;
@@ -470,36 +470,36 @@ export default function StudentOfTheMonthModal({
     // ==========================================
     // 5. 3D GOLDEN RIBBON BANNER & CROWN
     // ==========================================
-    const bannerCenterY = headerY + 120;
-    const bannerW = 900;
-    const bannerH = 88;
+    const bannerCenterY = headerY + 105;
+    const bannerW = 1260;
+    const bannerH = 82;
     const bannerX = W / 2 - bannerW / 2;
 
     ctx.save();
     // Crown 👑 above the banner
     ctx.fillStyle = '#ffd700';
     ctx.textAlign = 'center';
-    ctx.font = '54px "Segoe UI Emoji", "Apple Color Emoji", sans-serif';
-    ctx.fillText('👑', W / 2, bannerCenterY - 44);
+    ctx.font = '46px "Segoe UI Emoji", "Apple Color Emoji", sans-serif';
+    ctx.fillText('👑', W / 2, bannerCenterY - 38);
 
     // Left Ribbon Tail
     ctx.fillStyle = '#8c6518';
     ctx.beginPath();
-    ctx.moveTo(bannerX - 50, bannerCenterY + 10);
+    ctx.moveTo(bannerX - 55, bannerCenterY + 10);
     ctx.lineTo(bannerX + 20, bannerCenterY + 10);
     ctx.lineTo(bannerX + 20, bannerCenterY + bannerH + 10);
-    ctx.lineTo(bannerX - 50, bannerCenterY + bannerH + 10);
-    ctx.lineTo(bannerX - 25, bannerCenterY + bannerH / 2 + 10);
+    ctx.lineTo(bannerX - 55, bannerCenterY + bannerH + 10);
+    ctx.lineTo(bannerX - 28, bannerCenterY + bannerH / 2 + 10);
     ctx.closePath();
     ctx.fill();
 
     // Right Ribbon Tail
     ctx.beginPath();
-    ctx.moveTo(bannerX + bannerW + 50, bannerCenterY + 10);
+    ctx.moveTo(bannerX + bannerW + 55, bannerCenterY + 10);
     ctx.lineTo(bannerX + bannerW - 20, bannerCenterY + 10);
     ctx.lineTo(bannerX + bannerW - 20, bannerCenterY + bannerH + 10);
-    ctx.lineTo(bannerX + bannerW + 50, bannerCenterY + bannerH + 10);
-    ctx.lineTo(bannerX + bannerW + 25, bannerCenterY + bannerH / 2 + 10);
+    ctx.lineTo(bannerX + bannerW + 55, bannerCenterY + bannerH + 10);
+    ctx.lineTo(bannerX + bannerW + 28, bannerCenterY + bannerH / 2 + 10);
     ctx.closePath();
     ctx.fill();
 
@@ -533,46 +533,46 @@ export default function StudentOfTheMonthModal({
     ctx.strokeStyle = '#946614';
     ctx.stroke();
 
-    // Ribbon Text: "STUDENTS OF THE MONTH"
+    // Ribbon Text: "STUDENTS OF THE MONTH • [MONTH YEAR]"
     ctx.textAlign = 'center';
     ctx.fillStyle = '#061328';
-    ctx.font = '900 44px "Cinzel", "Trajan Pro", "Times New Roman", serif';
-    ctx.letterSpacing = '6px';
+    ctx.font = '900 38px "Cinzel", "Trajan Pro", "Times New Roman", serif';
+    ctx.letterSpacing = '4px';
     ctx.fillText(
       monthYear ? `STUDENTS OF THE MONTH • ${monthYear}` : 'STUDENTS OF THE MONTH',
       W / 2,
-      bannerCenterY + 58
+      bannerCenterY + 54
     );
 
-    // Banner Subtitle underneath: "EXCELLENCE IN EVERY AREA"
+    // Banner Subtitle underneath: "★   EXCELLENCE IN EVERY AREA   ★"
     if (bannerSubtitle) {
       ctx.fillStyle = '#fce7a1';
-      ctx.font = 'bold 22px "Cinzel", "Georgia", serif';
-      ctx.letterSpacing = '5px';
-      ctx.fillText(`★   ${bannerSubtitle}   ★`, W / 2, bannerCenterY + bannerH + 34);
+      ctx.font = 'bold 20px "Cinzel", "Georgia", serif';
+      ctx.letterSpacing = '4px';
+      ctx.fillText(`★   ${bannerSubtitle}   ★`, W / 2, bannerCenterY + bannerH + 28);
     }
     ctx.restore();
 
     // ==========================================
     // 6. STUDENT AWARD CARDS
     // ==========================================
-    // We will render 5 cards in 1 row (Mode 1), OR 9 cards in 2 rows (5 on top, 4 bottom) (Mode 2)
     const renderCard = (
       role: AwardRoleConfig,
       cardX: number,
       cardY: number,
       cardW: number,
-      cardH: number
+      cardH: number,
+      isSmallMode: boolean = false
     ) => {
       ctx.save();
 
       // Card outer shadow
       ctx.shadowColor = 'rgba(0, 0, 0, 0.75)';
-      ctx.shadowBlur = 20;
-      ctx.shadowOffsetY = 10;
+      ctx.shadowBlur = 18;
+      ctx.shadowOffsetY = 8;
 
       // Card Gold Outer Border
-      const cardRadius = 24;
+      const cardRadius = isSmallMode ? 20 : 24;
       const cardGoldGrad = ctx.createLinearGradient(cardX, cardY, cardX + cardW, cardY + cardH);
       cardGoldGrad.addColorStop(0, '#f9e497');
       cardGoldGrad.addColorStop(0.3, '#d4af37');
@@ -589,7 +589,7 @@ export default function StudentOfTheMonthModal({
       ctx.shadowOffsetY = 0;
 
       // Inner card body (Deep Navy with subtle gradient)
-      const borderThickness = 6;
+      const borderThickness = isSmallMode ? 5 : 6;
       const innerCardX = cardX + borderThickness;
       const innerCardY = cardY + borderThickness;
       const innerCardW = cardW - 2 * borderThickness;
@@ -606,13 +606,13 @@ export default function StudentOfTheMonthModal({
       ctx.fill();
 
       // Top Icon Medallion Badge
-      const badgeY = innerCardY + 44;
-      const badgeR = 36;
+      const badgeY = isSmallMode ? innerCardY + 34 : innerCardY + 44;
+      const badgeR = isSmallMode ? 26 : 36;
       const badgeCenterX = innerCardX + innerCardW / 2;
 
       // Medallion outer gold ring
       ctx.beginPath();
-      ctx.arc(badgeCenterX, badgeY, badgeR + 4, 0, Math.PI * 2);
+      ctx.arc(badgeCenterX, badgeY, badgeR + 3, 0, Math.PI * 2);
       ctx.fillStyle = cardGoldGrad;
       ctx.fill();
 
@@ -625,7 +625,9 @@ export default function StudentOfTheMonthModal({
       // Medallion icon / symbol
       ctx.fillStyle = '#ffffff';
       ctx.textAlign = 'center';
-      ctx.font = '32px "Segoe UI Symbol", "Apple Color Emoji", sans-serif';
+      ctx.font = isSmallMode 
+        ? '24px "Segoe UI Symbol", "Apple Color Emoji", sans-serif'
+        : '32px "Segoe UI Symbol", "Apple Color Emoji", sans-serif';
       let symbol = '★';
       if (role.id === 'quran') symbol = '📖';
       else if (role.id === 'model') symbol = '⭐';
@@ -636,34 +638,46 @@ export default function StudentOfTheMonthModal({
       else if (role.id === 'language') symbol = '🌐';
       else if (role.id === 'analytical') symbol = '💡';
       else if (role.id === 'math') symbol = '📐';
-      ctx.fillText(symbol, badgeCenterX, badgeY + 11);
+      ctx.fillText(symbol, badgeCenterX, isSmallMode ? badgeY + 8 : badgeY + 11);
 
       // Award English Title
       ctx.textAlign = 'center';
       ctx.fillStyle = '#fce7a1';
-      ctx.font = 'bold 20px "Cinzel", "Arial Black", sans-serif';
-      ctx.letterSpacing = '1px';
-      ctx.fillText(role.defaultTitle.toUpperCase(), badgeCenterX, badgeY + badgeR + 30);
+      ctx.font = isSmallMode
+        ? 'bold 16px "Cinzel", "Arial Black", sans-serif'
+        : 'bold 20px "Cinzel", "Arial Black", sans-serif';
+      ctx.letterSpacing = isSmallMode ? '0.8px' : '1px';
+      ctx.fillText(
+        role.defaultTitle.toUpperCase(), 
+        badgeCenterX, 
+        isSmallMode ? badgeY + badgeR + 22 : badgeY + badgeR + 30
+      );
 
       // Award Arabic Title (e.g. سفير القرآن)
       ctx.fillStyle = '#ffffff';
-      ctx.font = 'bold 24px "Amiri", "Traditional Arabic", "Scheherazade New", serif';
-      ctx.fillText(role.arabicTitle, badgeCenterX, badgeY + badgeR + 62);
+      ctx.font = isSmallMode
+        ? 'bold 20px "Amiri", "Traditional Arabic", "Scheherazade New", serif'
+        : 'bold 24px "Amiri", "Traditional Arabic", "Scheherazade New", serif';
+      ctx.fillText(
+        role.arabicTitle, 
+        badgeCenterX, 
+        isSmallMode ? badgeY + badgeR + 46 : badgeY + badgeR + 62
+      );
 
       // Student Photo Container
-      const photoW = cardW * 0.72;
-      const photoH = photoW * 1.18;
+      const photoW = isSmallMode ? 260 : cardW * 0.74;
+      const photoH = isSmallMode ? 240 : photoW * 1.15;
       const photoX = innerCardX + (innerCardW - photoW) / 2;
-      const photoY = badgeY + badgeR + 80;
+      const photoY = isSmallMode ? badgeY + badgeR + 58 : badgeY + badgeR + 80;
 
       // Photo Gold Frame
       const photoBorder = 4;
       ctx.fillStyle = cardGoldGrad;
       ctx.beginPath();
-      ctx.roundRect(photoX, photoY, photoW, photoH, 18);
+      ctx.roundRect(photoX, photoY, photoW, photoH, 16);
       ctx.fill();
 
-      // Clip and Draw Photo
+      // Clip and Draw Photo with aspect-ratio cover
       ctx.save();
       ctx.beginPath();
       ctx.roundRect(
@@ -671,32 +685,51 @@ export default function StudentOfTheMonthModal({
         photoY + photoBorder, 
         photoW - 2 * photoBorder, 
         photoH - 2 * photoBorder, 
-        14
+        12
       );
       ctx.clip();
 
       const studentImg = photoImages[role.id];
+      const targetW = photoW - 2 * photoBorder;
+      const targetH = photoH - 2 * photoBorder;
+
       if (studentImg) {
-        // Draw image covering the rectangle
-        ctx.drawImage(studentImg, photoX + photoBorder, photoY + photoBorder, photoW - 2 * photoBorder, photoH - 2 * photoBorder);
+        const sRatio = studentImg.width / studentImg.height;
+        const tRatio = targetW / targetH;
+        let sx = 0, sy = 0, sw = studentImg.width, sh = studentImg.height;
+        if (sRatio > tRatio) {
+          sw = studentImg.height * tRatio;
+          sx = (studentImg.width - sw) / 2;
+        } else {
+          sh = studentImg.width / tRatio;
+          sy = (studentImg.height - sh) / 2;
+        }
+        ctx.drawImage(
+          studentImg, 
+          sx, sy, sw, sh,
+          photoX + photoBorder, 
+          photoY + photoBorder, 
+          targetW, 
+          targetH
+        );
       } else {
         // Silhouette placeholder
         ctx.fillStyle = '#0f274e';
-        ctx.fillRect(photoX + photoBorder, photoY + photoBorder, photoW - 2 * photoBorder, photoH - 2 * photoBorder);
+        ctx.fillRect(photoX + photoBorder, photoY + photoBorder, targetW, targetH);
         ctx.fillStyle = '#fce7a1';
-        ctx.font = 'bold 64px sans-serif';
+        ctx.font = 'bold 58px sans-serif';
         const initials = role.studentName
           ? role.studentName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()
           : '?';
-        ctx.fillText(initials, badgeCenterX, photoY + photoH / 2 + 20);
+        ctx.fillText(initials, badgeCenterX, photoY + photoH / 2 + 18);
       }
       ctx.restore();
 
       // Student Name Pill (Navy & Gold Pill at bottom of photo)
       const pillW = cardW * 0.88;
-      const pillH = 46;
+      const pillH = isSmallMode ? 42 : 46;
       const pillX = innerCardX + (innerCardW - pillW) / 2;
-      const pillY = photoY + photoH + 18;
+      const pillY = isSmallMode ? photoY + photoH + 12 : photoY + photoH + 18;
 
       ctx.save();
       ctx.fillStyle = '#061a38';
@@ -705,19 +738,23 @@ export default function StudentOfTheMonthModal({
       ctx.fill();
 
       ctx.strokeStyle = cardGoldGrad;
-      ctx.lineWidth = 2.5;
+      ctx.lineWidth = 2.2;
       ctx.stroke();
 
       ctx.fillStyle = '#ffffff';
-      ctx.font = 'bold 19px "Montserrat", "Arial", sans-serif';
+      ctx.font = isSmallMode
+        ? 'bold 17px "Montserrat", "Arial", sans-serif'
+        : 'bold 19px "Montserrat", "Arial", sans-serif';
       const studentDisplayName = role.studentName || 'Student Name';
-      ctx.fillText(studentDisplayName, badgeCenterX, pillY + 29);
+      ctx.fillText(studentDisplayName, badgeCenterX, isSmallMode ? pillY + 27 : pillY + 29);
       ctx.restore();
 
       // Student Class Subtitle (e.g. Basic 1 Gold)
-      const classY = pillY + pillH + 26;
+      const classY = isSmallMode ? pillY + pillH + 22 : pillY + pillH + 26;
       ctx.fillStyle = '#d4af37';
-      ctx.font = 'bold 17px "Cinzel", "Georgia", serif';
+      ctx.font = isSmallMode
+        ? 'bold 15px "Cinzel", "Georgia", serif'
+        : 'bold 17px "Cinzel", "Georgia", serif';
       ctx.letterSpacing = '1px';
       ctx.fillText(role.studentClass || 'Class Name', badgeCenterX, classY);
 
@@ -730,46 +767,46 @@ export default function StudentOfTheMonthModal({
     if (is5Card) {
       // 5 Panoramic Cards across the screen
       const numCards = 5;
-      const cardW = 390;
-      const cardH = 800;
+      const cardW = 400;
+      const cardH = 780;
       const totalCardsW = numCards * cardW;
       const availableSpace = innerW - 140; // margins
       const gap = (availableSpace - totalCardsW) / (numCards - 1);
       const startX = innerX + 70;
-      const cardsY = bannerCenterY + bannerH + 70;
+      const cardsY = bannerCenterY + bannerH + 55;
 
       activeRoles.slice(0, 5).forEach((role, idx) => {
         const cx = startX + idx * (cardW + gap);
-        renderCard(role, cx, cardsY, cardW, cardH);
+        renderCard(role, cx, cardsY, cardW, cardH, false);
       });
     } else {
       // 9 Cards Layout: Row 1 has 5 cards, Row 2 has 4 cards centered
-      const cardW = 380;
-      const cardH = 500;
+      const cardW = 390;
+      const cardH = 515;
       const gapX = 36;
-      const gapY = 32;
+      const gapY = 36;
 
       // Row 1 (5 cards)
       const row1Count = 5;
       const row1W = row1Count * cardW + (row1Count - 1) * gapX;
-      const row1StartX = W / 2 - row1W / 2;
-      const row1Y = bannerCenterY + bannerH + 60;
+      const row1StartX = (W - row1W) / 2;
+      const row1Y = bannerCenterY + bannerH + 46;
 
       activeRoles.slice(0, 5).forEach((role, idx) => {
         const cx = row1StartX + idx * (cardW + gapX);
-        renderCard(role, cx, row1Y, cardW, cardH);
+        renderCard(role, cx, row1Y, cardW, cardH, true);
       });
 
       // Row 2 (4 cards centered)
       const row2Count = Math.min(4, activeRoles.length - 5);
       if (row2Count > 0) {
         const row2W = row2Count * cardW + (row2Count - 1) * gapX;
-        const row2StartX = W / 2 - row2W / 2;
+        const row2StartX = (W - row2W) / 2;
         const row2Y = row1Y + cardH + gapY;
 
         activeRoles.slice(5, 5 + row2Count).forEach((role, idx) => {
           const cx = row2StartX + idx * (cardW + gapX);
-          renderCard(role, cx, row2Y, cardW, cardH);
+          renderCard(role, cx, row2Y, cardW, cardH, true);
         });
       }
     }
@@ -1242,7 +1279,7 @@ export default function StudentOfTheMonthModal({
               <div className="flex items-center gap-2">
                 <span className="inline-block w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
                 <span className="text-xs font-bold text-slate-300">
-                  Live Plaque Canvas Rendering ({layoutMode === '5-card' ? '2400 × 1500 px' : '2400 × 1720 px'})
+                  Live Plaque Canvas Rendering ({layoutMode === '5-card' ? '2400 × 1500 px' : '2400 × 1680 px'})
                 </span>
               </div>
               <span className="text-xs text-amber-400/80 font-mono">
