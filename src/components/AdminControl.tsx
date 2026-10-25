@@ -4552,6 +4552,16 @@ export default function AdminControl({ students, initialStaff = [], settings }: 
                                       <span>Letter</span>
                                     </button>
 
+                                    <a
+                                      href={`/api/export-csv?studentId=${student.id}&photos=urls`}
+                                      download={`student_${student.firstName}_${student.lastName}.csv`}
+                                      className="py-2 px-3 bg-emerald-50 hover:bg-emerald-100 text-[#0f7343] border border-emerald-200 rounded-xl font-bold text-xs flex items-center justify-center gap-1 transition-all cursor-pointer shadow-2xs"
+                                      title={`Export CSV data for ${student.firstName} ${student.lastName}`}
+                                    >
+                                      <FileSpreadsheet className="w-3.5 h-3.5 text-[#0f7343]" />
+                                      <span>CSV</span>
+                                    </a>
+
                                     {(!student.photo || !student.photo.trim()) && (
                                       <label
                                         htmlFor={`quick-photo-roster-${student.id}`}
@@ -4856,6 +4866,17 @@ export default function AdminControl({ students, initialStaff = [], settings }: 
                               <span className="hidden sm:inline">WhatsApp</span>
                             </a>
                           )}
+
+                          <a
+                            href={`/api/export-csv?studentId=${student.id}&photos=urls`}
+                            download={`student_${student.firstName}_${student.lastName}.csv`}
+                            className="px-3.5 py-1.5 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-800 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs hover:shadow-xs"
+                            title={`Export CSV data for ${student.firstName} ${student.lastName}`}
+                          >
+                            <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" />
+                            <span>Export CSV</span>
+                          </a>
+
                           <button
                             onClick={() => startEditStudent(student)}
                             className="px-3.5 py-1.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg text-xs font-bold text-slate-600 transition-all cursor-pointer"
@@ -7997,6 +8018,26 @@ export default function AdminControl({ students, initialStaff = [], settings }: 
               <div>
                 <h3 className="text-2xl font-black text-slate-800 tracking-tight leading-none">Edit Student Record</h3>
                 <p className="text-xs font-semibold text-slate-400 mt-2">Update the details for the selected student.</p>
+                <div className="flex items-center gap-2 mt-2.5">
+                  <a
+                    href={`/api/export-csv?studentId=${editingStudent.id}&photos=urls`}
+                    download={`student_${editingStudent.firstName}_${editingStudent.lastName}.csv`}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-800 rounded-xl text-xs font-bold transition-all shadow-2xs hover:shadow-xs cursor-pointer"
+                    title="Export this student's data as standard CSV"
+                  >
+                    <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-700" />
+                    <span>Export CSV</span>
+                  </a>
+                  <a
+                    href={`/api/export-csv?studentId=${editingStudent.id}&layout=profile`}
+                    download={`student_${editingStudent.firstName}_${editingStudent.lastName}_profile.csv`}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all shadow-2xs hover:shadow-xs cursor-pointer"
+                    title="Download vertical key-value profile CSV"
+                  >
+                    <Download className="w-3.5 h-3.5 text-slate-600" />
+                    <span>Vertical Profile (CSV)</span>
+                  </a>
+                </div>
               </div>
               <div className="flex items-center gap-3">
                 <StudentAvatar student={editingStudent} size="md" />
@@ -8326,7 +8367,17 @@ export default function AdminControl({ students, initialStaff = [], settings }: 
                   </div>
                 )}
 
-                <div className="flex gap-3 justify-end">
+                <div className="flex gap-3 justify-end items-center flex-wrap">
+                  <a
+                    href={`/api/export-csv?studentId=${editingStudent.id}&photos=urls`}
+                    download={`student_${editingStudent.firstName}_${editingStudent.lastName}.csv`}
+                    className="py-3 px-4 border border-emerald-200 bg-emerald-50 hover:bg-emerald-100 rounded-xl font-bold text-sm text-emerald-800 transition-all flex items-center gap-2 cursor-pointer shadow-2xs hover:shadow-xs"
+                    title="Export this student's data as CSV"
+                  >
+                    <FileSpreadsheet className="w-4 h-4 text-emerald-700" />
+                    <span>Export CSV</span>
+                  </a>
+
                   <button 
                     type="button"
                     onClick={() => setEditingStudent(null)}

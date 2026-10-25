@@ -19,8 +19,30 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const format = searchParams.get('format')?.toLowerCase();
     const isExcel = format === 'xlsx' || format === 'excel';
+    const targetStudentId = (searchParams.get('studentId') || searchParams.get('id') || searchParams.get('student_id'))?.trim();
 
-    const students = await getAllStudents();
+    const allStudents = await getAllStudents();
+    let students = allStudents;
+    let singleStudent: (typeof allStudents)[0] | undefined;
+
+    if (targetStudentId) {
+      singleStudent = allStudents.find(
+        (s) =>
+          s.id === targetStudentId ||
+          s.formNumber?.toLowerCase() === targetStudentId.toLowerCase() ||
+          s.admissionNumber?.toLowerCase() === targetStudentId.toLowerCase() ||
+          getStudentAdmissionNumber(s).toLowerCase() === targetStudentId.toLowerCase()
+      );
+
+      if (!singleStudent) {
+        return NextResponse.json(
+          { error: `Student not found with ID or admission number: ${targetStudentId}` },
+          { status: 404 }
+        );
+      }
+      students = [singleStudent];
+    }
+
     const parents = await getAllParents();
     const parentMap = new Map(parents.map(p => [p.id, p]));
 
@@ -128,7 +150,7 @@ export async function GET(request: NextRequest) {
       const student = students[i];
       const parent = parentMap.get(student.parentId);
       const admNo = getStudentAdmissionNumber(student);
-      const classArm = getStudentClassArm(student.intendedClass, student.id, students);
+      const classArm = getStudentClassArm(student.intendedClass, student.id, allStudents);
       const row = worksheet.getRow(rowNumber);
       row.height = 55; // Provide spacious height for passport photo thumbnail
 
@@ -258,11 +280,15 @@ export async function GET(request: NextRequest) {
 
     const buffer = await workbook.xlsx.writeBuffer();
 
+      const excelFilename = singleStudent
+        ? `student_${(singleStudent.firstName || '').trim()}_${(singleStudent.lastName || '').trim()}_${getStudentAdmissionNumber(singleStudent)}`.replace(/[^a-zA-Z0-9_-]/g, '_') + '.xlsx'
+        : 'student_register_with_photos.xlsx';
+
       return new NextResponse(buffer, {
         status: 200,
         headers: {
           'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-          'Content-Disposition': 'attachment; filename="student_register_with_photos.xlsx"',
+          'Content-Disposition': `attachment; filename="${excelFilename}"`,
           'Pragma': 'no-cache',
           'Cache-Control': 'no-cache, no-store, must-revalidate',
         },
@@ -368,7 +394,7 @@ export async function GET(request: NextRequest) {
     for (const student of students) {
       const parent = parentMap.get(student.parentId);
       const admNo = getStudentAdmissionNumber(student);
-      const classArm = getStudentClassArm(student.intendedClass, student.id, students);
+      const classArm = getStudentClassArm(student.intendedClass, student.id, allStudents);
       const { className, sectionName } = splitClassAndSection(classArm || student.intendedClass);
 
       const photoUrl = `https://portal.academyhub.com.ng/api/student-photo?id=${student.id}`;
@@ -436,10 +462,72 @@ export async function GET(request: NextRequest) {
       csvRows.push(row.join(','));
     }
 
-    const csvContent = '\ufeff' + csvRows.join('\r\n');
-    const downloadFilename = urlOnlyPhotos
+    let downloadFilename = urlOnlyPhotos
       ? 'student_verification_data_light.csv'
       : 'student_verification_data_compressed_photos.csv';
+
+    if (singleStudent) {
+      const cleanFName = (singleStudent.firstName || '').trim().replace(/[^a-zA-Z0-9_-]/g, '_');
+      const cleanLName = (singleStudent.lastName || '').trim().replace(/[^a-zA-Z0-9_-]/g, '_');
+      const admNoClean = getStudentAdmissionNumber(singleStudent).replace(/[^a-zA-Z0-9_-]/g, '_');
+      downloadFilename = `student_${cleanFName}_${cleanLName}_${admNoClean || singleStudent.id}.csv`;
+    }
+
+    // Optional vertical key-value layout for single student profile inspection
+    const layout = searchParams.get('layout')?.toLowerCase();
+    if (singleStudent && (layout === 'profile' || layout === 'vertical' || layout === 'kv')) {
+      const parent = parentMap.get(singleStudent.parentId);
+      const admNo = getStudentAdmissionNumber(singleStudent);
+      const classArm = getStudentClassArm(singleStudent.intendedClass, singleStudent.id, allStudents);
+      const { className, sectionName } = splitClassAndSection(classArm || singleStudent.intendedClass);
+      const photoUrl = `https://portal.academyhub.com.ng/api/student-photo?id=${singleStudent.id}`;
+
+      const profileFields: [string, string | undefined | null][] = [
+        ['Admission Number', admNo],
+        ['Form Number', singleStudent.formNumber],
+        ['Full Name', `${formatPersonName(singleStudent.firstName)} ${formatPersonName(singleStudent.lastName)}`],
+        ['First Name', formatPersonName(singleStudent.firstName)],
+        ['Last Name', formatPersonName(singleStudent.lastName)],
+        ['Gender', (singleStudent.gender || 'Male').toLowerCase().startsWith('f') ? 'Female' : 'Male'],
+        ['Class Arm', formatClassName(classArm || singleStudent.intendedClass)],
+        ['Base Class', formatClassName(className)],
+        ['Section / Arm', formatSectionName(sectionName)],
+        ['Date of Birth', singleStudent.dateOfBirth],
+        ['Father Name', formatPersonName(singleStudent.fatherName || parent?.parentName)],
+        ['Mother Name', formatPersonName(singleStudent.motherName)],
+        ['Guardian Name', formatPersonName(singleStudent.guardianName || singleStudent.fatherName || parent?.parentName || 'Parent / Guardian')],
+        ['Parent / Phone 1', singleStudent.phone1 || parent?.phoneNumber],
+        ['Phone 2', singleStudent.phone2],
+        ['Residential Address', formatTitleCase(singleStudent.residentialAddress)],
+        ['Guardian Address', formatTitleCase(singleStudent.guardianAddress || singleStudent.residentialAddress)],
+        ['Nationality', formatNationality(singleStudent.nationality)],
+        ['Religion', formatReligion(singleStudent.religion)],
+        ['Verification Status', singleStudent.verificationStatus === 'verified' ? 'Verified' : singleStudent.verificationStatus === 'requires_correction' ? 'Requires Correction' : 'Pending'],
+        ['Payment Status', (singleStudent.paymentStatus || 'pending').toLowerCase() === 'paid' ? 'Paid' : 'Pending'],
+        ['Academic Session', singleStudent.academicSession || '2024/2025'],
+        ['Resumption Date', singleStudent.resumptionDate],
+        ['Admission Date', singleStudent.admissionDate],
+        ['Passport Photo URL', photoUrl],
+        ['Correction / Parent Notes', formatTitleCase(singleStudent.correctionNotes)],
+      ];
+
+      const kvRows = ['"Field","Value"'];
+      for (const [key, val] of profileFields) {
+        kvRows.push(`${escapeCSV(key)},${escapeCSV(val)}`);
+      }
+      const csvKvContent = '\ufeff' + kvRows.join('\r\n');
+      return new NextResponse(csvKvContent, {
+        status: 200,
+        headers: {
+          'Content-Type': 'text/csv; charset=utf-8',
+          'Content-Disposition': `attachment; filename="${downloadFilename}"`,
+          'Pragma': 'no-cache',
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+        },
+      });
+    }
+
+    const csvContent = '\ufeff' + csvRows.join('\r\n');
 
     return new NextResponse(csvContent, {
       status: 200,
