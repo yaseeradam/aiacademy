@@ -1998,6 +1998,8 @@ export default function AdminControl({ students, initialStaff = [], settings }: 
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'verified' | 'requires_correction'>('all');
   const [classFilter, setClassFilter] = useState('all');
+  const [photoFilter, setPhotoFilter] = useState<'all' | 'missing' | 'has_photo'>('all');
+  const [rosterPhotoFilter, setRosterPhotoFilter] = useState<'all' | 'missing' | 'has_photo'>('all');
   
   // CSV status state
   const [, setImportStatus] = useState<{ success?: boolean; message?: string } | null>(null);
@@ -2284,6 +2286,8 @@ export default function AdminControl({ students, initialStaff = [], settings }: 
   const pendingCount = students.filter(s => s.verificationStatus === 'pending').length;
   const verifiedCount = students.filter(s => s.verificationStatus === 'verified').length;
   const correctionCount = students.filter(s => s.verificationStatus === 'requires_correction').length;
+  const missingPhotoCount = students.filter(s => !s.photo || !s.photo.trim()).length;
+  const hasPhotoCount = students.filter(s => !!s.photo && !!s.photo.trim()).length;
   const completionRate = totalStudents > 0 ? Math.round((verifiedCount / totalStudents) * 100) : 0;
 
   // Filter students based on active settings
@@ -2302,8 +2306,12 @@ export default function AdminControl({ students, initialStaff = [], settings }: 
 
     const matchesStatus = statusFilter === 'all' || student.verificationStatus === statusFilter;
     const matchesClass = classFilter === 'all' || student.intendedClass === classFilter;
+    const hasPhoto = !!student.photo && !!student.photo.trim();
+    const matchesPhoto = photoFilter === 'all' ||
+                         (photoFilter === 'missing' && !hasPhoto) ||
+                         (photoFilter === 'has_photo' && hasPhoto);
 
-    return matchesSearch && matchesStatus && matchesClass;
+    return matchesSearch && matchesStatus && matchesClass && matchesPhoto;
   });
 
   // Handle CSV Import
@@ -2367,6 +2375,44 @@ export default function AdminControl({ students, initialStaff = [], settings }: 
   const startEditStudent = (student: Student) => {
     setEditingStudent({ ...student });
     setDeleteConfirm(false);
+  };
+
+  const handleQuickPhotoUpload = async (student: Student, file: File) => {
+    setFeedbackModal({
+      isOpen: true,
+      type: 'loading',
+      title: 'Uploading Photo...',
+      message: `Compressing and saving photo for ${student.firstName} ${student.lastName}...`,
+    });
+    try {
+      const base64 = await compressImage(file);
+      const updated = { ...student, photo: base64 };
+      const result = await adminUpdateStudentAction(student.id, updated);
+      if (result.success) {
+        router.refresh();
+        setFeedbackModal({
+          isOpen: true,
+          type: 'success',
+          title: 'Photo Uploaded!',
+          message: `Passport photograph for "${student.firstName} ${student.lastName}" uploaded and saved successfully!`,
+        });
+      } else {
+        setFeedbackModal({
+          isOpen: true,
+          type: 'error',
+          title: 'Upload Failed',
+          message: result.error || 'Failed to save student photo.',
+        });
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to process image file.';
+      setFeedbackModal({
+        isOpen: true,
+        type: 'error',
+        title: 'Upload Error',
+        message: msg,
+      });
+    }
   };
 
   const handleUpdateStudent = async (e: React.FormEvent) => {
@@ -4300,22 +4346,53 @@ export default function AdminControl({ students, initialStaff = [], settings }: 
                           />
                         </div>
 
-                        <span className="text-xs font-bold text-slate-500">
-                          Showing {rosterStudents.filter(s => {
-                            if (!rosterSearch.trim()) return true;
-                            const q = rosterSearch.toLowerCase();
-                            return `${s.firstName} ${s.lastName}`.toLowerCase().includes(q) ||
-                                   s.formNumber.toLowerCase().includes(q) ||
-                                   (s.admissionNumber && s.admissionNumber.toLowerCase().includes(q)) ||
-                                   (s.phone1 && s.phone1.includes(q)) ||
-                                   (s.fatherName && s.fatherName.toLowerCase().includes(q));
-                          }).length} of {enrolledCount} students in {selectedSubgroupRoster}
-                        </span>
+                        <div className="flex items-center gap-3 w-full md:w-auto justify-between md:justify-end flex-wrap">
+                          <button
+                            type="button"
+                            onClick={() => setRosterPhotoFilter(prev => prev === 'missing' ? 'all' : 'missing')}
+                            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer border shrink-0 ${
+                              rosterPhotoFilter === 'missing'
+                                ? 'bg-amber-500 text-slate-950 border-amber-400 font-black shadow-xs ring-2 ring-amber-400/30'
+                                : 'bg-slate-50 hover:bg-slate-100 border-slate-200 text-slate-700'
+                            }`}
+                            title="Filter students in this class without passport pictures"
+                          >
+                            <Camera className="w-3.5 h-3.5 text-amber-600" />
+                            <span>Without Pictures ({rosterStudents.filter(s => !s.photo || !s.photo.trim()).length})</span>
+                            {rosterPhotoFilter === 'missing' && (
+                              <span className="bg-slate-950 text-amber-300 text-[9px] font-black px-1.5 py-0.5 rounded-full uppercase">
+                                Filtered
+                              </span>
+                            )}
+                          </button>
+
+                          <span className="text-xs font-bold text-slate-500">
+                            Showing {rosterStudents.filter(s => {
+                              const hasPhoto = !!s.photo && !!s.photo.trim();
+                              const matchesPhoto = rosterPhotoFilter === 'all' ||
+                                                   (rosterPhotoFilter === 'missing' && !hasPhoto) ||
+                                                   (rosterPhotoFilter === 'has_photo' && hasPhoto);
+                              if (!matchesPhoto) return false;
+                              if (!rosterSearch.trim()) return true;
+                              const q = rosterSearch.toLowerCase();
+                              return `${s.firstName} ${s.lastName}`.toLowerCase().includes(q) ||
+                                     s.formNumber.toLowerCase().includes(q) ||
+                                     (s.admissionNumber && s.admissionNumber.toLowerCase().includes(q)) ||
+                                     (s.phone1 && s.phone1.includes(q)) ||
+                                     (s.fatherName && s.fatherName.toLowerCase().includes(q));
+                            }).length} of {enrolledCount} students in {selectedSubgroupRoster}
+                          </span>
+                        </div>
                       </div>
 
                       {/* Main Roster Body - Full Page Responsive Grid */}
                       {(() => {
                         const filteredRoster = rosterStudents.filter(s => {
+                          const hasPhoto = !!s.photo && !!s.photo.trim();
+                          const matchesPhoto = rosterPhotoFilter === 'all' ||
+                                               (rosterPhotoFilter === 'missing' && !hasPhoto) ||
+                                               (rosterPhotoFilter === 'has_photo' && hasPhoto);
+                          if (!matchesPhoto) return false;
                           if (!rosterSearch.trim()) return true;
                           const q = rosterSearch.toLowerCase();
                           return `${s.firstName} ${s.lastName}`.toLowerCase().includes(q) ||
@@ -4475,6 +4552,28 @@ export default function AdminControl({ students, initialStaff = [], settings }: 
                                       <span>Letter</span>
                                     </button>
 
+                                    {(!student.photo || !student.photo.trim()) && (
+                                      <label
+                                        htmlFor={`quick-photo-roster-${student.id}`}
+                                        className="py-2 px-3 bg-amber-500 hover:bg-amber-600 text-slate-950 border border-amber-400 rounded-xl font-black text-xs flex items-center justify-center gap-1 transition-all cursor-pointer shadow-2xs shrink-0"
+                                        title="Instantly upload passport picture"
+                                      >
+                                        <Camera className="w-3.5 h-3.5 text-slate-950" />
+                                        <span>Photo</span>
+                                        <input
+                                          id={`quick-photo-roster-${student.id}`}
+                                          type="file"
+                                          accept="image/*"
+                                          className="hidden"
+                                          onChange={(e) => {
+                                            const file = e.target.files?.[0];
+                                            if (file) handleQuickPhotoUpload(student, file);
+                                            e.target.value = '';
+                                          }}
+                                        />
+                                      </label>
+                                    )}
+
                                     <button
                                       type="button"
                                       onClick={() => {
@@ -4523,18 +4622,39 @@ export default function AdminControl({ students, initialStaff = [], settings }: 
               <div>
                 <h1 className="text-3xl font-black text-slate-800 tracking-tight leading-none">Student Directory</h1>
                 <p className="text-slate-500 text-sm font-semibold mt-2.5">
-                  Manage student records. Use filters to locate specific individuals or scan for duplicate records.
+                  Manage student records. Use filters to locate specific individuals, find missing pictures, or scan for duplicate records.
                 </p>
               </div>
 
-              <button
-                type="button"
-                onClick={handleScanDuplicates}
-                className="py-2.5 px-4 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-xs font-black transition-all flex items-center gap-2 cursor-pointer shadow-md self-start md:self-auto shrink-0"
-              >
-                <AlertOctagon className="w-4 h-4 text-white" />
-                <span>Scan & Review Duplicates</span>
-              </button>
+              <div className="flex items-center gap-2.5 flex-wrap self-start md:self-auto shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setPhotoFilter(prev => prev === 'missing' ? 'all' : 'missing')}
+                  className={`py-2.5 px-4 rounded-xl text-xs font-black transition-all flex items-center gap-2 cursor-pointer shadow-md border ${
+                    photoFilter === 'missing'
+                      ? 'bg-amber-500 text-slate-950 border-amber-400 ring-2 ring-amber-400/40 shadow-amber-500/20'
+                      : 'bg-white hover:bg-amber-50 text-amber-900 border-amber-200'
+                  }`}
+                  title="Filter to view only students without passport photos"
+                >
+                  <Camera className="w-4 h-4 text-amber-600" />
+                  <span>Without Pictures ({missingPhotoCount})</span>
+                  {photoFilter === 'missing' && (
+                    <span className="bg-slate-950 text-amber-300 text-[10px] px-1.5 py-0.5 rounded-full uppercase">
+                      Active
+                    </span>
+                  )}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleScanDuplicates}
+                  className="py-2.5 px-4 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-xs font-black transition-all flex items-center gap-2 cursor-pointer shadow-md"
+                >
+                  <AlertOctagon className="w-4 h-4 text-white" />
+                  <span>Scan & Review Duplicates</span>
+                </button>
+              </div>
             </div>
 
             <div className="soft-card bg-white rounded-[2rem] border border-slate-200 overflow-hidden shadow-sm">
@@ -4555,13 +4675,32 @@ export default function AdminControl({ students, initialStaff = [], settings }: 
                 <div className="flex gap-3 flex-wrap sm:flex-nowrap">
                   <button
                     type="button"
-                    onClick={handleScanDuplicates}
-                    className="py-3 px-4 bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-900 rounded-xl text-sm font-extrabold transition-all flex items-center gap-2 cursor-pointer shadow-2xs shrink-0"
-                    title="Scan database to find potential duplicate student records"
+                    onClick={() => setPhotoFilter(prev => prev === 'missing' ? 'all' : 'missing')}
+                    className={`py-3 px-4 rounded-xl text-sm font-extrabold transition-all flex items-center gap-2 cursor-pointer shadow-2xs shrink-0 border ${
+                      photoFilter === 'missing'
+                        ? 'bg-amber-500 text-slate-950 border-amber-400 shadow-md ring-2 ring-amber-400/40'
+                        : 'bg-amber-50 hover:bg-amber-100 border-amber-200 text-amber-900'
+                    }`}
+                    title="Filter students missing passport photos"
                   >
-                    <AlertOctagon className="w-4 h-4 text-amber-600" />
-                    <span>Detect Duplicates</span>
+                    <Camera className="w-4 h-4 text-amber-600" />
+                    <span>Without Pictures ({missingPhotoCount})</span>
                   </button>
+
+                  <select
+                    value={photoFilter}
+                    onChange={(e) => setPhotoFilter(e.target.value as 'all' | 'missing' | 'has_photo')}
+                    className={`py-3 px-4 border rounded-xl text-sm font-bold focus:outline-none transition-all cursor-pointer ${
+                      photoFilter === 'missing'
+                        ? 'bg-amber-500 text-slate-950 border-amber-400 font-black shadow-sm ring-2 ring-amber-400/30'
+                        : 'bg-slate-50 border-slate-200 text-slate-600'
+                    }`}
+                    title="Filter by student photo status"
+                  >
+                    <option value="all">📷 All Photos ({totalStudents})</option>
+                    <option value="missing">⚠️ Without Pictures ({missingPhotoCount})</option>
+                    <option value="has_photo">✅ With Pictures ({hasPhotoCount})</option>
+                  </select>
 
                   <select
                     value={classFilter}
@@ -4585,14 +4724,59 @@ export default function AdminControl({ students, initialStaff = [], settings }: 
                 </div>
               </div>
 
+              {/* Active Filter Banner when filtering for students without pictures */}
+              {photoFilter === 'missing' && (
+                <div className="p-4 bg-amber-50 border-b border-amber-200 px-6 flex items-center justify-between gap-4 animate-slide-down">
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-xl bg-amber-500 text-slate-950 flex items-center justify-center font-black shadow-xs shrink-0">
+                      <Camera className="w-5 h-5 text-slate-950" />
+                    </div>
+                    <div>
+                      <span className="text-xs font-black text-amber-950 block">
+                        Filtered: Showing Students Without Pictures ({filteredStudents.length} of {missingPhotoCount} total)
+                      </span>
+                      <span className="text-[11px] text-amber-800 font-medium block">
+                        Click &ldquo;Upload Photo&rdquo; on any student below to select and instantly attach their passport picture.
+                      </span>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setPhotoFilter('all')}
+                    className="px-3.5 py-1.5 bg-white hover:bg-slate-100 text-slate-800 text-xs font-extrabold rounded-lg border border-slate-300 transition-all cursor-pointer shrink-0 shadow-2xs"
+                  >
+                    Show All ({totalStudents})
+                  </button>
+                </div>
+              )}
+
               <div className="divide-y divide-slate-100">
                 {filteredStudents.length > 0 ? (
                   filteredStudents.map((student) => (
                     <div key={student.id} className="p-6 hover:bg-slate-50/50 transition-all flex flex-col md:flex-row md:items-center justify-between gap-4">
                       <div className="flex items-center gap-4">
-                        <StudentAvatar student={student} size="md" />
+                        <div className="relative">
+                          <StudentAvatar student={student} size="md" />
+                          {(!student.photo || !student.photo.trim()) && (
+                            <span className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-amber-500 text-slate-950 flex items-center justify-center text-[10px] font-black shadow-xs ring-1 ring-white" title="Missing Photo">
+                              !
+                            </span>
+                          )}
+                        </div>
                         <div>
-                          <h4 className="font-bold text-slate-800">{student.firstName} {student.lastName}</h4>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <h4 className="font-bold text-slate-800">{student.firstName} {student.lastName}</h4>
+                            {(!student.photo || !student.photo.trim()) ? (
+                              <span className="px-2 py-0.5 rounded-md text-[10px] font-black bg-amber-100 text-amber-800 border border-amber-300 flex items-center gap-1">
+                                <Camera className="w-2.5 h-2.5 text-amber-700" />
+                                <span>No Picture</span>
+                              </span>
+                            ) : (
+                              <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-100 text-slate-600">
+                                Has Photo
+                              </span>
+                            )}
+                          </div>
                           <span className="text-xs font-semibold text-slate-400 font-mono">SN: {student.formNumber}</span>
                         </div>
                       </div>
@@ -4616,7 +4800,50 @@ export default function AdminControl({ students, initialStaff = [], settings }: 
                           </span>
                         )}
 
-                        <div className="flex gap-2">
+                        <div className="flex gap-2 items-center flex-wrap">
+                          {/* Quick Photo Upload Button */}
+                          {(!student.photo || !student.photo.trim()) ? (
+                            <label
+                              htmlFor={`quick-photo-dir-${student.id}`}
+                              className="px-3.5 py-1.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 font-black rounded-lg text-xs flex items-center gap-1.5 cursor-pointer shadow-xs transition-all border border-amber-400"
+                              title="Select image to instantly upload and save passport photo"
+                            >
+                              <Camera className="w-3.5 h-3.5 text-slate-950" />
+                              <span>Upload Photo</span>
+                              <input
+                                id={`quick-photo-dir-${student.id}`}
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={(e) => {
+                                  const file = e.target.files?.[0];
+                                  if (file) handleQuickPhotoUpload(student, file);
+                                  e.target.value = '';
+                                }}
+                              />
+                            </label>
+                          ) : (
+                            <label
+                              htmlFor={`quick-photo-dir-${student.id}`}
+                              className="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-lg text-xs flex items-center gap-1 cursor-pointer transition-all border border-slate-200"
+                              title="Replace current passport photo"
+                            >
+                              <Camera className="w-3.5 h-3.5 text-slate-500" />
+                              <span className="hidden sm:inline">Change Photo</span>
+                              <input
+                                id={`quick-photo-dir-${student.id}`}
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={(e) => {
+                                  const file = e.target.files?.[0];
+                                  if (file) handleQuickPhotoUpload(student, file);
+                                  e.target.value = '';
+                                }}
+                              />
+                            </label>
+                          )}
+
                           {student.phone1 && (
                             <a
                               href={`https://wa.me/${student.phone1.replace(/[^\d]/g, '')}?text=${encodeURIComponent(`Dear Parent, your child ${student.firstName} ${student.lastName}'s details (Form: ${student.formNumber}) have been verified at AI Integrated Academy Argungu. Thank you!`)}`}
@@ -4653,8 +4880,21 @@ export default function AdminControl({ students, initialStaff = [], settings }: 
                     </div>
                   ))
                 ) : (
-                  <div className="p-12 text-center text-slate-400 font-semibold">
-                    No student records matched your filters.
+                  <div className="p-12 text-center text-slate-400 font-semibold space-y-2">
+                    <p className="text-sm font-bold text-slate-700">
+                      {photoFilter === 'missing' 
+                        ? '🎉 Amazing! All students in the selected criteria have passport photos uploaded.'
+                        : 'No student records matched your filters.'}
+                    </p>
+                    {photoFilter === 'missing' && (
+                      <button
+                        type="button"
+                        onClick={() => setPhotoFilter('all')}
+                        className="px-4 py-2 bg-slate-900 text-white text-xs font-black rounded-xl hover:bg-slate-800 transition-all cursor-pointer shadow-sm"
+                      >
+                        Reset Photo Filter
+                      </button>
+                    )}
                   </div>
                 )}
               </div>
