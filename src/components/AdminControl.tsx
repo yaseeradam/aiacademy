@@ -1998,8 +1998,6 @@ export default function AdminControl({ students, initialStaff = [], settings }: 
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'verified' | 'requires_correction'>('all');
   const [classFilter, setClassFilter] = useState('all');
-  const [photoFilter, setPhotoFilter] = useState<'all' | 'missing' | 'has_photo'>('all');
-  const [rosterPhotoFilter, setRosterPhotoFilter] = useState<'all' | 'missing' | 'has_photo'>('all');
   
   // CSV status state
   const [, setImportStatus] = useState<{ success?: boolean; message?: string } | null>(null);
@@ -2286,8 +2284,6 @@ export default function AdminControl({ students, initialStaff = [], settings }: 
   const pendingCount = students.filter(s => s.verificationStatus === 'pending').length;
   const verifiedCount = students.filter(s => s.verificationStatus === 'verified').length;
   const correctionCount = students.filter(s => s.verificationStatus === 'requires_correction').length;
-  const missingPhotoCount = students.filter(s => !s.photo || !s.photo.trim()).length;
-  const hasPhotoCount = students.filter(s => !!s.photo && !!s.photo.trim()).length;
   const completionRate = totalStudents > 0 ? Math.round((verifiedCount / totalStudents) * 100) : 0;
 
   // Filter students based on active settings
@@ -2306,12 +2302,8 @@ export default function AdminControl({ students, initialStaff = [], settings }: 
 
     const matchesStatus = statusFilter === 'all' || student.verificationStatus === statusFilter;
     const matchesClass = classFilter === 'all' || student.intendedClass === classFilter;
-    const hasPhoto = !!student.photo && !!student.photo.trim();
-    const matchesPhoto = photoFilter === 'all' ||
-                         (photoFilter === 'missing' && !hasPhoto) ||
-                         (photoFilter === 'has_photo' && hasPhoto);
 
-    return matchesSearch && matchesStatus && matchesClass && matchesPhoto;
+    return matchesSearch && matchesStatus && matchesClass;
   });
 
   // Handle CSV Import
@@ -4347,40 +4339,18 @@ export default function AdminControl({ students, initialStaff = [], settings }: 
                         </div>
 
                         <div className="flex items-center gap-3 w-full md:w-auto justify-between md:justify-end flex-wrap">
-                          <button
-                            type="button"
-                            onClick={() => setRosterPhotoFilter(prev => prev === 'missing' ? 'all' : 'missing')}
-                            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer border shrink-0 ${
-                              rosterPhotoFilter === 'missing'
-                                ? 'bg-amber-500 text-slate-950 border-amber-400 font-black shadow-xs ring-2 ring-amber-400/30'
-                                : 'bg-slate-50 hover:bg-slate-100 border-slate-200 text-slate-700'
-                            }`}
-                            title="Filter students in this class without passport pictures"
-                          >
-                            <Camera className="w-3.5 h-3.5 text-amber-600" />
-                            <span>Without Pictures ({rosterStudents.filter(s => !s.photo || !s.photo.trim()).length})</span>
-                            {rosterPhotoFilter === 'missing' && (
-                              <span className="bg-slate-950 text-amber-300 text-[9px] font-black px-1.5 py-0.5 rounded-full uppercase">
-                                Filtered
-                              </span>
-                            )}
-                          </button>
-
                           <span className="text-xs font-bold text-slate-500">
-                            Showing {rosterStudents.filter(s => {
-                              const hasPhoto = !!s.photo && !!s.photo.trim();
-                              const matchesPhoto = rosterPhotoFilter === 'all' ||
-                                                   (rosterPhotoFilter === 'missing' && !hasPhoto) ||
-                                                   (rosterPhotoFilter === 'has_photo' && hasPhoto);
-                              if (!matchesPhoto) return false;
-                              if (!rosterSearch.trim()) return true;
+                            Showing {(() => {
+                              if (!rosterSearch.trim()) return rosterStudents.length;
                               const q = rosterSearch.toLowerCase();
-                              return `${s.firstName} ${s.lastName}`.toLowerCase().includes(q) ||
-                                     s.formNumber.toLowerCase().includes(q) ||
-                                     (s.admissionNumber && s.admissionNumber.toLowerCase().includes(q)) ||
-                                     (s.phone1 && s.phone1.includes(q)) ||
-                                     (s.fatherName && s.fatherName.toLowerCase().includes(q));
-                            }).length} of {enrolledCount} students in {selectedSubgroupRoster}
+                              return rosterStudents.filter(s =>
+                                `${s.firstName} ${s.lastName}`.toLowerCase().includes(q) ||
+                                s.formNumber.toLowerCase().includes(q) ||
+                                (s.admissionNumber && s.admissionNumber.toLowerCase().includes(q)) ||
+                                (s.phone1 && s.phone1.includes(q)) ||
+                                (s.fatherName && s.fatherName.toLowerCase().includes(q))
+                              ).length;
+                            })()} of {enrolledCount} students in {selectedSubgroupRoster}
                           </span>
                         </div>
                       </div>
@@ -4388,11 +4358,6 @@ export default function AdminControl({ students, initialStaff = [], settings }: 
                       {/* Main Roster Body - Full Page Responsive Grid */}
                       {(() => {
                         const filteredRoster = rosterStudents.filter(s => {
-                          const hasPhoto = !!s.photo && !!s.photo.trim();
-                          const matchesPhoto = rosterPhotoFilter === 'all' ||
-                                               (rosterPhotoFilter === 'missing' && !hasPhoto) ||
-                                               (rosterPhotoFilter === 'has_photo' && hasPhoto);
-                          if (!matchesPhoto) return false;
                           if (!rosterSearch.trim()) return true;
                           const q = rosterSearch.toLowerCase();
                           return `${s.firstName} ${s.lastName}`.toLowerCase().includes(q) ||
@@ -4632,30 +4597,11 @@ export default function AdminControl({ students, initialStaff = [], settings }: 
               <div>
                 <h1 className="text-3xl font-black text-slate-800 tracking-tight leading-none">Student Directory</h1>
                 <p className="text-slate-500 text-sm font-semibold mt-2.5">
-                  Manage student records. Use filters to locate specific individuals, find missing pictures, or scan for duplicate records.
+                  Manage student records. Use filters to locate specific individuals or scan for duplicate records.
                 </p>
               </div>
 
               <div className="flex items-center gap-2.5 flex-wrap self-start md:self-auto shrink-0">
-                <button
-                  type="button"
-                  onClick={() => setPhotoFilter(prev => prev === 'missing' ? 'all' : 'missing')}
-                  className={`py-2.5 px-4 rounded-xl text-xs font-black transition-all flex items-center gap-2 cursor-pointer shadow-md border ${
-                    photoFilter === 'missing'
-                      ? 'bg-amber-500 text-slate-950 border-amber-400 ring-2 ring-amber-400/40 shadow-amber-500/20'
-                      : 'bg-white hover:bg-amber-50 text-amber-900 border-amber-200'
-                  }`}
-                  title="Filter to view only students without passport photos"
-                >
-                  <Camera className="w-4 h-4 text-amber-600" />
-                  <span>Without Pictures ({missingPhotoCount})</span>
-                  {photoFilter === 'missing' && (
-                    <span className="bg-slate-950 text-amber-300 text-[10px] px-1.5 py-0.5 rounded-full uppercase">
-                      Active
-                    </span>
-                  )}
-                </button>
-
                 <button
                   type="button"
                   onClick={handleScanDuplicates}
@@ -4683,35 +4629,6 @@ export default function AdminControl({ students, initialStaff = [], settings }: 
                 </div>
 
                 <div className="flex gap-3 flex-wrap sm:flex-nowrap">
-                  <button
-                    type="button"
-                    onClick={() => setPhotoFilter(prev => prev === 'missing' ? 'all' : 'missing')}
-                    className={`py-3 px-4 rounded-xl text-sm font-extrabold transition-all flex items-center gap-2 cursor-pointer shadow-2xs shrink-0 border ${
-                      photoFilter === 'missing'
-                        ? 'bg-amber-500 text-slate-950 border-amber-400 shadow-md ring-2 ring-amber-400/40'
-                        : 'bg-amber-50 hover:bg-amber-100 border-amber-200 text-amber-900'
-                    }`}
-                    title="Filter students missing passport photos"
-                  >
-                    <Camera className="w-4 h-4 text-amber-600" />
-                    <span>Without Pictures ({missingPhotoCount})</span>
-                  </button>
-
-                  <select
-                    value={photoFilter}
-                    onChange={(e) => setPhotoFilter(e.target.value as 'all' | 'missing' | 'has_photo')}
-                    className={`py-3 px-4 border rounded-xl text-sm font-bold focus:outline-none transition-all cursor-pointer ${
-                      photoFilter === 'missing'
-                        ? 'bg-amber-500 text-slate-950 border-amber-400 font-black shadow-sm ring-2 ring-amber-400/30'
-                        : 'bg-slate-50 border-slate-200 text-slate-600'
-                    }`}
-                    title="Filter by student photo status"
-                  >
-                    <option value="all">📷 All Photos ({totalStudents})</option>
-                    <option value="missing">⚠️ Without Pictures ({missingPhotoCount})</option>
-                    <option value="has_photo">✅ With Pictures ({hasPhotoCount})</option>
-                  </select>
-
                   <select
                     value={classFilter}
                     onChange={(e) => setClassFilter(e.target.value)}
@@ -4733,32 +4650,6 @@ export default function AdminControl({ students, initialStaff = [], settings }: 
                   </select>
                 </div>
               </div>
-
-              {/* Active Filter Banner when filtering for students without pictures */}
-              {photoFilter === 'missing' && (
-                <div className="p-4 bg-amber-50 border-b border-amber-200 px-6 flex items-center justify-between gap-4 animate-slide-down">
-                  <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-xl bg-amber-500 text-slate-950 flex items-center justify-center font-black shadow-xs shrink-0">
-                      <Camera className="w-5 h-5 text-slate-950" />
-                    </div>
-                    <div>
-                      <span className="text-xs font-black text-amber-950 block">
-                        Filtered: Showing Students Without Pictures ({filteredStudents.length} of {missingPhotoCount} total)
-                      </span>
-                      <span className="text-[11px] text-amber-800 font-medium block">
-                        Click &ldquo;Upload Photo&rdquo; on any student below to select and instantly attach their passport picture.
-                      </span>
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setPhotoFilter('all')}
-                    className="px-3.5 py-1.5 bg-white hover:bg-slate-100 text-slate-800 text-xs font-extrabold rounded-lg border border-slate-300 transition-all cursor-pointer shrink-0 shadow-2xs"
-                  >
-                    Show All ({totalStudents})
-                  </button>
-                </div>
-              )}
 
               <div className="divide-y divide-slate-100">
                 {filteredStudents.length > 0 ? (
@@ -4903,19 +4794,8 @@ export default function AdminControl({ students, initialStaff = [], settings }: 
                 ) : (
                   <div className="p-12 text-center text-slate-400 font-semibold space-y-2">
                     <p className="text-sm font-bold text-slate-700">
-                      {photoFilter === 'missing' 
-                        ? '🎉 Amazing! All students in the selected criteria have passport photos uploaded.'
-                        : 'No student records matched your filters.'}
+                      No student records matched your filters.
                     </p>
-                    {photoFilter === 'missing' && (
-                      <button
-                        type="button"
-                        onClick={() => setPhotoFilter('all')}
-                        className="px-4 py-2 bg-slate-900 text-white text-xs font-black rounded-xl hover:bg-slate-800 transition-all cursor-pointer shadow-sm"
-                      >
-                        Reset Photo Filter
-                      </button>
-                    )}
                   </div>
                 )}
               </div>
