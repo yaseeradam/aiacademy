@@ -169,6 +169,7 @@ export default function AdminControl({ students, initialStaff = [], settings }: 
     title: string;
     message: string;
     details?: Record<string, string>;
+    duplicateStudent?: Student;
   } | null>(null);
 
   // Classes Page filter state
@@ -2253,21 +2254,26 @@ export default function AdminControl({ students, initialStaff = [], settings }: 
   });
 
   useEffect(() => {
-    const first = newStudent.firstName.trim().toLowerCase();
-    const last = newStudent.lastName.trim().toLowerCase();
+    const first = newStudent.firstName.trim().replace(/\s+/g, ' ').toLowerCase();
+    const last = newStudent.lastName.trim().replace(/\s+/g, ' ').toLowerCase();
     const phone = newStudent.phone1.replace(/[^\d]/g, '');
     const dob = newStudent.dateOfBirth.trim().toLowerCase();
 
-    if (first && last && (phone || dob)) {
+    if (first && last) {
       const match = students.find(s => {
-        const sFirst = s.firstName.trim().toLowerCase();
-        const sLast = s.lastName.trim().toLowerCase();
+        const sFirst = (s.firstName || '').trim().replace(/\s+/g, ' ').toLowerCase();
+        const sLast = (s.lastName || '').trim().replace(/\s+/g, ' ').toLowerCase();
         const sPhone = (s.phone1 || '').replace(/[^\d]/g, '');
         const sDob = (s.dateOfBirth || '').trim().toLowerCase();
 
-        if (phone && sFirst === first && sLast === last && sPhone === phone) return true;
-        if (dob && sFirst === first && sLast === last && sDob === dob) return true;
-        return false;
+        // Exact name match (space-normalized)
+        const nameMatch = sFirst === first && sLast === last;
+        if (!nameMatch) return false;
+
+        // If phone or DOB is entered, verify match; otherwise flag exact name duplicate
+        if (phone && sPhone) return sPhone === phone;
+        if (dob && sDob) return sDob === dob;
+        return true;
       });
       setDuplicateWarning(match || null);
     } else {
@@ -2286,25 +2292,82 @@ export default function AdminControl({ students, initialStaff = [], settings }: 
   const correctionCount = students.filter(s => s.verificationStatus === 'requires_correction').length;
   const completionRate = totalStudents > 0 ? Math.round((verifiedCount / totalStudents) * 100) : 0;
 
-  // Filter students based on active settings
+  // Filter students based on active settings with resilient tokenized search
   const classes = Array.from(new Set(students.map(s => s.intendedClass))).filter(Boolean);
 
-  const filteredStudents = students.filter(student => {
-    const fullName = `${student.firstName} ${student.lastName}`.toLowerCase();
-    const formNum = student.formNumber.toLowerCase();
-    const parentPhone = student.phone1?.toLowerCase() || '';
-    const intendedCls = student.intendedClass.toLowerCase();
+  const filteredStudents = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase().replace(/\s+/g, ' ');
+    const tokens = q ? q.split(' ').filter(Boolean) : [];
 
-    const matchesSearch = fullName.includes(searchQuery.toLowerCase()) || 
-                          formNum.includes(searchQuery.toLowerCase()) ||
-                          parentPhone.includes(searchQuery.toLowerCase()) ||
-                          intendedCls.includes(searchQuery.toLowerCase());
+    return students.filter(student => {
+      const sFirst = (student.firstName || '').trim().replace(/\s+/g, ' ').toLowerCase();
+      const sLast = (student.lastName || '').trim().replace(/\s+/g, ' ').toLowerCase();
+      const fullName = `${sFirst} ${sLast}`.trim();
+      const formNum = (student.formNumber || '').trim().toLowerCase();
+      const admNum = (student.admissionNumber || '').trim().toLowerCase();
+      const parentPhone1 = (student.phone1 || '').toLowerCase();
+      const parentPhone2 = (student.phone2 || '').toLowerCase();
+      const digits1 = (student.phone1 || '').replace(/[^\d]/g, '');
+      const digits2 = (student.phone2 || '').replace(/[^\d]/g, '');
+      const parentNames = `${student.fatherName || ''} ${student.motherName || ''} ${student.guardianName || ''}`.replace(/\s+/g, ' ').toLowerCase();
+      const intendedCls = (student.intendedClass || '').toLowerCase();
 
-    const matchesStatus = statusFilter === 'all' || student.verificationStatus === statusFilter;
-    const matchesClass = classFilter === 'all' || student.intendedClass === classFilter;
+      let matchesSearch = true;
+      if (tokens.length > 0) {
+        matchesSearch = tokens.every(token =>
+          fullName.includes(token) ||
+          formNum.includes(token) ||
+          admNum.includes(token) ||
+          parentPhone1.includes(token) ||
+          parentPhone2.includes(token) ||
+          digits1.includes(token) ||
+          digits2.includes(token) ||
+          parentNames.includes(token) ||
+          intendedCls.includes(token)
+        );
+      }
 
-    return matchesSearch && matchesStatus && matchesClass;
-  });
+      const matchesStatus = statusFilter === 'all' || student.verificationStatus === statusFilter;
+      const matchesClass = classFilter === 'all' || student.intendedClass === classFilter;
+
+      return matchesSearch && matchesStatus && matchesClass;
+    });
+  }, [students, searchQuery, statusFilter, classFilter]);
+
+  // Count matches hidden by class/status filters so the user is never left in the dark
+  const hiddenMatchesCount = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase().replace(/\s+/g, ' ');
+    if (!q || (statusFilter === 'all' && classFilter === 'all')) return 0;
+    const tokens = q.split(' ').filter(Boolean);
+
+    const totalMatches = students.filter(student => {
+      const sFirst = (student.firstName || '').trim().replace(/\s+/g, ' ').toLowerCase();
+      const sLast = (student.lastName || '').trim().replace(/\s+/g, ' ').toLowerCase();
+      const fullName = `${sFirst} ${sLast}`.trim();
+      const formNum = (student.formNumber || '').trim().toLowerCase();
+      const admNum = (student.admissionNumber || '').trim().toLowerCase();
+      const parentPhone1 = (student.phone1 || '').toLowerCase();
+      const parentPhone2 = (student.phone2 || '').toLowerCase();
+      const digits1 = (student.phone1 || '').replace(/[^\d]/g, '');
+      const digits2 = (student.phone2 || '').replace(/[^\d]/g, '');
+      const parentNames = `${student.fatherName || ''} ${student.motherName || ''} ${student.guardianName || ''}`.replace(/\s+/g, ' ').toLowerCase();
+      const intendedCls = (student.intendedClass || '').toLowerCase();
+
+      return tokens.every(token =>
+        fullName.includes(token) ||
+        formNum.includes(token) ||
+        admNum.includes(token) ||
+        parentPhone1.includes(token) ||
+        parentPhone2.includes(token) ||
+        digits1.includes(token) ||
+        digits2.includes(token) ||
+        parentNames.includes(token) ||
+        intendedCls.includes(token)
+      );
+    }).length;
+
+    return Math.max(0, totalMatches - filteredStudents.length);
+  }, [students, searchQuery, statusFilter, classFilter, filteredStudents.length]);
 
   // Handle CSV Import
   const handleCSVImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -2601,8 +2664,9 @@ export default function AdminControl({ students, initialStaff = [], settings }: 
         setFeedbackModal({
           isOpen: true,
           type: 'error',
-          title: 'Registration Failed',
+          title: result.existingStudent ? 'Student Record Already Exists' : 'Registration Failed',
           message: result.error || 'Failed to create student record. Please try again.',
+          duplicateStudent: result.existingStudent,
         });
       }
     } catch (err: unknown) {
@@ -4651,6 +4715,22 @@ export default function AdminControl({ students, initialStaff = [], settings }: 
                 </div>
               </div>
 
+              {hiddenMatchesCount > 0 && (
+                <div className="mx-6 mt-4 p-3.5 bg-amber-50 border-2 border-amber-300 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs text-amber-900 animate-slide-down shadow-xs">
+                  <div className="flex items-center gap-2 font-bold">
+                    <AlertOctagon className="w-4 h-4 text-amber-600 shrink-0" />
+                    <span>Found <strong>{hiddenMatchesCount}</strong> student record{hiddenMatchesCount > 1 ? 's' : ''} matching &ldquo;{searchQuery}&rdquo; in other classes or review statuses.</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => { setClassFilter('all'); setStatusFilter('all'); }}
+                    className="px-3.5 py-1.5 bg-amber-600 hover:bg-amber-700 text-white font-extrabold rounded-xl transition-all cursor-pointer shrink-0 text-xs shadow-xs"
+                  >
+                    Clear Filters to View ({hiddenMatchesCount} match{hiddenMatchesCount > 1 ? 'es' : ''})
+                  </button>
+                </div>
+              )}
+
               <div className="divide-y divide-slate-100">
                 {filteredStudents.length > 0 ? (
                   filteredStudents.map((student) => (
@@ -4792,10 +4872,28 @@ export default function AdminControl({ students, initialStaff = [], settings }: 
                     </div>
                   ))
                 ) : (
-                  <div className="p-12 text-center text-slate-400 font-semibold space-y-2">
+                  <div className="p-12 text-center text-slate-400 font-semibold space-y-3">
                     <p className="text-sm font-bold text-slate-700">
-                      No student records matched your filters.
+                      No student records matched your current filters.
                     </p>
+                    {hiddenMatchesCount > 0 ? (
+                      <div className="inline-flex flex-col items-center gap-2.5 p-4 bg-amber-50 border border-amber-300 rounded-2xl text-xs text-amber-900 max-w-md mx-auto">
+                        <p className="font-bold">
+                          Found {hiddenMatchesCount} matching record{hiddenMatchesCount > 1 ? 's' : ''} in other classes or statuses!
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => { setClassFilter('all'); setStatusFilter('all'); }}
+                          className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-extrabold rounded-xl transition-all cursor-pointer shadow-xs text-xs"
+                        >
+                          Show All {hiddenMatchesCount} Match{hiddenMatchesCount > 1 ? 'es' : ''} (Reset Filters)
+                        </button>
+                      </div>
+                    ) : searchQuery.trim() ? (
+                      <p className="text-xs text-slate-500">
+                        Try searching by first name, last name, serial number, admission number, or phone.
+                      </p>
+                    ) : null}
                   </div>
                 )}
               </div>
@@ -5126,13 +5224,26 @@ export default function AdminControl({ students, initialStaff = [], settings }: 
                   <p className="leading-relaxed text-slate-700 font-medium">
                     A student record for <strong className="font-extrabold text-amber-950">{duplicateWarning.firstName} {duplicateWarning.lastName}</strong> (Form No: <code className="font-mono bg-amber-100 px-1.5 py-0.5 rounded text-amber-900 font-bold">{duplicateWarning.formNumber}</code>) already exists in <strong>Class {duplicateWarning.intendedClass}</strong>.
                   </p>
-                  <div className="pt-1 flex gap-3">
+                  <div className="pt-1 flex gap-3 flex-wrap">
                     <button
                       type="button"
                       onClick={() => startEditStudent(duplicateWarning)}
                       className="px-3.5 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-xl font-bold text-xs transition-all cursor-pointer shadow-xs flex items-center gap-1.5"
                     >
                       <span>View / Edit Existing Record</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setActiveTab('directory');
+                        setClassFilter('all');
+                        setStatusFilter('all');
+                        setSearchQuery(`${duplicateWarning.firstName} ${duplicateWarning.lastName}`.trim());
+                      }}
+                      className="px-3.5 py-2 bg-white border border-amber-300 hover:bg-amber-100 text-amber-900 rounded-xl font-bold text-xs transition-all cursor-pointer shadow-xs flex items-center gap-1.5"
+                    >
+                      <Search className="w-3.5 h-3.5 text-amber-700" />
+                      <span>Find in Student Directory</span>
                     </button>
                   </div>
                 </div>
@@ -5632,14 +5743,45 @@ export default function AdminControl({ students, initialStaff = [], settings }: 
               </select>
             </div>
 
+            {hiddenMatchesCount > 0 && (
+              <div className="p-3.5 bg-amber-50 border-2 border-amber-300 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs text-amber-900 animate-slide-down shadow-xs">
+                <div className="flex items-center gap-2 font-bold">
+                  <AlertOctagon className="w-4 h-4 text-amber-600 shrink-0" />
+                  <span>Found <strong>{hiddenMatchesCount}</strong> student record{hiddenMatchesCount > 1 ? 's' : ''} matching &ldquo;{searchQuery}&rdquo; in other classes.</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => { setClassFilter('all'); }}
+                  className="px-3.5 py-1.5 bg-amber-600 hover:bg-amber-700 text-white font-extrabold rounded-xl transition-all cursor-pointer shrink-0 text-xs shadow-xs"
+                >
+                  Clear Class Filter ({hiddenMatchesCount} match{hiddenMatchesCount > 1 ? 'es' : ''})
+                </button>
+              </div>
+            )}
+
             {/* Grid of Students */}
             {filteredStudents.length === 0 ? (
               <div className="bg-white rounded-3xl p-12 border border-slate-200 text-center space-y-3">
                 <FileText className="w-12 h-12 text-slate-300 mx-auto" />
                 <h3 className="text-base font-bold text-slate-800">No Student Records Found</h3>
-                <p className="text-xs text-slate-400 font-medium max-w-md mx-auto">
-                  Registered students will appear here to manage fee approval and issue admission letters.
-                </p>
+                {hiddenMatchesCount > 0 ? (
+                  <div className="inline-flex flex-col items-center gap-2 p-3 bg-amber-50 border border-amber-300 rounded-2xl text-xs text-amber-900 max-w-md mx-auto">
+                    <p className="font-bold">
+                      Found {hiddenMatchesCount} matching record{hiddenMatchesCount > 1 ? 's' : ''} in other classes!
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => setClassFilter('all')}
+                      className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-extrabold rounded-xl transition-all cursor-pointer shadow-xs text-xs"
+                    >
+                      Show All Matches
+                    </button>
+                  </div>
+                ) : (
+                  <p className="text-xs text-slate-400 font-medium max-w-md mx-auto">
+                    Registered students will appear here to manage fee approval and issue admission letters.
+                  </p>
+                )}
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -8331,7 +8473,37 @@ export default function AdminControl({ students, initialStaff = [], settings }: 
 
             {/* Action Buttons */}
             {feedbackModal.type !== 'loading' && (
-              <div className="w-full pt-2">
+              <div className="w-full pt-2 space-y-2">
+                {feedbackModal.duplicateStudent && (
+                  <div className="flex flex-col sm:flex-row gap-2 w-full">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const dup = feedbackModal.duplicateStudent!;
+                        setFeedbackModal(null);
+                        startEditStudent(dup);
+                      }}
+                      className="flex-1 py-3 px-4 bg-amber-600 hover:bg-amber-700 text-white rounded-xl font-extrabold text-xs transition-all shadow-md cursor-pointer flex items-center justify-center gap-1.5"
+                    >
+                      <span>Edit Existing Record</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const dup = feedbackModal.duplicateStudent!;
+                        setFeedbackModal(null);
+                        setActiveTab('directory');
+                        setClassFilter('all');
+                        setStatusFilter('all');
+                        setSearchQuery(`${dup.firstName} ${dup.lastName}`.trim());
+                      }}
+                      className="flex-1 py-3 px-4 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl font-extrabold text-xs transition-all shadow-md cursor-pointer flex items-center justify-center gap-1.5"
+                    >
+                      <Search className="w-3.5 h-3.5" />
+                      <span>Find in Directory</span>
+                    </button>
+                  </div>
+                )}
                 <button
                   type="button"
                   onClick={() => {
@@ -8340,10 +8512,12 @@ export default function AdminControl({ students, initialStaff = [], settings }: 
                   className={`w-full py-3.5 px-6 rounded-xl font-extrabold text-sm shadow-md transition-all active:scale-[0.98] cursor-pointer ${
                     feedbackModal.type === 'success'
                       ? 'bg-[#0f7343] hover:bg-[#0b5c34] text-white'
+                      : feedbackModal.duplicateStudent
+                      ? 'bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs py-2.5'
                       : 'bg-slate-900 hover:bg-slate-800 text-white'
                   }`}
                 >
-                  {feedbackModal.type === 'success' ? 'Review & Save Form ✓' : 'Dismiss / Try Again'}
+                  {feedbackModal.type === 'success' ? 'Review & Save Form ✓' : feedbackModal.duplicateStudent ? 'Close Window' : 'Dismiss / Try Again'}
                 </button>
               </div>
             )}

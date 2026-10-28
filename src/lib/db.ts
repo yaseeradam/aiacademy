@@ -299,8 +299,9 @@ export async function findDuplicateStudent(studentData: Partial<Student>): Promi
   const db = await getDB();
 
   const formNum = studentData.formNumber?.trim();
-  const first = studentData.firstName?.trim();
-  const last = studentData.lastName?.trim();
+  const admNum = studentData.admissionNumber?.trim();
+  const first = studentData.firstName?.trim().replace(/\s+/g, ' ');
+  const last = studentData.lastName?.trim().replace(/\s+/g, ' ');
 
   const conditions: object[] = [];
 
@@ -308,14 +309,15 @@ export async function findDuplicateStudent(studentData: Partial<Student>): Promi
   if (formNum) {
     conditions.push({ formNumber: { $regex: new RegExp(`^${escapeRegex(formNum)}$`, 'i') } });
   }
+  if (admNum) {
+    conditions.push({ admissionNumber: { $regex: new RegExp(`^${escapeRegex(admNum)}$`, 'i') } });
+  }
   if (first && last) {
+    const firstRegex = escapeRegex(first).replace(/ /g, '\\s+');
+    const lastRegex = escapeRegex(last).replace(/ /g, '\\s+');
     conditions.push({
-      firstName: { $regex: new RegExp(`^${escapeRegex(first)}$`, 'i') },
-      lastName:  { $regex: new RegExp(`^${escapeRegex(last)}$`, 'i') }
-    });
-  } else if (first && first.length > 2) {
-    conditions.push({
-      firstName: { $regex: new RegExp(`^${escapeRegex(first)}$`, 'i') }
+      firstName: { $regex: new RegExp(`^\\s*${firstRegex}\\s*$`, 'i') },
+      lastName:  { $regex: new RegExp(`^\\s*${lastRegex}\\s*$`, 'i') }
     });
   }
 
@@ -399,9 +401,19 @@ export async function getAllParents(): Promise<Parent[]> {
 
 export async function addOrUpdateStudent(student: Student): Promise<void> {
   const db = await getDB();
+  const sanitizedStudent: Student = {
+    ...student,
+    firstName: (student.firstName || '').trim().replace(/\s+/g, ' '),
+    lastName: (student.lastName || '').trim().replace(/\s+/g, ' '),
+    formNumber: (student.formNumber || '').trim(),
+    intendedClass: (student.intendedClass || '').trim().replace(/\s+/g, ' '),
+  };
+  if (sanitizedStudent.admissionNumber) {
+    sanitizedStudent.admissionNumber = normalizeAdmissionNumber(sanitizedStudent.admissionNumber);
+  }
   await db.collection<Student>(STUDENTS_COL).updateOne(
     { id: student.id },
-    { $set: student },
+    { $set: sanitizedStudent },
     { upsert: true }
   );
 }
