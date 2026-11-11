@@ -220,7 +220,9 @@ body {
   }
 
   #printable-slip-area,
-  #printable-slip-area * {
+  #printable-slip-area *,
+  #payroll-print-area,
+  #payroll-print-area * {
     visibility: visible !important;
   }
 
@@ -238,6 +240,17 @@ body {
     overflow: visible !important;
     page-break-inside: avoid !important;
     break-inside: avoid !important;
+  }
+
+  #payroll-print-area {
+    position: static !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    overflow: visible !important;
   }
 
   .print\:hidden {

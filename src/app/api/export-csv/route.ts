@@ -290,7 +290,7 @@ export async function GET(request: NextRequest) {
           'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
           'Content-Disposition': `attachment; filename="${excelFilename}"`,
           'Pragma': 'no-cache',
-          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Cache-Control': 'no-cache, no-store, must-revalidate, max-age=0',
         },
       });
     }
@@ -535,7 +535,7 @@ export async function GET(request: NextRequest) {
         'Content-Type': 'text/csv; charset=utf-8',
         'Content-Disposition': `attachment; filename="${downloadFilename}"`,
         'Pragma': 'no-cache',
-        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Cache-Control': 'no-cache, no-store, must-revalidate, max-age=0',
       },
     });
   } catch (error: unknown) {

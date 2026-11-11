@@ -1,5 +1,6 @@
-import { Student } from '@/types';
+import { Student, Staff } from '@/types';
 import { getStudentClassArm, getStudentAdmissionNumber } from './classUtils';
+import { formatPersonName, formatTitleCase } from './formatUtils';
 
 export interface PrintClassRosterOptions {
   students: Student[];
@@ -862,3 +863,449 @@ export function printOfficialClassEnrolmentRoster({
     printWindow.document.close();
   }
 }
+
+export interface PrintStaffPayrollScheduleOptions {
+  staffList: Staff[];
+  schoolName?: string;
+  logoSrc?: string;
+  academicSession?: string;
+  title?: string;
+}
+
+export function printStaffPayrollSchedulePDF({
+  staffList,
+  schoolName = 'AI INTEGRATED ACADEMY (AIA)',
+  logoSrc = '/logo.jpg',
+  academicSession = '2025/2026',
+  title = 'OFFICIAL STAFF PAYROLL & REMUNERATION SCHEDULE',
+}: PrintStaffPayrollScheduleOptions) {
+  if (!staffList || staffList.length === 0) {
+    alert('No staff records found to print.');
+    return;
+  }
+
+  // Calculate totals
+  let totalPayroll = 0;
+  let countWithSalary = 0;
+  let verifiedAccounts = 0;
+
+  for (const s of staffList) {
+    const parsed = s.salary ? parseInt(String(s.salary).replace(/[^0-9]/g, ''), 10) : 0;
+    if (parsed && !isNaN(parsed)) {
+      totalPayroll += parsed;
+      countWithSalary++;
+    }
+    const acct = (s.accountNumber || '').trim().toLowerCase();
+    if (acct && acct !== 'pending' && acct !== 'none' && acct.length >= 8) {
+      verifiedAccounts++;
+    }
+  }
+
+  const avgSalary = countWithSalary > 0 ? Math.round(totalPayroll / countWithSalary) : 0;
+  const pendingAccounts = staffList.length - verifiedAccounts;
+  const currentDate = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+  const formatNaira = (amt: number) => '₦' + amt.toLocaleString('en-NG');
+
+  const rowsHtml = staffList.map((staff, idx) => {
+    const rawSal = staff.salary ? parseInt(String(staff.salary).replace(/[^0-9]/g, ''), 10) : null;
+    const salaryDisplay = rawSal && !isNaN(rawSal) ? formatNaira(rawSal) : '<span class="status-pending">Pending Setup</span>';
+    const isAcctVerified = Boolean(staff.accountNumber && staff.accountNumber.trim().length >= 8 && staff.accountNumber.toLowerCase() !== 'pending');
+    const acctDisplay = isAcctVerified && staff.accountNumber ? staff.accountNumber.trim() : '<span class="status-pending">Pending</span>';
+    const statusBadge = isAcctVerified
+      ? '<span class="badge badge-verified">Verified</span>'
+      : '<span class="badge badge-amber">Pending NUBAN</span>';
+
+    return `
+      <tr>
+        <td class="col-center text-muted font-bold">${idx + 1}</td>
+        <td class="col-name">${formatPersonName(staff.name)}</td>
+        <td class="col-center font-mono">${staff.idNumber || '—'}</td>
+        <td class="col-center">${formatTitleCase(staff.section) || 'Primary'}</td>
+        <td class="col-center">${staff.role || 'Teacher'}</td>
+        <td class="col-left">${staff.classAllocated ? formatTitleCase(staff.classAllocated) : '<span class="text-muted">—</span>'}</td>
+        <td class="col-left">${staff.bankName ? formatTitleCase(staff.bankName) : '<span class="text-muted">Pending</span>'}</td>
+        <td class="col-center font-mono">${acctDisplay}</td>
+        <td class="col-right font-bold text-emerald">${salaryDisplay}</td>
+        <td class="col-center">${statusBadge}</td>
+      </tr>
+    `;
+  }).join('');
+
+  const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>${schoolName} - Payroll Schedule PDF</title>
+  <style>
+    @page {
+      size: A4 landscape;
+      margin: 8mm 10mm;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      font-size: 9.5px;
+      color: #0f172a;
+      background: #ffffff;
+      padding: 10px;
+    }
+    .container {
+      width: 100%;
+      max-width: 100%;
+      margin: 0 auto;
+    }
+    /* Header Letterhead */
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 2.5px solid #0f172a;
+      padding-bottom: 8px;
+      margin-bottom: 10px;
+    }
+    .header-logo {
+      width: 65px;
+      height: 65px;
+      object-fit: contain;
+      border-radius: 8px;
+    }
+    .header-center {
+      text-align: center;
+      flex-grow: 1;
+      padding: 0 12px;
+    }
+    .school-title {
+      font-size: 19px;
+      font-weight: 900;
+      color: #0f172a;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      line-height: 1.1;
+    }
+    .sub-title {
+      font-size: 11px;
+      font-weight: 800;
+      color: #047857;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-top: 3px;
+    }
+    .meta-line {
+      font-size: 8.5px;
+      color: #64748b;
+      margin-top: 2px;
+      font-weight: 600;
+    }
+    .header-badge {
+      text-align: right;
+      min-width: 130px;
+    }
+    .badge-official {
+      display: inline-block;
+      background: #0f172a;
+      color: #ffffff;
+      font-size: 8.5px;
+      font-weight: 800;
+      text-transform: uppercase;
+      padding: 4px 8px;
+      border-radius: 4px;
+      letter-spacing: 0.5px;
+    }
+    .badge-date {
+      font-size: 8px;
+      color: #475569;
+      font-weight: 700;
+      margin-top: 3px;
+    }
+
+    /* KPI Cards */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    .kpi-card {
+      background: #f8fafc;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      padding: 6px 10px;
+    }
+    .kpi-card.highlight {
+      background: #ecfdf5;
+      border-color: #6ee7b7;
+    }
+    .kpi-label {
+      font-size: 7.5px;
+      font-weight: 800;
+      text-transform: uppercase;
+      color: #64748b;
+      letter-spacing: 0.5px;
+    }
+    .kpi-value {
+      font-size: 13px;
+      font-weight: 900;
+      color: #0f172a;
+      margin-top: 2px;
+    }
+    .kpi-value.emerald {
+      color: #047857;
+    }
+
+    /* Table Styles */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 8.5px;
+      margin-bottom: 12px;
+    }
+    th {
+      background: #0f172a;
+      color: #ffffff;
+      font-size: 8px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      padding: 6px 5px;
+      border: 1px solid #0f172a;
+    }
+    td {
+      padding: 4.5px 5px;
+      border: 1px solid #cbd5e1;
+      color: #1e293b;
+    }
+    tr:nth-child(even) td {
+      background: #f8fafc;
+    }
+    .col-center { text-align: center; }
+    .col-left { text-align: left; }
+    .col-right { text-align: right; }
+    .col-name {
+      font-weight: 800;
+      color: #0f172a;
+      text-align: left;
+    }
+    .font-mono {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 8px;
+      letter-spacing: -0.2px;
+    }
+    .font-bold { font-weight: 700; }
+    .text-emerald { color: #047857; }
+    .text-muted { color: #94a3b8; }
+    .badge {
+      display: inline-block;
+      padding: 1.5px 6px;
+      border-radius: 9999px;
+      font-size: 7.5px;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+    .badge-verified {
+      background: #dcfce7;
+      color: #15803d;
+      border: 1px solid #86efac;
+    }
+    .badge-amber {
+      background: #fef3c7;
+      color: #b45309;
+      border: 1px solid #fde68a;
+    }
+    .status-pending {
+      color: #b45309;
+      font-style: italic;
+      font-size: 8px;
+    }
+
+    /* Total Row */
+    .total-row td {
+      background: #0f172a !important;
+      color: #ffffff !important;
+      font-size: 9.5px;
+      font-weight: 900;
+      border-top: 2px solid #0f172a;
+    }
+    .total-row .total-amount {
+      color: #34d399 !important;
+      font-size: 11px;
+    }
+
+    /* Signatures Section */
+    .signatures-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 16px;
+      margin-top: 14px;
+      page-break-inside: avoid;
+    }
+    .signature-card {
+      border: 1px dashed #cbd5e1;
+      border-radius: 6px;
+      padding: 10px 12px;
+      background: #fafafa;
+    }
+    .signature-card-title {
+      font-size: 8px;
+      font-weight: 800;
+      text-transform: uppercase;
+      color: #475569;
+      letter-spacing: 0.5px;
+      margin-bottom: 24px;
+    }
+    .signature-line {
+      border-top: 1px solid #0f172a;
+      display: flex;
+      justify-content: space-between;
+      padding-top: 3px;
+      font-size: 7.5px;
+      font-weight: 700;
+      color: #334155;
+    }
+    .stamp-box {
+      border: 2px dashed #94a3b8;
+      border-radius: 6px;
+      height: 100%;
+      min-height: 55px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #94a3b8;
+      font-size: 8.5px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    /* Footer meta */
+    .footer-meta {
+      margin-top: 10px;
+      display: flex;
+      justify-content: space-between;
+      font-size: 7.5px;
+      color: #64748b;
+      font-weight: 600;
+      border-top: 1px solid #e2e8f0;
+      padding-top: 4px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Header Letterhead -->
+    <div class="header">
+      <img src="${logoSrc}" alt="Logo" class="header-logo" onerror="this.style.display='none'">
+      <div class="header-center">
+        <h1 class="school-title">${schoolName}</h1>
+        <h2 class="sub-title">${title}</h2>
+        <p class="meta-line">Bursary & Accounts Directorate • ${academicSession} Academic Session • Official Bank Disbursement</p>
+      </div>
+      <div class="header-badge">
+        <div class="badge-official">Official Record</div>
+        <div class="badge-date">Date: ${currentDate}</div>
+      </div>
+    </div>
+
+    <!-- Summary KPI Cards -->
+    <div class="kpi-grid">
+      <div class="kpi-card highlight">
+        <div class="kpi-label">Total Monthly Payroll</div>
+        <div class="kpi-value emerald">${formatNaira(totalPayroll)}</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Staff on Schedule</div>
+        <div class="kpi-value">${staffList.length} <span style="font-size: 9px; font-weight: normal; color: #64748b;">Personnel</span></div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Verified Accounts</div>
+        <div class="kpi-value">${verifiedAccounts} <span style="font-size: 9px; font-weight: normal; color: #64748b;">of ${staffList.length}</span></div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Average Monthly Salary</div>
+        <div class="kpi-value">${formatNaira(avgSalary)}</div>
+      </div>
+    </div>
+
+    <!-- Payroll Table -->
+    <table>
+      <thead>
+        <tr>
+          <th style="width: 25px;">S/N</th>
+          <th style="width: 170px;">Staff Full Name</th>
+          <th style="width: 90px;">Staff ID No.</th>
+          <th style="width: 75px;">Cadre / Section</th>
+          <th style="width: 70px;">Role</th>
+          <th style="width: 95px;">Class Allocated</th>
+          <th style="width: 95px;">Disbursement Bank</th>
+          <th style="width: 90px;">NUBAN Account No.</th>
+          <th style="width: 95px;">Monthly Salary</th>
+          <th style="width: 75px;">Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${rowsHtml}
+        <!-- Total Row -->
+        <tr class="total-row">
+          <td class="col-center">Σ</td>
+          <td colspan="7" style="text-align: left; letter-spacing: 0.5px;">TOTAL MONTHLY PAYROLL DISBURSEMENT (${staffList.length} STAFF PERSONNEL)</td>
+          <td class="col-right total-amount">${formatNaira(totalPayroll)}</td>
+          <td class="col-center" style="font-size: 8px; color: #cbd5e1;">${verifiedAccounts}/${staffList.length} OK</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- Signatures & Official Endorsement -->
+    <div class="signatures-grid">
+      <div class="signature-card">
+        <div class="signature-card-title">Prepared by (Bursar / Accounts Officer)</div>
+        <div class="signature-line">
+          <span>Signature & Stamp</span>
+          <span>Date</span>
+        </div>
+      </div>
+
+      <div class="signature-card">
+        <div class="signature-card-title">Authorized & Approved by (Director / Proprietor)</div>
+        <div class="signature-line">
+          <span>Signature & Stamp</span>
+          <span>Date</span>
+        </div>
+      </div>
+
+      <div>
+        <div class="stamp-box">
+          Official School Stamp
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer Meta -->
+    <div class="footer-meta">
+      <span>AI Integrated Academy (AIA) • Electronic Payroll Management System</span>
+      <span>Confidential Financial Schedule • For Bank Disbursement & Auditing Only</span>
+      <span>Generated ${currentDate}</span>
+    </div>
+  </div>
+
+  <script>
+    window.onload = function() {
+      setTimeout(function() {
+        window.print();
+      }, 350);
+    };
+  </script>
+</body>
+</html>`;
+
+  const printWindow = window.open('', '_blank', 'width=1100,height=850');
+  if (printWindow) {
+    printWindow.document.write(html);
+    printWindow.document.close();
+  }
+}
+

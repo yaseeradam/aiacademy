@@ -6,7 +6,7 @@ import {
   ArrowLeft, Search, Filter, 
   Building2, Users, CheckCircle2, AlertCircle, FileSpreadsheet,
   Printer, TrendingUp, ShieldCheck, Banknote, RefreshCw,
-  Plus, Edit3, Trash2, X, Save, Phone, GraduationCap, AlertOctagon
+  Plus, Edit3, Trash2, X, Save, Phone, GraduationCap, AlertOctagon, Download
 } from 'lucide-react';
 import { Staff } from '@/types';
 import { 
@@ -16,6 +16,7 @@ import {
   adminDeleteStaffAction 
 } from '@/app/actions';
 import { OFFICIAL_PAYROLL_SCHEDULE } from '@/lib/payrollData';
+import { printStaffPayrollSchedulePDF } from '@/lib/printUtils';
 
 export default function PayrollPage() {
   const [staffList, setStaffList] = useState<Staff[]>([]);
@@ -24,6 +25,7 @@ export default function PayrollPage() {
   const [selectedBank, setSelectedBank] = useState<string>('ALL');
   const [selectedSection, setSelectedSection] = useState<string>('ALL');
   const [isExporting, setIsExporting] = useState(false);
+  const [isExportingCSV, setIsExportingCSV] = useState(false);
 
   // CRUD Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -289,12 +291,24 @@ export default function PayrollPage() {
 
   const handleExportExcel = () => {
     setIsExporting(true);
-    window.location.href = '/api/export-payroll-excel';
+    window.location.href = `/api/export-payroll-excel?t=${Date.now()}`;
     setTimeout(() => setIsExporting(false), 2000);
   };
 
+  const handleExportCSV = () => {
+    setIsExportingCSV(true);
+    window.location.href = `/api/export-payroll-excel?format=csv&t=${Date.now()}`;
+    setTimeout(() => setIsExportingCSV(false), 2000);
+  };
+
   const handlePrint = () => {
-    window.print();
+    const listToPrint = filteredStaff.length > 0 ? filteredStaff : staffList;
+    printStaffPayrollSchedulePDF({
+      staffList: listToPrint,
+      schoolName: 'AI INTEGRATED ACADEMY (AIA)',
+      logoSrc: '/logo.jpg',
+      academicSession: '2025/2026',
+    });
   };
 
   return (
@@ -327,7 +341,7 @@ export default function PayrollPage() {
             </div>
           </div>
 
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
             <button
               onClick={handleOpenAddModal}
               className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold text-white bg-slate-800 hover:bg-slate-700 border border-slate-700 transition cursor-pointer"
@@ -340,10 +354,24 @@ export default function PayrollPage() {
             <button
               onClick={handlePrint}
               className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold text-slate-300 hover:text-white bg-slate-800/80 hover:bg-slate-800 border border-slate-700/80 transition shadow-sm cursor-pointer"
-              title="Print Schedule"
+              title="Print Official A4 PDF Schedule"
             >
-              <Printer className="w-3.5 h-3.5 text-slate-400" />
-              <span className="hidden sm:inline">Print A4</span>
+              <Printer className="w-3.5 h-3.5 text-emerald-400" />
+              <span className="hidden sm:inline">Print A4 (PDF)</span>
+            </button>
+
+            <button
+              onClick={handleExportCSV}
+              disabled={isExportingCSV}
+              className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold text-slate-200 hover:text-white bg-slate-800 hover:bg-slate-700 border border-slate-700 transition shadow-sm cursor-pointer disabled:opacity-50"
+              title="Export Live Payroll CSV"
+            >
+              {isExportingCSV ? (
+                <RefreshCw className="w-3.5 h-3.5 animate-spin text-emerald-400" />
+              ) : (
+                <Download className="w-3.5 h-3.5 text-emerald-400" />
+              )}
+              <span>Export CSV</span>
             </button>
 
             <button
@@ -364,7 +392,7 @@ export default function PayrollPage() {
       </header>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+      <main id="payroll-print-area" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
         {/* Printable Official Letterhead for Print Mode */}
         <div className="hidden print:block text-center border-b-2 border-slate-900 pb-4 mb-6">
           <h1 className="text-2xl font-black text-slate-950 uppercase tracking-tight">AI INTEGRATED ACADEMY (AIA)</h1>

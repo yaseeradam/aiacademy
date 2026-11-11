@@ -1,35 +1,119 @@
 import { NextResponse } from 'next/server';
 import ExcelJS from 'exceljs';
-import { OFFICIAL_PAYROLL_SCHEDULE, calculatePayrollTotals } from '@/lib/payrollData';
+import { PayrollRecord, OFFICIAL_PAYROLL_SCHEDULE, calculatePayrollTotals } from '@/lib/payrollData';
 import { getAllStaff } from '@/lib/db';
 import { formatPersonName, formatTitleCase } from '@/lib/formatUtils';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    let records = OFFICIAL_PAYROLL_SCHEDULE;
+    const { searchParams } = new URL(request.url);
+    const format = searchParams.get('format')?.toLowerCase();
+    const isCSV = format === 'csv';
+
+    let records: PayrollRecord[] = OFFICIAL_PAYROLL_SCHEDULE;
     try {
       const dbStaff = await getAllStaff();
-      if (dbStaff && dbStaff.length >= 20) {
-        const dbMap = new Map(dbStaff.map(s => [s.idNumber || s.name.toLowerCase().trim(), s]));
-        records = OFFICIAL_PAYROLL_SCHEDULE.map(item => {
-          const matched = dbMap.get(item.idNumber) || dbMap.get(item.name.toLowerCase().trim());
-          if (!matched) return item;
-          const parsedSal = matched.salary ? parseInt(String(matched.salary).replace(/[^0-9]/g, ''), 10) : null;
+      if (dbStaff && dbStaff.length > 0) {
+        const canonicalMap = new Map(OFFICIAL_PAYROLL_SCHEDULE.map(item => [item.idNumber || item.name.toLowerCase().trim(), item]));
+        records = dbStaff.map((staff, idx) => {
+          const matched = canonicalMap.get(staff.idNumber) || canonicalMap.get(staff.name.toLowerCase().trim());
+          const parsedSal = staff.salary ? parseInt(String(staff.salary).replace(/[^0-9]/g, ''), 10) : (matched?.salary ?? null);
           return {
-            ...item,
-            name: matched.name || item.name,
-            bankName: matched.bankName || item.bankName,
-            accountNumber: matched.accountNumber || item.accountNumber,
-            salary: parsedSal && !isNaN(parsedSal) ? parsedSal : item.salary,
-            classAllocated: matched.classAllocated || item.classAllocated,
-            phone: matched.phone || item.phone,
+            sn: idx + 1,
+            name: staff.name || matched?.name || 'Staff Member',
+            idNumber: staff.idNumber || matched?.idNumber || `AIA-STF-${idx + 1}`,
+            section: staff.section || matched?.section || 'Primary',
+            role: staff.role || matched?.role || 'Teacher',
+            classAllocated: staff.classAllocated || matched?.classAllocated || '',
+            phone: staff.phone || matched?.phone || '',
+            bankName: staff.bankName || matched?.bankName || '',
+            accountNumber: staff.accountNumber || matched?.accountNumber || '',
+            salary: parsedSal && !isNaN(parsedSal) ? parsedSal : null,
           };
         });
       }
     } catch (e) {
       console.warn('Using canonical OFFICIAL_PAYROLL_SCHEDULE for Excel export:', e);
+    }
+
+    if (isCSV) {
+      const escapeCSV = (val: string | number | undefined | null) => {
+        if (val === undefined || val === null) return '';
+        const s = String(val).trim();
+        if (s.includes(',') || s.includes('"') || s.includes('\n') || s.includes('\r')) {
+          return `"${s.replace(/"/g, '""')}"`;
+        }
+        return s;
+      };
+
+      const csvHeaders = [
+        'S/N',
+        'Staff Full Name',
+        'Staff ID No.',
+        'Cadre / Section',
+        'Role',
+        'Class Allocated',
+        'Disbursement Bank',
+        'NUBAN Account No.',
+        'Monthly Salary (NGN)',
+        'Account Status',
+        'Phone'
+      ];
+
+      const csvRows = [csvHeaders.join(',')];
+      let totalDisbursement = 0;
+
+      records.forEach((rec, idx) => {
+        const isPendingAcct = !rec.accountNumber || rec.accountNumber.trim().toLowerCase() === 'pending' || rec.accountNumber.trim().length < 8;
+        const statusText = isPendingAcct ? 'Pending NUBAN' : 'Verified';
+        const acctDisplay = isPendingAcct ? 'Pending' : String(rec.accountNumber).trim();
+        const salVal = typeof rec.salary === 'number' && !isNaN(rec.salary) ? rec.salary : '';
+        if (typeof rec.salary === 'number' && !isNaN(rec.salary)) {
+          totalDisbursement += rec.salary;
+        }
+
+        csvRows.push([
+          idx + 1,
+          escapeCSV(formatPersonName(rec.name)),
+          escapeCSV(rec.idNumber),
+          escapeCSV(formatTitleCase(rec.section || 'Primary')),
+          escapeCSV(rec.role || 'Teacher'),
+          escapeCSV(formatTitleCase(rec.classAllocated || '')),
+          escapeCSV(formatTitleCase(rec.bankName || 'Pending')),
+          escapeCSV(acctDisplay),
+          salVal,
+          escapeCSV(statusText),
+          escapeCSV(rec.phone || ''),
+        ].join(','));
+      });
+
+      // Total summary row
+      csvRows.push([
+        '',
+        escapeCSV('TOTAL MONTHLY PAYROLL DISBURSEMENT'),
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        totalDisbursement,
+        escapeCSV(`${records.filter(r => r.accountNumber && r.accountNumber.trim().length >= 8 && r.accountNumber.toLowerCase() !== 'pending').length}/${records.length} Verified`),
+        ''
+      ].join(','));
+
+      const csvContent = '\uFEFF' + csvRows.join('\r\n');
+      return new NextResponse(csvContent, {
+        status: 200,
+        headers: {
+          'Content-Type': 'text/csv; charset=utf-8',
+          'Content-Disposition': 'attachment; filename="AI_Integrated_Academy_Payroll_Schedule_2026.csv"',
+          'Pragma': 'no-cache',
+          'Cache-Control': 'no-cache, no-store, must-revalidate, max-age=0',
+        },
+      });
     }
 
     const workbook = new ExcelJS.Workbook();
@@ -326,7 +410,8 @@ export async function GET() {
       headers: {
         'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         'Content-Disposition': 'attachment; filename="AI_Integrated_Academy_Payroll_Schedule_2026.xlsx"',
-        'Cache-Control': 'no-store, max-age=0',
+        'Pragma': 'no-cache',
+        'Cache-Control': 'no-cache, no-store, must-revalidate, max-age=0',
       },
     });
   } catch (error: any) {

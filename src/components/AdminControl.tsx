@@ -19,7 +19,7 @@ import AppointmentLetterModal, { printBulkAppointmentLetters, printIndividualApp
 import PickupIDCardModal from './PickupIDCardModal';
 import PrintClassRosterModal from './PrintClassRosterModal';
 import StudentOfTheMonthModal from './StudentOfTheMonthModal';
-import { printOfficialClassEnrolmentRoster } from '@/lib/printUtils';
+import { printOfficialClassEnrolmentRoster, printStaffPayrollSchedulePDF } from '@/lib/printUtils';
 
 interface AdminControlProps {
   students: Student[];
@@ -1509,10 +1509,10 @@ export default function AdminControl({ students, initialStaff = [], settings }: 
   }, [initialStaff]);
 
   useEffect(() => {
-    if (activeTab === 'staff' && staffList.length === 0) {
+    if (activeTab === 'staff') {
       loadStaff();
     }
-  }, [activeTab, staffList.length]);
+  }, [activeTab]);
 
   useEffect(() => {
     const handleOutsideClick = (e: MouseEvent) => {
@@ -1840,7 +1840,7 @@ export default function AdminControl({ students, initialStaff = [], settings }: 
   };
 
   const handleSyncOfficialStaff = async () => {
-    if (!confirm('Sync the 22 official staff members from the staff payroll schedule into the database?')) {
+    if (!confirm('Sync the official staff members from the staff payroll schedule into the database?')) {
       return;
     }
     setIsLoadingStaff(true);
@@ -1874,33 +1874,43 @@ export default function AdminControl({ students, initialStaff = [], settings }: 
     document.body.removeChild(link);
   };
 
-  const handleExportStaffCSV = () => {
-    if (staffList.length === 0) {
-      alert('No staff records to export.');
-      return;
+  const handleExportStaffCSV = async () => {
+    try {
+      setIsLoadingStaff(true);
+      const freshStaff = await getAllStaffAction();
+      const currentList = freshStaff && freshStaff.length > 0 ? freshStaff : staffList;
+      if (currentList.length === 0) {
+        alert('No staff records to export.');
+        return;
+      }
+      setStaffList(currentList);
+      const headers = ['S/N', 'Staff Name', 'Phone', 'Staff ID', 'Section', 'Class Allocated', 'Role', 'Bank Name', 'Account Number', 'Monthly Salary'];
+      const rows = currentList.map((s, idx) => [
+        idx + 1,
+        `"${(s.name || '').replace(/"/g, '""')}"`,
+        `"${s.phone || ''}"`,
+        `"${s.idNumber || ''}"`,
+        `"${s.section || ''}"`,
+        `"${s.classAllocated || ''}"`,
+        `"${s.role || ''}"`,
+        `"${s.bankName || ''}"`,
+        `"${s.accountNumber || ''}"`,
+        `"${s.salary || ''}"`,
+      ]);
+      const csv = '\uFEFF' + [headers.join(','), ...rows.map(r => r.join(','))].join('\r\n');
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.setAttribute('href', url);
+      link.setAttribute('download', `staff_directory_${new Date().toISOString().slice(0, 10)}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (err: unknown) {
+      alert('Failed to export latest staff records.');
+    } finally {
+      setIsLoadingStaff(false);
     }
-    const headers = ['S/N', 'Staff Name', 'Phone', 'Staff ID', 'Section', 'Class Allocated', 'Role', 'Bank Name', 'Account Number', 'Monthly Salary'];
-    const rows = staffList.map((s, idx) => [
-      idx + 1,
-      `"${(s.name || '').replace(/"/g, '""')}"`,
-      `"${s.phone || ''}"`,
-      `"${s.idNumber || ''}"`,
-      `"${s.section || ''}"`,
-      `"${s.classAllocated || ''}"`,
-      `"${s.role || ''}"`,
-      `"${s.bankName || ''}"`,
-      `"${s.accountNumber || ''}"`,
-      `"${s.salary || ''}"`,
-    ]);
-    const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.setAttribute('href', url);
-    link.setAttribute('download', `staff_directory_${new Date().toISOString().slice(0, 10)}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
   };
 
   const handleDeleteStaff = async (staff: Staff) => {
@@ -5944,6 +5954,37 @@ export default function AdminControl({ students, initialStaff = [], settings }: 
                   <FileSpreadsheet className="w-4 h-4 text-emerald-100" />
                   <span>Payroll & Excel (.xlsx)</span>
                 </a>
+
+                <a
+                  href="/api/export-payroll-excel?format=csv"
+                  className="py-2 px-3 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer shadow-xs whitespace-nowrap shrink-0"
+                  title="Download Live Payroll CSV Schedule"
+                >
+                  <Download className="w-4 h-4 text-emerald-600" />
+                  <span>Payroll CSV</span>
+                </a>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!staffList || staffList.length === 0) {
+                      alert('No staff records found to print.');
+                      return;
+                    }
+                    printStaffPayrollSchedulePDF({
+                      staffList,
+                      schoolName: settings?.schoolName || 'AI INTEGRATED ACADEMY (AIA)',
+                      logoSrc: settings?.logo || '/logo.jpg',
+                      academicSession: '2025/2026',
+                    });
+                  }}
+                  disabled={staffList.length === 0}
+                  className="py-2 px-3 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer shadow-xs whitespace-nowrap shrink-0 disabled:opacity-50"
+                  title="Print Official Staff Payroll & Remuneration PDF"
+                >
+                  <Printer className="w-4 h-4 text-emerald-400" />
+                  <span>Print Payroll PDF</span>
+                </button>
 
                 <button
                   type="button"
